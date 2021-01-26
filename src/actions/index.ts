@@ -1,4 +1,4 @@
-/*****
+/*
 // import * as core from '@actions/core';
 // import { context, getOctokit } from '@actions/github';
 import { getRepositoryInformation } from './gitutils/getRepositoryInformation';
@@ -135,5 +135,4 @@ async function run() {
 
 run();
 
- *
- */
+*/

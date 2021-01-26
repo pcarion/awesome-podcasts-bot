@@ -58,3 +58,20 @@ export interface HandleIssueResponse {
   podcast?: Podcast;
   fileName?: string;
 }
+
+export interface HandlePullRequestArg {
+  octokit: Octokit;
+  repoInformation: RepoInformation;
+  podcastsDirectory: string;
+  podcastJsonDirectory: string;
+  prNumber: number;
+  commitsUrl: string;
+  pullRequestBranch: string;
+}
+
+export interface HandlePullRequestResponse {
+  isSuccess: boolean;
+  errorMessage?: string;
+  podcast?: Podcast;
+  fileName?: string;
+}

@@ -1,7 +1,6 @@
 import axios from 'axios';
 import path from 'path';
-import { Octokit, RepoInformation } from './types';
-import { Podcast } from './jtd/podcast';
+import { HandlePullRequestArg, HandlePullRequestResponse } from './types';
 import addFilesToRepository from './gitutils/addFilesToRepository';
 import mergePullRequest from './gitutils/mergePullRequest';
 import enhancePodcast from './enhance/enhancePodcast';
@@ -20,22 +19,15 @@ async function downloadFileContent(url: string): Promise<string> {
   return response.data;
 }
 
-export interface HandlePullRequestResponse {
-  isSuccess: boolean;
-  errorMessage?: string;
-  podcast?: Podcast;
-  fileName?: string;
-}
-
-export default async function handlePullRequestEvent(
-  octokit: Octokit,
-  repoInformation: RepoInformation,
-  podcastsDirectory: string,
-  podcastJsonDirectory: string,
-  prNumber: number,
-  commitsUrl: string,
-  pullRequestBranch: string,
-): Promise<HandlePullRequestResponse> {
+export default async function handlePullRequestEvent({
+  octokit,
+  repoInformation,
+  podcastsDirectory,
+  podcastJsonDirectory,
+  prNumber,
+  commitsUrl,
+  pullRequestBranch,
+}: HandlePullRequestArg): Promise<HandlePullRequestResponse> {
   const reporter = mkReporter(octokit, repoInformation.owner, repoInformation.repo, prNumber);
 
   try {
