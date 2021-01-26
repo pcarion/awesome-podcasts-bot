@@ -1,8 +1,36 @@
 {
   "title": "Les Cast Codeurs Podcast",
-  "description": "Restez informes sur les sujets brulants de l industrie Java. Plongez sur un sujet precis avec l interview de l episode. Supportez les radotages de vos hôtes : Emmanuel Bernard (JBoss, Hibernate), Arnaud Héritier (CloudBees, Jenkins), Guillaume Laforge (Google, Groovy), Antonio Goncalves (freelance, auteur), Vincent Massol (XWiki, Maven), Audrey Neveu (Saagie, Devoxx4Kids).",
+  "description": "Restez informes sur les sujets brulants de l industrie Java. Plongez sur un sujet precis avec l interview de l episode. \nSupportez les radotages de vos hôtes : Emmanuel Bernard (JBoss, Hibernate), Arnaud Héritier (CloudBees, Jenkins), Guillaume Laforge (Google, Groovy), Antonio Goncalves (freelance, auteur), Vincent Massol (XWiki, Maven), Audrey Neveu (Saagie, Devoxx4Kids).\n",
   "imageUrl": "https://ssl-static.libsyn.com/p/assets/2/5/5/f/255f68ddc87cc049/logo-lescastcodeurs-1400px-white.png",
-  "pid": "pypgojl",
+  "contacts": {
+    "link": "_",
+    "email": "_",
+    "twitter": "_",
+    "patreon": "_",
+    "googleGroup": "_"
+  },
+  "hosts": [
+    {
+      "name": "Emmanuel Bernard",
+      "twitter": "_"
+    },
+    {
+      "name": "Guillaume Laforge",
+      "twitter": "_"
+    },
+    {
+      "name": "Vincent Massol",
+      "twitter": "_"
+    },
+    {
+      "name": "Antonio Goncalves",
+      "twitter": "_"
+    },
+    {
+      "name": "Aud",
+      "twitter": "_"
+    }
+  ],
   "feed": {
     "rss": "https://lescastcodeurs.libsyn.com/rss",
     "itunes": "_",
@@ -13,30 +41,7 @@
     "castbox": "_",
     "pocketcast": "_"
   },
-  "hosts": [
-    {
-      "name": "Emmanuel Bernard"
-    },
-    {
-      "name": "Guillaume Laforge"
-    },
-    {
-      "name": "Vincent Massol"
-    },
-    {
-      "name": "Antonio Goncalves"
-    },
-    {
-      "name": "Aud"
-    }
-  ],
-  "contacts": {
-    "link": "_",
-    "email": "_",
-    "twitter": "_",
-    "patreon": "_",
-    "googleGroup": "_"
-  },
+  "pid": "pypgojl",
   "yamlDescriptionFile": "les_cast_codeurs_podcast-6.yaml",
   "extra": {
     "colors": {
