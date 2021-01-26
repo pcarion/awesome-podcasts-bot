@@ -1,0 +1,3 @@
+config:
+  podcastJsonDirectory: test/json
+  podcastYamlDirectory: test/podcasts
