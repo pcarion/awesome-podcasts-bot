@@ -2,6 +2,7 @@ import { Probot, WebhookPayloadWithRepository } from 'probot';
 import { RepoInformation } from './actions/types';
 import handleIssuesEvent from './actions/handleIssuesEvent';
 import handlePullRequestEvent from './actions/handlePullRequestEvent';
+import { ApplicationFunction } from './types';
 
 type PayloadRepository = WebhookPayloadWithRepository['repository'];
 
@@ -25,7 +26,7 @@ function getRepositoryInformation(repository: PayloadRepository): RepoInformatio
   return repoInformation;
 }
 
-export = (app: Probot): void => {
+const appFunction: ApplicationFunction = (app: Probot) => {
   app.on('issues.opened', async (context) => {
     try {
       console.log('@@@ issues.opened....', JSON.stringify(context.payload, null, 2));
@@ -79,3 +80,5 @@ export = (app: Probot): void => {
   // To get your app running against GitHub, see:
   // https://probot.github.io/docs/development/
 };
+
+export default appFunction;

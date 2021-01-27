@@ -34,7 +34,7 @@ const lowerCaseKeys = (obj: HeaderArg = {}): HeaderArg =>
     {},
   );
 
-module.exports.serverless = (appFn: ApplicationFunction) => {
+export default function mkServerlessHandler(appFn: ApplicationFunction) {
   return async (event: APIGatewayProxyEvent, context: Context): Promise<APIGatewayProxyResult> => {
     // 🤖 A friendly homepage if there isn't a payload
     if (event.httpMethod === 'GET' && event.path === '/probot') {
@@ -112,4 +112,4 @@ module.exports.serverless = (appFn: ApplicationFunction) => {
       throw new Error('unknown error');
     }
   };
-};
+}
