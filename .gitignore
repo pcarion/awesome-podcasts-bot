@@ -116,3 +116,4 @@ npm-debug.log
 .env
 coverage
 lib
+certs
