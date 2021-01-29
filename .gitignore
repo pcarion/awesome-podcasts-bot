@@ -107,6 +107,7 @@ npm-debug.log
 *.pem
 !mock-cert.pem
 .env
+.envrc
 coverage
 lib
 node_modules

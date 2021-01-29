@@ -1,8 +1,4 @@
-FROM node:12-slim
-WORKDIR /usr/src/app
-COPY package.json package-lock.json ./
-RUN npm ci --production
-RUN npm cache clean --force
-ENV NODE_ENV="production"
+FROM amazon/aws-lambda-nodejs:12
 COPY . .
-CMD [ "npm", "start" ]
+RUN npm install && npm run build
+CMD [ "lib.handler" ]
