@@ -118,3 +118,4 @@ npm-debug.log
 coverage
 lib
 certs
+.DS_Store
