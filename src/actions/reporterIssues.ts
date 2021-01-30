@@ -35,13 +35,16 @@ export default function mkReporter(octokit: Octokit, owner: string, repo: string
 
   return {
     info(info: string) {
+      console.log('>info>', info);
       _lines.push(info);
     },
     error(info: string) {
+      console.log('>error>', info);
       _lines.push('');
       _lines.push(`**Error**: ${info}`);
     },
     async succeed(label: string): Promise<void> {
+      console.log('>succeed>', label);
       if (label) {
         await setLabel(label);
       }
@@ -49,6 +52,7 @@ export default function mkReporter(octokit: Octokit, owner: string, repo: string
       await closeTicket();
     },
     async fail(label: string): Promise<void> {
+      console.log('>fail>', label);
       if (label) {
         await setLabel(label);
       }

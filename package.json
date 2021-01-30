@@ -12,8 +12,10 @@
     "probot-app"
   ],
   "scripts": {
-    "prebuild": "rimraf lib",
+    "clean": "rimraf dist build",
     "build": "tsc",
+    "package": "ncc build lib/handler.js -o dist --source-map --license licenses.txt",
+    "dist": "npm run clean && npm run build && npm run package",
     "start": "probot run ./lib/index.js",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
@@ -50,6 +52,7 @@
     "@types/xml2js": "^0.4.8",
     "@typescript-eslint/eslint-plugin": "^4.14.1",
     "@typescript-eslint/parser": "^4.14.1",
+    "@vercel/ncc": "^0.27.0",
     "eslint": "^7.18.0",
     "eslint-config-prettier": "^7.2.0",
     "eslint-plugin-prettier": "^3.3.1",

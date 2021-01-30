@@ -20,7 +20,6 @@ export default async function extractFilesFromPR(octokit: Octokit, commits_url: 
       throw new Error(`missing commit_url`);
     }
     const result = await octokit.request(commit_url);
-    // console.log('@@@ commit:  files', JSON.stringify(result.data.files, null, 2));
     (result.data.files || []).forEach((f: any) => {
       if (!files.includes(f.filename)) {
         files.push({

@@ -1,8 +1,8 @@
-import { Probot, WebhookPayloadWithRepository } from 'probot';
+import { Probot, WebhookPayloadWithRepository, Context } from 'probot';
 import { RepoInformation } from './actions/types';
 import handleIssuesEvent from './actions/handleIssuesEvent';
 import handlePullRequestEvent from './actions/handlePullRequestEvent';
-import { ApplicationFunction } from './types';
+import { Octokit, ApplicationFunction } from './types';
 
 type PayloadRepository = WebhookPayloadWithRepository['repository'];
 
@@ -27,9 +27,8 @@ function getRepositoryInformation(repository: PayloadRepository): RepoInformatio
 }
 
 const appFunction: ApplicationFunction = (app: Probot) => {
-  app.on('issues.opened', async (context) => {
+  app.on(['issues.opened', 'issues.edited'], async (context) => {
     try {
-      console.log('@@@ issues.opened....', JSON.stringify(context.payload, null, 2));
       const issueNumber = context.payload.issue.number;
       const title = context.payload.issue.title;
 
@@ -43,18 +42,17 @@ const appFunction: ApplicationFunction = (app: Probot) => {
         issueNumber,
         title,
       });
-      const issueComment = context.issue({
-        body: 'Thanks for opening this issue!',
-      });
-      await context.octokit.issues.createComment(issueComment);
+      // const issueComment = context.issue({
+      //   body: 'Thanks for opening this issue!',
+      // });
+      // await context.octokit.issues.createComment(issueComment);
     } catch (err) {
       console.log('issues.opened.error', err);
     }
   });
 
-  app.on('pull_request.opened', async (context) => {
+  app.on(['pull_request.opened', 'pull_request.edited'], async (context) => {
     try {
-      console.log('@@@ pull_request.opened....', JSON.stringify(context.payload, null, 2));
       const repoInformation = getRepositoryInformation(context.payload.repository);
       const prNumber = context.payload.number;
       const commitsUrl = context.payload.pull_request.commits_url;

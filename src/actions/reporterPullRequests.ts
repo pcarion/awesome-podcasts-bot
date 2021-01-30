@@ -26,6 +26,7 @@ export default function mkReporter(octokit: Octokit, owner: string, repo: string
 
   return {
     info(info: string) {
+      console.log('>info>', info);
       _lines.push(info);
     },
     error(info: string) {
