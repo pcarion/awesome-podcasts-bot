@@ -1,8 +1,20 @@
 {
   "title": "S'informer sur la Tech",
-  "description": "C'est l'émission qui réveille la curiosité technique. Partageons nos passions, nos découvertes et nos expériences. CC BY 4.0",
+  "description": "C'est l'émission qui réveille la curiosité technique. Partageons nos passions, nos découvertes et nos expériences. \nCC BY 4.0\n",
   "imageUrl": "https://info.mindcast.fr/images/itunes_image.png",
-  "pid": "p2prm74",
+  "contacts": {
+    "link": "_",
+    "email": "_",
+    "twitter": "_",
+    "patreon": "_",
+    "googleGroup": "_"
+  },
+  "hosts": [
+    {
+      "name": "mindCast",
+      "twitter": "_"
+    }
+  ],
   "feed": {
     "rss": "https://info.mindcast.fr/feed.xml",
     "itunes": "https://podcasts.apple.com/us/podcast/id1345098278",
@@ -13,18 +25,7 @@
     "castbox": "_",
     "pocketcast": "_"
   },
-  "hosts": [
-    {
-      "name": "mindCast"
-    }
-  ],
-  "contacts": {
-    "link": "_",
-    "email": "_",
-    "twitter": "_",
-    "patreon": "_",
-    "googleGroup": "_"
-  },
+  "pid": "p2prm74",
   "yamlDescriptionFile": "s'informer_sur_la_tech-16.yaml",
   "extra": {
     "colors": {
