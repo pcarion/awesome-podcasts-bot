@@ -42,6 +42,12 @@ const appFunction: ApplicationFunction = (app: Probot) => {
         issueNumber,
         title,
       });
+      const config = await context.octokit.repos.getContent({
+        path: '.awesome-podcasts-bot',
+        repo: repoInformation.repo,
+        owner: repoInformation.owner,
+      });
+      console.log('@@@ config:', config);
       // const issueComment = context.issue({
       //   body: 'Thanks for opening this issue!',
       // });

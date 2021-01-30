@@ -13,8 +13,10 @@ export default async function loadExistingPodcastFiles(
 
   // filter to get only yaml files and download their content
   const podcastFiles = files.filter((f) => f.name.endsWith('.yaml'));
+  console.log('>podcast files to process:', podcastFiles);
   await dowloadFiles(podcastFiles);
   for (const file of podcastFiles) {
+    console.log('>validate file:', file);
     if (!file.content) {
       throw new Error(`missing content for file: ${file.name}`);
     }

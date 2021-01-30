@@ -23,8 +23,10 @@ export default async function enhancePodcast(podcast: Podcast, fileName: string)
   return new Promise((resolve, reject) => {
     if (podcast.imageUrl != '_') {
       try {
+        console.log('>extracting color information from image>', podcast.imageUrl);
         Vibrant.from(podcast.imageUrl).getPalette((err, palette) => {
           if (err) {
+            console.log('>ERROR>extracting color information from image>', err);
             return reject(err);
           }
           console.log(`>palette retrieved>image url>${podcast.imageUrl}>found>${!!palette}`);
@@ -38,6 +40,7 @@ export default async function enhancePodcast(podcast: Podcast, fileName: string)
             result.extra.colors.lightMuted = palette.LightMuted?.hex || null;
           }
           const parser = new Parser();
+          console.log('>parsing feed>', podcast.feed.rss);
           parser
             .parseURL(podcast.feed.rss)
             .then((feed) => {
@@ -74,6 +77,7 @@ export default async function enhancePodcast(podcast: Podcast, fileName: string)
         return resolve(result);
       }
     } else {
+      console.log('>nothing to do>', result);
       return resolve(result);
     }
   });

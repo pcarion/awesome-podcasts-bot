@@ -13,7 +13,9 @@ async function downloadFile(file: FileInformation): Promise<void> {
 export async function dowloadFiles(listOfFiles: FileInformation[]): Promise<void> {
   try {
     for (const file of listOfFiles) {
+      console.log('>downloading content of file>', file);
       await downloadFile(file);
+      console.log('>content>', file.content && file.content.length);
     }
   } catch (err) {
     console.log(err);
