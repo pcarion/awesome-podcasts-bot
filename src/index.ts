@@ -1,8 +1,8 @@
-import { Probot, WebhookPayloadWithRepository, Context } from 'probot';
+import { Probot, WebhookPayloadWithRepository } from 'probot';
 import { RepoInformation } from './actions/types';
 import handleIssuesEvent from './actions/handleIssuesEvent';
 import handlePullRequestEvent from './actions/handlePullRequestEvent';
-import { Octokit, ApplicationFunction } from './types';
+import { ApplicationFunction } from './types';
 
 type PayloadRepository = WebhookPayloadWithRepository['repository'];
 

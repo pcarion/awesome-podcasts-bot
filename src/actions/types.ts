@@ -1,5 +1,7 @@
+import { ProbotOctokit } from 'probot';
 import { Podcast } from './jtd/podcast';
-import { Octokit } from '../types';
+
+export type Octokit = InstanceType<typeof ProbotOctokit>;
 
 export interface RepoInformation {
   owner: string;
