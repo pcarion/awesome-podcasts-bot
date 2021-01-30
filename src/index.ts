@@ -3,14 +3,32 @@ import { RepoInformation } from './actions/types';
 import handleIssuesEvent from './actions/handleIssuesEvent';
 import handlePullRequestEvent from './actions/handlePullRequestEvent';
 import { ApplicationFunction } from './types';
-
+import retrieveYamlContentFromRepository from './actions/gitutils/retrieveYamlContentFromRepository';
+import { Octokit } from './actions/types';
 type PayloadRepository = WebhookPayloadWithRepository['repository'];
 
-const podcastYamlDirectory = process.env['AWESOME_PODCAST_YAML_DIRECTORY'];
-const podcastJsonDirectory = process.env['AWESOME_PODCAST_JSON_DIRECTORY'];
+const BOT_CONFIGFILE = '.awesome-podcasts-bot.yaml';
 
-if (!podcastJsonDirectory || !podcastYamlDirectory) {
-  throw new Error(`missing environment variables`);
+interface BotConfig {
+  podcastYamlDirectory: string;
+  podcastJsonDirectory: string;
+}
+
+async function getBotConfiguration(octo: Octokit, repoInformation: RepoInformation): Promise<BotConfig> {
+  // retrieve specific configuration
+  const botconfig = await retrieveYamlContentFromRepository(octo, repoInformation, BOT_CONFIGFILE);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const podcastYamlDirectory = (botconfig as any).config.podcastYamlDirectory;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const podcastJsonDirectory = (botconfig as any).config.podcastJsonDirectory;
+  if (!podcastJsonDirectory || !podcastYamlDirectory) {
+    console.log(`>invalid bot config>${BOT_CONFIGFILE}>`, botconfig);
+    throw new Error(`missing configuration variables from ${BOT_CONFIGFILE}`);
+  }
+  return {
+    podcastYamlDirectory,
+    podcastJsonDirectory,
+  };
 }
 
 function getRepositoryInformation(repository: PayloadRepository): RepoInformation {
@@ -33,6 +51,10 @@ const appFunction: ApplicationFunction = (app: Probot) => {
       const title = context.payload.issue.title;
 
       const repoInformation = getRepositoryInformation(context.payload.repository);
+      const { podcastYamlDirectory, podcastJsonDirectory } = await getBotConfiguration(
+        context.octokit,
+        repoInformation,
+      );
 
       await handleIssuesEvent({
         octokit: context.octokit,
@@ -42,12 +64,6 @@ const appFunction: ApplicationFunction = (app: Probot) => {
         issueNumber,
         title,
       });
-      const config = await context.octokit.repos.getContent({
-        path: '.awesome-podcasts-bot',
-        repo: repoInformation.repo,
-        owner: repoInformation.owner,
-      });
-      console.log('@@@ config:', config);
       // const issueComment = context.issue({
       //   body: 'Thanks for opening this issue!',
       // });
@@ -63,6 +79,12 @@ const appFunction: ApplicationFunction = (app: Probot) => {
       const prNumber = context.payload.number;
       const commitsUrl = context.payload.pull_request.commits_url;
       const pullRequestBranch = context.payload.pull_request.head.ref;
+
+      // retrieve specific configuration
+      const { podcastYamlDirectory, podcastJsonDirectory } = await getBotConfiguration(
+        context.octokit,
+        repoInformation,
+      );
 
       await handlePullRequestEvent({
         octokit: context.octokit,

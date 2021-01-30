@@ -5,6 +5,6 @@ RUN npm install && npm run dist
 
 FROM amazon/aws-lambda-nodejs:12
 COPY --from=stage1 /app/dist /app/dist/
-COPY ./certs/*.pem /app/certs/
+COPY ./certs /app/certs/
 WORKDIR /app
 CMD [ "/app/dist/index.handler" ]
