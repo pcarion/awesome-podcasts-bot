@@ -1,6 +1,10 @@
 import { Octokit, RepoInformation } from '../types';
 
-export async function getRepositoryInformation(octo: Octokit, owner: string, repo: string): Promise<RepoInformation> {
+export default async function getRepositoryInformation(
+  octo: Octokit,
+  owner: string,
+  repo: string,
+): Promise<RepoInformation> {
   try {
     const result = await octo.repos.get({
       owner,

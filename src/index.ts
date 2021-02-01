@@ -1,35 +1,11 @@
 import { Probot, WebhookPayloadWithRepository } from 'probot';
 import { RepoInformation } from './actions/types';
+import { ApplicationFunction } from './types';
 import handleIssuesEvent from './actions/handleIssuesEvent';
 import handlePullRequestEvent from './actions/handlePullRequestEvent';
-import { ApplicationFunction } from './types';
-import retrieveYamlContentFromRepository from './actions/gitutils/retrieveYamlContentFromRepository';
-import { Octokit } from './actions/types';
+import getConfigurationData from './actions/gitutils/getConfigurationData';
+
 type PayloadRepository = WebhookPayloadWithRepository['repository'];
-
-const BOT_CONFIGFILE = '.awesome-podcasts-bot.yaml';
-
-interface BotConfig {
-  podcastYamlDirectory: string;
-  podcastJsonDirectory: string;
-}
-
-async function getBotConfiguration(octo: Octokit, repoInformation: RepoInformation): Promise<BotConfig> {
-  // retrieve specific configuration
-  const botconfig = await retrieveYamlContentFromRepository(octo, repoInformation, BOT_CONFIGFILE);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const podcastYamlDirectory = (botconfig as any).config.podcastYamlDirectory;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const podcastJsonDirectory = (botconfig as any).config.podcastJsonDirectory;
-  if (!podcastJsonDirectory || !podcastYamlDirectory) {
-    console.log(`>invalid bot config>${BOT_CONFIGFILE}>`, botconfig);
-    throw new Error(`missing configuration variables from ${BOT_CONFIGFILE}`);
-  }
-  return {
-    podcastYamlDirectory,
-    podcastJsonDirectory,
-  };
-}
 
 function getRepositoryInformation(repository: PayloadRepository): RepoInformation {
   if (!repository) {
@@ -51,7 +27,7 @@ const appFunction: ApplicationFunction = (app: Probot) => {
       const title = context.payload.issue.title;
 
       const repoInformation = getRepositoryInformation(context.payload.repository);
-      const { podcastYamlDirectory, podcastJsonDirectory } = await getBotConfiguration(
+      const { podcastYamlDirectory, podcastJsonDirectory } = await getConfigurationData(
         context.octokit,
         repoInformation,
       );
@@ -81,7 +57,7 @@ const appFunction: ApplicationFunction = (app: Probot) => {
       const pullRequestBranch = context.payload.pull_request.head.ref;
 
       // retrieve specific configuration
-      const { podcastYamlDirectory, podcastJsonDirectory } = await getBotConfiguration(
+      const { podcastYamlDirectory, podcastJsonDirectory } = await getConfigurationData(
         context.octokit,
         repoInformation,
       );

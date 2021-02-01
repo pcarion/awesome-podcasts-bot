@@ -1,3 +1,4 @@
+import path from 'path';
 import { HandleRegenerateAllJsonFilesArg, HandleRegenerateAllJsonFilesResponse } from './types';
 import enhancePodcast from './enhance/enhancePodcast';
 import loadExistingPodcastFiles from './loadExistingPodcastFiles';
@@ -16,7 +17,10 @@ export default async function handleRegenerateAllJsonFiles({
 
     for (const podcast of existingPodcasts) {
       console.log('>enhance podcast>', podcast);
-      const podcastEnhanced = await enhancePodcast(podcast, podcast.yamlDescriptionFile || 'unknown.yaml');
+      const podcastEnhanced = await enhancePodcast(
+        podcast,
+        path.basename(podcast.yamlDescriptionFile || 'unknown.yaml'),
+      );
       console.log('>enhanced as>', podcastEnhanced);
 
       console.log('>adding to repository>');

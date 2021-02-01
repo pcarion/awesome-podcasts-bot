@@ -1,6 +1,7 @@
 import * as core from '@actions/core';
 import { context, getOctokit } from '@actions/github';
-import { getRepositoryInformation } from './actions/gitutils/getRepositoryInformation';
+import getConfigurationData from './actions/gitutils/getConfigurationData';
+import getRepositoryInformation from './actions/gitutils/getRepositoryInformation';
 import handleRegenerateAllJsonFiles from './actions/handleRegenerateAllJsonFiles';
 
 interface RepositoryOwner {
@@ -27,29 +28,23 @@ async function run() {
   try {
     console.log('Starting github action...');
     const token = core.getInput('repo-token', { required: true });
-    const podcastYamlDirectory = core.getInput('podcast-yaml-directory');
-    const podcastJsonDirectory = core.getInput('podcast-json-directory');
-
     const octokit = getOctokit(token);
 
     const repo = getRepositoryOwner();
 
     const info = await getRepositoryInformation(octokit, repo.owner, repo.repo);
 
-    // const payload = JSON.stringify(context, undefined, 2);
-    // console.log(`>> The context is: ${payload}`);
-    // console.log('====');
-    switch (context.eventName) {
-      case 'issues': {
-        await handleRegenerateAllJsonFiles({
-          octokit,
-          repoInformation: info,
-          podcastYamlDirectory,
-          podcastJsonDirectory,
-        });
-        break;
-      }
-    }
+    const { podcastYamlDirectory, podcastJsonDirectory } = await getConfigurationData(octokit, info);
+
+    const payload = JSON.stringify(context, undefined, 2);
+    console.log(`>> The context is: ${payload}`);
+    console.log('====');
+    await handleRegenerateAllJsonFiles({
+      octokit,
+      repoInformation: info,
+      podcastYamlDirectory,
+      podcastJsonDirectory,
+    });
   } catch (error) {
     core.setFailed(error.message);
   }
