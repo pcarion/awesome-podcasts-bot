@@ -23,6 +23,11 @@ function getRepositoryInformation(repository: PayloadRepository): RepoInformatio
 const appFunction: ApplicationFunction = (app: Probot) => {
   app.on(['issues.opened', 'issues.edited'], async (context) => {
     try {
+      const issueComment = context.issue({
+        body: "Merci pour votre soumission! L'issue sera fermée automatiquement si elle est valide",
+      });
+      await context.octokit.issues.createComment(issueComment);
+
       const issueNumber = context.payload.issue.number;
       const title = context.payload.issue.title;
 
@@ -40,10 +45,6 @@ const appFunction: ApplicationFunction = (app: Probot) => {
         issueNumber,
         title,
       });
-      // const issueComment = context.issue({
-      //   body: 'Thanks for opening this issue!',
-      // });
-      // await context.octokit.issues.createComment(issueComment);
     } catch (err) {
       console.log('issues.opened.error', err);
     }
@@ -51,6 +52,10 @@ const appFunction: ApplicationFunction = (app: Probot) => {
 
   app.on(['pull_request.opened', 'pull_request.edited'], async (context) => {
     try {
+      const issueComment = context.issue({
+        body: 'Merci pour votre soumission! La PR sera fermée automatiquement si elle est valide',
+      });
+      await context.octokit.issues.createComment(issueComment);
       const repoInformation = getRepositoryInformation(context.payload.repository);
       const prNumber = context.payload.number;
       const commitsUrl = context.payload.pull_request.commits_url;
