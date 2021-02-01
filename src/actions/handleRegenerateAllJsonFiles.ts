@@ -16,12 +16,11 @@ export default async function handleRegenerateAllJsonFiles({
     const addToRepository = await addFilesToRepository(octokit, repoInformation);
 
     for (const podcast of existingPodcasts) {
-      console.log('>enhance podcast>', podcast);
+      console.log('>enhance podcast>', podcast.title);
       const podcastEnhanced = await enhancePodcast(
         podcast,
         path.basename(podcast.yamlDescriptionFile || 'unknown.yaml'),
       );
-      console.log('>enhanced as>', podcastEnhanced);
 
       console.log('>adding to repository>');
       await addToRepository.addJsonFile(`${podcastJsonDirectory}/${podcastEnhanced.pid}.json`, podcastEnhanced);

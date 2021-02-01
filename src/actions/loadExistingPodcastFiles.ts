@@ -16,7 +16,7 @@ export default async function loadExistingPodcastFiles(
   console.log('>podcast files to process:', podcastFiles);
   await dowloadFiles(podcastFiles);
   for (const file of podcastFiles) {
-    console.log('>validate file:', file);
+    console.log('>validate file:', file.path);
     if (!file.content) {
       throw new Error(`missing content for file: ${file.name}`);
     }

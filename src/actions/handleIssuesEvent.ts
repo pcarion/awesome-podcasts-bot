@@ -28,11 +28,10 @@ export default async function handleIssuesEvent({
     // before we can add this podcast, we need to check that this is not a duplicate
     await checkForDuplicatePodcast(podcasts, result.podcast);
 
-    console.log('>enhance podcast>', result.podcast);
+    console.log('>enhance podcast>', result.podcast.title);
     const podcastEnhanced = await enhancePodcast(result.podcast, result.fileName);
-    console.log('>enhanced as>', podcastEnhanced);
 
-    console.log('>adding to respository>');
+    console.log('>adding to repository>');
     const addToRepository = await addFilesToRepository(octokit, repoInformation);
     await addToRepository.addFileWithlines(`${podcastYamlDirectory}/${result.fileName}`, result.lines);
     await addToRepository.addJsonFile(`${podcastJsonDirectory}/${podcastEnhanced.pid}.json`, podcastEnhanced);

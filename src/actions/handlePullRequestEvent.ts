@@ -51,9 +51,8 @@ export default async function handlePullRequestEvent({
     const content = await downloadFileContent(file.url);
     const podcast = validatePodcastYaml(content, file.filename);
 
-    console.log('>enhance podcast>', podcast);
+    console.log('>enhance podcast>', podcast.title);
     const podcastEnhanced = await enhancePodcast(podcast, path.basename(file.filename));
-    console.log('>enhanced as>', podcastEnhanced);
 
     // we check if the change are OK
     await checkPodcastModifications(originalPodcast, podcast);

@@ -998,11 +998,10 @@ function handleRegenerateAllJsonFiles(_a) {
                 case 3:
                     if (!(_i < existingPodcasts_1.length)) return [3 /*break*/, 7];
                     podcast = existingPodcasts_1[_i];
-                    console.log('>enhance podcast>', podcast);
+                    console.log('>enhance podcast>', podcast.title);
                     return [4 /*yield*/, enhancePodcast_1.default(podcast, path_1.default.basename(podcast.yamlDescriptionFile || 'unknown.yaml'))];
                 case 4:
                     podcastEnhanced = _b.sent();
-                    console.log('>enhanced as>', podcastEnhanced);
                     console.log('>adding to repository>');
                     return [4 /*yield*/, addToRepository.addJsonFile(podcastJsonDirectory + "/" + podcastEnhanced.pid + ".json", podcastEnhanced)];
                 case 5:
@@ -1210,7 +1209,7 @@ function loadExistingPodcastFiles(octokit, repoInformation, podcastsDirectory) {
                     _a.sent();
                     for (_i = 0, podcastFiles_1 = podcastFiles; _i < podcastFiles_1.length; _i++) {
                         file = podcastFiles_1[_i];
-                        console.log('>validate file:', file);
+                        console.log('>validate file:', file.path);
                         if (!file.content) {
                             throw new Error("missing content for file: " + file.name);
                         }
