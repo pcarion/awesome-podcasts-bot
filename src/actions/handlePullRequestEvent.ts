@@ -32,7 +32,7 @@ export default async function handlePullRequestEvent({
 
   try {
     const files = await extractFilesFromPR(octokit, commitsUrl);
-    reporter.info(`Files modified in PR: * ${files.map((f) => f.filename).join('\n* ')}`);
+    reporter.info(`Files modified in PR: \n* ${files.map((f) => f.filename).join('\n* ')}`);
     if (files.length !== 1) {
       throw new Error(`PR must change one and only one file from the podcasts directory`);
     }
@@ -59,12 +59,15 @@ export default async function handlePullRequestEvent({
 
     console.log('>adding to repository>');
     const addToRepository = await addFilesToRepository(octokit, repoInformation);
-    await addToRepository.addJsonFile(`${podcastJsonDirectory}/${podcastEnhanced.pid}.json`, podcastEnhanced);
+    const prJsonFile = `${podcastJsonDirectory}/${podcastEnhanced.pid}.json`;
+    console.log('>adding to repository>file>', prJsonFile);
+    await addToRepository.addJsonFile(prJsonFile, podcastEnhanced);
 
     const sha = await addToRepository.commit(
       `adding podcast: ${podcastEnhanced.title} - ${podcastEnhanced.yamlDescriptionFile}`,
       pullRequestBranch,
     );
+    console.log('>mergin PR>sha>', sha);
 
     await mergePullRequest(octokit, repoInformation.owner, repoInformation.repo, prNumber, sha);
 
