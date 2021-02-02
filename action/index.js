@@ -315,24 +315,37 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 function getCurrentCommit(octo, owner, repo, branch) {
     return __awaiter(this, void 0, void 0, function () {
-        var refData, commitSha, commitData;
+        var refs, refData, commitSha, commitData;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, octo.git.getRef({
-                        owner: owner,
-                        repo: repo,
-                        ref: "heads/" + branch,
-                    })];
+                case 0:
+                    console.log('@@ refs?');
+                    return [4 /*yield*/, octo.git.listMatchingRefs({
+                            owner: owner,
+                            repo: repo,
+                            ref: '',
+                        })];
                 case 1:
+                    refs = _a.sent();
+                    console.log('@@ refs>', refs);
+                    console.log("@@@ octo.git.getRef>branch>" + branch);
+                    return [4 /*yield*/, octo.git.getRef({
+                            owner: owner,
+                            repo: repo,
+                            ref: "heads/" + branch,
+                        })];
+                case 2:
                     refData = (_a.sent()).data;
                     commitSha = refData.object.sha;
+                    console.log("@@@ octo.git.getRef>1>" + commitSha);
                     return [4 /*yield*/, octo.git.getCommit({
                             owner: owner,
                             repo: repo,
                             commit_sha: commitSha,
                         })];
-                case 2:
+                case 3:
                     commitData = (_a.sent()).data;
+                    console.log("@@@ octo.git.getRef>2>" + branch);
                     return [2 /*return*/, {
                             commitSha: commitSha,
                             treeSha: commitData.tree.sha,
@@ -476,10 +489,11 @@ function addFilesToRepository(octo, repoInformation) {
                                     switch (_a.label) {
                                         case 0:
                                             commitBranchName = branchName || defaultBranch_1;
+                                            console.log("@@@ commitBranchName>" + commitBranchName);
                                             return [4 /*yield*/, getCurrentCommit(octo, owner_1, repo_1, commitBranchName)];
                                         case 1:
                                             currentCommit = _a.sent();
-                                            console.log(">getCurrentCommit>branch>" + branchName + ">commit>", currentCommit);
+                                            console.log(">getCurrentCommit>branch>" + branchName + ">commit>" + currentCommit);
                                             return [4 /*yield*/, createNewTree(octo, owner_1, repo_1, blobs_1, currentCommit.treeSha)];
                                         case 2:
                                             newTree = _a.sent();
