@@ -9,17 +9,27 @@ type GitFileMode = '100644' | '100755' | '040000' | '160000' | '120000' | undefi
 type GitBlobType = 'tree' | 'blob' | 'commit' | undefined;
 
 async function getCurrentCommit(octo: Octokit, owner: string, repo: string, branch: string) {
+  console.log('@@ refs?');
+  const refs = await octo.git.listMatchingRefs({
+    owner,
+    repo,
+    ref: '',
+  });
+  console.log('@@ refs>', refs);
+  console.log(`@@@ octo.git.getRef>branch>${branch}`);
   const { data: refData } = await octo.git.getRef({
     owner,
     repo,
     ref: `heads/${branch}`,
   });
   const commitSha = refData.object.sha;
+  console.log(`@@@ octo.git.getRef>1>${commitSha}`);
   const { data: commitData } = await octo.git.getCommit({
     owner,
     repo,
     commit_sha: commitSha,
   });
+  console.log(`@@@ octo.git.getRef>2>${branch}`);
   return {
     commitSha,
     treeSha: commitData.tree.sha,
@@ -122,8 +132,9 @@ export default async function addFilesToRepository(
       },
       commit: async function (commitMessage: string, branchName?: string): Promise<string> {
         const commitBranchName = branchName || defaultBranch;
+        console.log(`@@@ commitBranchName>${commitBranchName}`);
         const currentCommit = await getCurrentCommit(octo, owner, repo, commitBranchName);
-        console.log(`>getCurrentCommit>branch>${branchName}>commit>`, currentCommit);
+        console.log(`>getCurrentCommit>branch>${branchName}>commit>${currentCommit}`);
 
         const newTree = await createNewTree(octo, owner, repo, blobs, currentCommit.treeSha);
         const newCommit = await createNewCommit(octo, owner, repo, commitMessage, newTree.sha, currentCommit.commitSha);

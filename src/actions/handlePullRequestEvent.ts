@@ -63,6 +63,7 @@ export default async function handlePullRequestEvent({
     console.log('>adding to repository>file>', prJsonFile);
     await addToRepository.addJsonFile(prJsonFile, podcastEnhanced);
 
+    console.log(`>pushing PR to branch>${pullRequestBranch}`);
     const sha = await addToRepository.commit(
       `adding podcast: ${podcastEnhanced.title} - ${podcastEnhanced.yamlDescriptionFile}`,
       pullRequestBranch,
@@ -78,6 +79,7 @@ export default async function handlePullRequestEvent({
       podcast: podcast,
     };
   } catch (err) {
+    console.log(err);
     reporter.error(`processing error: ${err.message || err.toString()}`);
     reporter.info('');
     reporter.info('feel free to update your PR is you can fix that error');

@@ -60,6 +60,8 @@ const appFunction: ApplicationFunction = (app: Probot) => {
       const prNumber = context.payload.number;
       const commitsUrl = context.payload.pull_request.commits_url;
       const pullRequestBranch = context.payload.pull_request.head.ref;
+      console.log(`@@@ pullRequestBranch:[${pullRequestBranch}]`);
+      console.log(`@@@ pull_request:[${JSON.stringify(context.payload.pull_request, null, 2)}]`);
 
       // retrieve specific configuration
       const { podcastYamlDirectory, podcastJsonDirectory } = await getConfigurationData(

@@ -30,6 +30,7 @@ export default function mkReporter(octokit: Octokit, owner: string, repo: string
       _lines.push(info);
     },
     error(info: string) {
+      console.log('>error>', info);
       _lines.push('');
       _lines.push(`**Error**: ${info}`);
     },

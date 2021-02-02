@@ -16,7 +16,8 @@ function addProp(lines: string[], propName: string, value: string | undefined, i
     }
   }
   const val = value || '_';
-  lines.push(`${tab}${name}: ${val}`);
+  const yamlVal = val.includes(': ') || val.includes('@') ? `"${val}"` : val;
+  lines.push(`${tab}${name}: ${yamlVal}`);
 }
 
 function writeDescription(lines: string[], description: string, indent: number) {
