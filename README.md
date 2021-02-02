@@ -14,5 +14,22 @@ Login Succeeded
 $ docker push ${ECR_REPOSITORY_URL}:latest
 ```
 
+# setup as a cronjob:
+
+```
+name: "Regenerate all Podcasts JSON files"
+on:
+  schedule:
+    - cron: "0 1 * * *"
+
+jobs:
+  regenerate_all_json:
+    runs-on: ubuntu-latest
+    steps:
+      - name: regenerate all Podcasts JSON files
+        uses: pcarion/awesome-podcasts-bot@v0.3
+        with:
+          repo-token: ${{ secrets.GH_PAT }}
+```
 
 

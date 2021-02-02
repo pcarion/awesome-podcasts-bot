@@ -11,10 +11,9 @@ export default async function mergePullRequest(
   owner: string,
   repo: string,
   pullRequestNumber: number,
-  sha: string,
 ): Promise<void> {
   // update pull request if extra files were added to the branch
-  console.log(`>mergePullRequest>pr>${pullRequestNumber}>sha>${sha}`);
+  console.log(`>mergePullRequest>pr>${pullRequestNumber}`);
   await octo.pulls.get({
     owner,
     repo,
@@ -42,6 +41,5 @@ export default async function mergePullRequest(
     commit_title: `merge PR`,
     commit_message: `merge from PR #${pullRequestNumber}`,
     merge_method: 'squash',
-    sha: sha,
   });
 }

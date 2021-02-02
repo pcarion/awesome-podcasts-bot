@@ -29,6 +29,7 @@ export default async function handlePullRequestEvent({
   pullRequestBranch,
 }: HandlePullRequestArg): Promise<HandlePullRequestResponse> {
   const reporter = mkReporter(octokit, repoInformation.owner, repoInformation.repo, prNumber);
+  console.log(`>processing PR>pullRequestBranch>${pullRequestBranch}`);
 
   try {
     const files = await extractFilesFromPR(octokit, commitsUrl);
@@ -57,21 +58,20 @@ export default async function handlePullRequestEvent({
     // we check if the change are OK
     await checkPodcastModifications(originalPodcast, podcast);
 
+    console.log(`>mergin PR>prNumber>${prNumber}`);
+    await mergePullRequest(octokit, repoInformation.owner, repoInformation.repo, prNumber);
+
     console.log('>adding to repository>');
     const addToRepository = await addFilesToRepository(octokit, repoInformation);
     const prJsonFile = `${podcastJsonDirectory}/${podcastEnhanced.pid}.json`;
     console.log('>adding to repository>file>', prJsonFile);
     await addToRepository.addJsonFile(prJsonFile, podcastEnhanced);
 
-    console.log(`>pushing PR to branch>${pullRequestBranch}`);
+    console.log(`>pushing json to main branch>`);
     const sha = await addToRepository.commit(
       `adding podcast: ${podcastEnhanced.title} - ${podcastEnhanced.yamlDescriptionFile}`,
-      pullRequestBranch,
     );
-    console.log('>mergin PR>sha>', sha);
-
-    await mergePullRequest(octokit, repoInformation.owner, repoInformation.repo, prNumber, sha);
-
+    console.log(`>pushing json to main branch>${sha}`);
     await reporter.succeed('PR ok');
     return {
       isSuccess: true,
