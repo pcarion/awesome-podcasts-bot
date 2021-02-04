@@ -46,6 +46,16 @@ async function createBlobForFile(octo: Octokit, owner: string, repo: string, con
   return blobData.data;
 }
 
+async function createBlobForBuffer(octo: Octokit, owner: string, repo: string, data: Buffer) {
+  const blobData = await octo.git.createBlob({
+    owner,
+    repo,
+    content: data.toString('base64'),
+    encoding: 'base64',
+  });
+  return blobData.data;
+}
+
 async function createNewTree(
   octo: Octokit,
   owner: string,
@@ -102,6 +112,7 @@ export interface AddFilesToRepositoryResult {
   addFileWithlines: (fileName: string, lines: string[]) => Promise<void>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   addJsonFile: (fileName: string, json: any) => Promise<void>;
+  addBuffer: (fileName: string, data: Buffer) => Promise<void>;
   commit: (commitMessage: string, branchName?: string) => Promise<string>;
 }
 
@@ -125,6 +136,13 @@ export default async function addFilesToRepository(
       addJsonFile: async function (fileName: string, json: any): Promise<void> {
         const content = JSON.stringify(json, null, 2);
         const blobData = await createBlobForFile(octo, owner, repo, content);
+        blobs.push({
+          path: fileName,
+          sha: blobData.sha,
+        });
+      },
+      addBuffer: async function (fileName: string, data: Buffer): Promise<void> {
+        const blobData = await createBlobForBuffer(octo, owner, repo, data);
         blobs.push({
           path: fileName,
           sha: blobData.sha,

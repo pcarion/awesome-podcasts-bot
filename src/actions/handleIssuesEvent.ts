@@ -4,6 +4,7 @@ import processCandidateUrl from './processCandidateUrl';
 import addFilesToRepository from './gitutils/addFilesToRepository';
 import loadExistingPodcastFiles from './loadExistingPodcastFiles';
 import checkForDuplicatePodcast from './checks/checkForDuplicatePodcast';
+import resizePodcastImage from './resizePodcastImage';
 import mkReporter from './reporterIssues';
 
 export default async function handleIssuesEvent({
@@ -31,10 +32,14 @@ export default async function handleIssuesEvent({
     console.log('>enhance podcast>', result.podcast.title);
     const podcastEnhanced = await enhancePodcast(result.podcast, result.fileName);
 
+    // const podcastImageFile = `${podcastJsonDirectory}/${podcastEnhanced.pid}.jpg`;
+    const imageBuffer = await resizePodcastImage(podcastEnhanced.imageUrl, 128);
+
     console.log('>adding to repository>');
     const addToRepository = await addFilesToRepository(octokit, repoInformation);
     await addToRepository.addFileWithlines(`${podcastYamlDirectory}/${result.fileName}`, result.lines);
     await addToRepository.addJsonFile(`${podcastJsonDirectory}/${podcastEnhanced.pid}.json`, podcastEnhanced);
+    await addToRepository.addBuffer(`${podcastJsonDirectory}/${podcastEnhanced.pid}.jpg`, imageBuffer);
 
     await addToRepository.commit(`adding podcast: ${podcastEnhanced.title} - ${podcastEnhanced.yamlDescriptionFile}`);
 

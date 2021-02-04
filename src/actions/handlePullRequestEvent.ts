@@ -19,6 +19,23 @@ async function downloadFileContent(url: string): Promise<string> {
   return response.data;
 }
 
+// async function downloadBinaryFile(destPath: string, url: string): Promise<void> {
+//   await fs.ensureFile(destPath);
+//   const writer = fs.createWriteStream(destPath);
+
+//   const response = await axios({
+//     url: url,
+//     method: 'GET',
+//     responseType: 'stream',
+//   });
+//   response.data.pipe(writer);
+
+//   return new Promise((resolve, reject) => {
+//     writer.on('finish', resolve);
+//     writer.on('error', reject);
+//   });
+// }
+
 export default async function handlePullRequestEvent({
   octokit,
   repoInformation,
