@@ -9,6 +9,13 @@ set -e
 
 echo "List of tags:"
 git tag --sort=taggerdate
+
+echo "2"
+git tag
+
+echo "3"
+git remote -v
+
 exit 0
 
 increment_version() {
