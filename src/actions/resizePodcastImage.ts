@@ -1,7 +1,7 @@
 import got from 'got';
 import sharp from 'sharp';
 
-export default async function resizePodcastImage(imageUrl: string, size: number): Promise<Buffer> {
+export default async function resizePodcastImage(imageUrl: string, size: number): Promise<Buffer | null> {
   console.log(`@@@ resizing image: ${imageUrl} ...`);
   const sharpStream = sharp({
     failOnError: false,
@@ -18,7 +18,8 @@ export default async function resizePodcastImage(imageUrl: string, size: number)
       return obj.data;
     })
     .catch((err) => {
+      console.log('>error resizing image>', imageUrl);
       console.log(err);
-      throw err;
+      return null;
     });
 }

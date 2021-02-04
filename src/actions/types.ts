@@ -23,19 +23,24 @@ export interface FileInformation {
   content?: string;
 }
 
+export interface PodcastEnhancedColors {
+  vibrant: string | null;
+  darkVibrant: string | null;
+  lightVibrant: string | null;
+  muted: string | null;
+  darkMuted: string | null;
+  lightMuted: string | null;
+}
+
+export interface PodcastEnhancedEpisode {
+  publishingDate: string;
+}
+
 export interface PodcastEnhanced extends Podcast {
   extra: {
-    colors: {
-      vibrant: string | null;
-      darkVibrant: string | null;
-      lightVibrant: string | null;
-      muted: string | null;
-      darkMuted: string | null;
-      lightMuted: string | null;
-    };
-    episodes: {
-      publishingDate: string;
-    }[];
+    logoRepoImage?: string;
+    colors: PodcastEnhancedColors;
+    episodes: PodcastEnhancedEpisode[];
   };
 }
 

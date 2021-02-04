@@ -6,7 +6,7 @@ import mergePullRequest from './gitutils/mergePullRequest';
 import enhancePodcast from './enhance/enhancePodcast';
 import extractFilesFromPR from './extractFilesFromPR';
 import validatePodcastYaml from './validatePodcastYaml';
-import loadExistingPodcastFiles from './loadExistingPodcastFiles';
+import loadExistingPodcastYamlFiles from './loadExistingPodcastYamlFiles';
 import checkPodcastModifications from './checks/checkPodcastModifications';
 import mkReporter from './reporterPullRequests';
 
@@ -57,7 +57,7 @@ export default async function handlePullRequestEvent({
     const file = files[0];
 
     // load existing podcasts
-    const existingPodcasts = await loadExistingPodcastFiles(octokit, repoInformation, podcastYamlDirectory);
+    const existingPodcasts = await loadExistingPodcastYamlFiles(octokit, repoInformation, podcastYamlDirectory);
 
     // the file should be in the list of existing podcasts
     const originalPodcast = existingPodcasts.find((p) => p.yamlDescriptionFile === file.filename);
@@ -75,7 +75,7 @@ export default async function handlePullRequestEvent({
     // we check if the change are OK
     await checkPodcastModifications(originalPodcast, podcast);
 
-    console.log(`>mergin PR>prNumber>${prNumber}`);
+    console.log(`>merging PR>prNumber>${prNumber}`);
     await mergePullRequest(octokit, repoInformation.owner, repoInformation.repo, prNumber);
 
     console.log('>adding to repository>');

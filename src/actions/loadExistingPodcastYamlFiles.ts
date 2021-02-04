@@ -3,7 +3,7 @@ import { Octokit, RepoInformation } from './types';
 import extractRepositoryContent, { dowloadFiles } from './gitutils/extractRepositoryContent';
 import validatePodcastYaml from './validatePodcastYaml';
 
-export default async function loadExistingPodcastFiles(
+export default async function loadExistingPodcastYamlFiles(
   octokit: Octokit,
   repoInformation: RepoInformation,
   podcastsDirectory: string,

@@ -2,7 +2,7 @@ import { HandleIssueArg, HandleIssueResponse } from './types';
 import enhancePodcast from './enhance/enhancePodcast';
 import processCandidateUrl from './processCandidateUrl';
 import addFilesToRepository from './gitutils/addFilesToRepository';
-import loadExistingPodcastFiles from './loadExistingPodcastFiles';
+import loadExistingPodcastYamlFiles from './loadExistingPodcastYamlFiles';
 import checkForDuplicatePodcast from './checks/checkForDuplicatePodcast';
 import resizePodcastImage from './resizePodcastImage';
 import mkReporter from './reporterIssues';
@@ -24,7 +24,7 @@ export default async function handleIssuesEvent({
     console.log('>podcast from candidate URL>', result.podcast);
 
     // load existing podcasts
-    const podcasts = await loadExistingPodcastFiles(octokit, repoInformation, podcastYamlDirectory);
+    const podcasts = await loadExistingPodcastYamlFiles(octokit, repoInformation, podcastYamlDirectory);
 
     // before we can add this podcast, we need to check that this is not a duplicate
     await checkForDuplicatePodcast(podcasts, result.podcast);
@@ -39,7 +39,11 @@ export default async function handleIssuesEvent({
     const addToRepository = await addFilesToRepository(octokit, repoInformation);
     await addToRepository.addFileWithlines(`${podcastYamlDirectory}/${result.fileName}`, result.lines);
     await addToRepository.addJsonFile(`${podcastJsonDirectory}/${podcastEnhanced.pid}.json`, podcastEnhanced);
-    await addToRepository.addBuffer(`${podcastJsonDirectory}/${podcastEnhanced.pid}.jpg`, imageBuffer);
+    if (imageBuffer) {
+      const logoRepoImage = `${podcastEnhanced.pid}.jpg`;
+      podcastEnhanced.extra.logoRepoImage = logoRepoImage;
+      await addToRepository.addBuffer(`${podcastJsonDirectory}/${logoRepoImage}`, imageBuffer);
+    }
 
     await addToRepository.commit(`adding podcast: ${podcastEnhanced.title} - ${podcastEnhanced.yamlDescriptionFile}`);
 
