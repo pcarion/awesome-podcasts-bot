@@ -12,6 +12,10 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 12.x
+      - name: set github identity
+        run: |
+          git config --global user.email "pcarion@gmail.com"
+          git config --global user.name "Pierre Carion"
       - name: Install packages
         run: npm install
       - name: Building and pushing
