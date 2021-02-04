@@ -7,6 +7,10 @@ set -e
 ## $1: version itself
 ## $2: number of part: 0 – major, 1 – minor
 
+echo "List of tags:"
+git tag --sort=taggerdate
+exit 0
+
 increment_version() {
   local delimiter=.
   local array=($(echo "$1" | sed "s/^v//"| tr $delimiter '\n'))
