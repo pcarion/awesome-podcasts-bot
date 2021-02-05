@@ -92,7 +92,7 @@ function run() {
             switch (_b.label) {
                 case 0:
                     _b.trys.push([0, 4, , 5]);
-                    console.log('> Starting github action');
+                    console.log('> Starting github action...');
                     token = core.getInput('repo-token', { required: true });
                     octokit = github_1.getOctokit(token);
                     repo = getRepositoryOwner();
