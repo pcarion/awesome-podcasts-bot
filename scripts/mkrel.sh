@@ -15,7 +15,7 @@ increment_version() {
   echo $(local IFS=$delimiter ; echo "v${array[*]}")
 }
 
-version=$(git ls-remote --tags  --sort=taggerdate | awk -F "/" '{print $3}' | tail -1)
+version=$(git ls-remote --tags | awk -F "/" '{print $3}' | sed "s/\^.*$//" | tail -1)
 newVersion=$(increment_version "$version" 1)
 
 echo "version    : ${version}"

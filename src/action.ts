@@ -26,7 +26,7 @@ function getRepositoryOwner(): RepositoryOwner {
 
 async function run() {
   try {
-    console.log('Starting github action...');
+    console.log('> Starting github action...');
     const token = core.getInput('repo-token', { required: true });
     const octokit = getOctokit(token);
 
@@ -37,7 +37,7 @@ async function run() {
     const { podcastYamlDirectory, podcastJsonDirectory } = await getConfigurationData(octokit, info);
 
     const payload = JSON.stringify(context, undefined, 2);
-    console.log(`>> The context is: ${payload}`);
+    console.log(`> The context is: ${payload}`);
     console.log('====');
     await handleRegenerateAllJsonFiles({
       octokit,
