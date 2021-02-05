@@ -37,7 +37,7 @@ async function run() {
     const { podcastYamlDirectory, podcastJsonDirectory } = await getConfigurationData(octokit, info);
 
     const payload = JSON.stringify(context, undefined, 2);
-    console.log(`> The context is: ${payload}`);
+    console.log(`> The context is: ${JSON.stringify(payload, null, 2)}`);
     console.log('====');
     await handleRegenerateAllJsonFiles({
       octokit,

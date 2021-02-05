@@ -22,8 +22,11 @@ echo "version    : ${version}"
 echo "new version: ${newVersion}"
 
 npm run dist
+echo "git status after build:"
+git status
 git add -A
 git commit -m "release ${newVersion}"
+echo "git push"
 git push
 git tag -a -m "${newVersion}" ${newVersion}
 git push --follow-tags
