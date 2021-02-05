@@ -7,17 +7,6 @@ set -e
 ## $1: version itself
 ## $2: number of part: 0 – major, 1 – minor
 
-echo "List of tags:"
-git tag --sort=taggerdate
-
-echo "2"
-git tag
-
-echo "3"
-git remote -v
-
-exit 0
-
 increment_version() {
   local delimiter=.
   local array=($(echo "$1" | sed "s/^v//"| tr $delimiter '\n'))
@@ -26,7 +15,7 @@ increment_version() {
   echo $(local IFS=$delimiter ; echo "v${array[*]}")
 }
 
-version=$(git tag --sort=taggerdate | tail -1)
+version=$(git ls-remote --tags  --sort=taggerdate | awk -F "/" '{print $3}' | tail -1)
 newVersion=$(increment_version "$version" 1)
 
 echo "version    : ${version}"
