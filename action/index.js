@@ -92,7 +92,7 @@ function run() {
             switch (_b.label) {
                 case 0:
                     _b.trys.push([0, 4, , 5]);
-                    console.log('Starting github action...');
+                    console.log('> Starting github action...');
                     token = core.getInput('repo-token', { required: true });
                     octokit = github_1.getOctokit(token);
                     repo = getRepositoryOwner();
@@ -103,7 +103,7 @@ function run() {
                 case 2:
                     _a = _b.sent(), podcastYamlDirectory = _a.podcastYamlDirectory, podcastJsonDirectory = _a.podcastJsonDirectory;
                     payload = JSON.stringify(github_1.context, undefined, 2);
-                    console.log(">> The context is: " + payload);
+                    console.log("> The context is: " + payload);
                     console.log('====');
                     return [4 /*yield*/, handleRegenerateAllJsonFiles_1.default({
                             octokit: octokit,
