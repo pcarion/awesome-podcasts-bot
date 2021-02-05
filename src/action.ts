@@ -26,7 +26,7 @@ function getRepositoryOwner(): RepositoryOwner {
 
 async function run() {
   try {
-    console.log('> Starting github action');
+    console.log('> Starting github action...');
     const token = core.getInput('repo-token', { required: true });
     const octokit = getOctokit(token);
 
