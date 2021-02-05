@@ -103,7 +103,7 @@ function run() {
                 case 2:
                     _a = _b.sent(), podcastYamlDirectory = _a.podcastYamlDirectory, podcastJsonDirectory = _a.podcastJsonDirectory;
                     payload = JSON.stringify(github_1.context, undefined, 2);
-                    console.log("> The context is: " + payload);
+                    console.log("> The context is: " + JSON.stringify(payload, null, 2));
                     console.log('====');
                     return [4 /*yield*/, handleRegenerateAllJsonFiles_1.default({
                             octokit: octokit,
