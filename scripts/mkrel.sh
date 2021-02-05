@@ -24,7 +24,8 @@ echo "new version: ${newVersion}"
 npm run dist
 echo "git status after build:"
 git status
-git add -A
+echo "git adding files from action directory:"
+git add action
 git commit -m "release ${newVersion}"
 echo "git push"
 git push
