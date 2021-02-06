@@ -1,25 +1,19 @@
-import got from 'got';
-import sharp from 'sharp';
+import Jimp from 'jimp';
 
 export default async function resizePodcastImage(imageUrl: string, size: number): Promise<Buffer | null> {
-  console.log(`@@@ resizing image: ${imageUrl} ...`);
-  const sharpStream = sharp({
-    failOnError: false,
-  });
-
-  const promise = sharpStream.clone().resize({ width: size }).jpeg({ quality: 100 }).toBuffer({
-    resolveWithObject: true,
-  });
-  got.stream(imageUrl).pipe(sharpStream);
-
-  return promise
-    .then((obj) => {
-      console.log('>data>', obj.info);
-      return obj.data;
+  console.log(`> resizing image: ${imageUrl} ...`);
+  return Jimp.read(imageUrl)
+    .then((image) => {
+      return image.cover(size, size);
+    })
+    .then((image) => {
+      return image.quality(90);
+    })
+    .then((image) => {
+      return image.getBufferAsync(Jimp.MIME_PNG);
     })
     .catch((err) => {
-      console.log('>error resizing image>', imageUrl);
-      console.log(err);
+      console.log(`> Error resizing image: ${imageUrl}:`, err);
       return null;
     });
 }
