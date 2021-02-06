@@ -1210,7 +1210,7 @@ function handleRegenerateAllJsonFiles(_a) {
                                     return [4 /*yield*/, enhancePodcast_1.default(podcast, path_1.default.basename(podcast.yamlDescriptionFile || 'unknown.yaml'), alreadyEnhanced)];
                                 case 1:
                                     podcastEnhanced = _a.sent();
-                                    if (false) {}
+                                    if (!!podcastEnhanced.extra.logoRepoImage) return [3 /*break*/, 4];
                                     return [4 /*yield*/, resizePodcastImage_1.default(podcastEnhanced.imageUrl, 128)];
                                 case 2:
                                     imageBuffer = _a.sent();

@@ -31,8 +31,7 @@ export default async function handleRegenerateAllJsonFiles({
         path.basename(podcast.yamlDescriptionFile || 'unknown.yaml'),
         alreadyEnhanced,
       );
-      if (true || !podcastEnhanced.extra.logoRepoImage) {
-        // const podcastImageFile = `${podcastJsonDirectory}/${podcastEnhanced.pid}.jpg`;
+      if (!podcastEnhanced.extra.logoRepoImage) {
         const imageBuffer = await resizePodcastImage(podcastEnhanced.imageUrl, 128);
         if (imageBuffer) {
           const logoRepoImage = `${podcastEnhanced.pid}.png`;
