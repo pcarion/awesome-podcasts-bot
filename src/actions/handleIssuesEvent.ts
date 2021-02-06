@@ -32,7 +32,6 @@ export default async function handleIssuesEvent({
     console.log('>enhance podcast>', result.podcast.title);
     const podcastEnhanced = await enhancePodcast(result.podcast, result.fileName);
 
-    // const podcastImageFile = `${podcastJsonDirectory}/${podcastEnhanced.pid}.jpg`;
     const imageBuffer = await resizePodcastImage(podcastEnhanced.imageUrl, 128);
 
     console.log('>adding to repository>');
@@ -40,7 +39,7 @@ export default async function handleIssuesEvent({
     await addToRepository.addFileWithlines(`${podcastYamlDirectory}/${result.fileName}`, result.lines);
     await addToRepository.addJsonFile(`${podcastJsonDirectory}/${podcastEnhanced.pid}.json`, podcastEnhanced);
     if (imageBuffer) {
-      const logoRepoImage = `${podcastEnhanced.pid}.jpg`;
+      const logoRepoImage = `${podcastEnhanced.pid}.png`;
       podcastEnhanced.extra.logoRepoImage = logoRepoImage;
       await addToRepository.addBuffer(`${podcastJsonDirectory}/${logoRepoImage}`, imageBuffer);
     }

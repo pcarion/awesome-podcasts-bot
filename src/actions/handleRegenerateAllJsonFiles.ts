@@ -31,11 +31,11 @@ export default async function handleRegenerateAllJsonFiles({
         path.basename(podcast.yamlDescriptionFile || 'unknown.yaml'),
         alreadyEnhanced,
       );
-      if (!podcastEnhanced.extra.logoRepoImage) {
+      if (true || !podcastEnhanced.extra.logoRepoImage) {
         // const podcastImageFile = `${podcastJsonDirectory}/${podcastEnhanced.pid}.jpg`;
         const imageBuffer = await resizePodcastImage(podcastEnhanced.imageUrl, 128);
         if (imageBuffer) {
-          const logoRepoImage = `${podcastEnhanced.pid}.jpg`;
+          const logoRepoImage = `${podcastEnhanced.pid}.png`;
           podcastEnhanced.extra.logoRepoImage = logoRepoImage;
           await addToRepository.addBuffer(`${podcastJsonDirectory}/${logoRepoImage}`, imageBuffer);
         }

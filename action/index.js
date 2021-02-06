@@ -1210,12 +1210,12 @@ function handleRegenerateAllJsonFiles(_a) {
                                     return [4 /*yield*/, enhancePodcast_1.default(podcast, path_1.default.basename(podcast.yamlDescriptionFile || 'unknown.yaml'), alreadyEnhanced)];
                                 case 1:
                                     podcastEnhanced = _a.sent();
-                                    if (!!podcastEnhanced.extra.logoRepoImage) return [3 /*break*/, 4];
+                                    if (false) {}
                                     return [4 /*yield*/, resizePodcastImage_1.default(podcastEnhanced.imageUrl, 128)];
                                 case 2:
                                     imageBuffer = _a.sent();
                                     if (!imageBuffer) return [3 /*break*/, 4];
-                                    logoRepoImage = podcastEnhanced.pid + ".jpg";
+                                    logoRepoImage = podcastEnhanced.pid + ".png";
                                     podcastEnhanced.extra.logoRepoImage = logoRepoImage;
                                     return [4 /*yield*/, addToRepository.addBuffer(podcastJsonDirectory + "/" + logoRepoImage, imageBuffer)];
                                 case 3:

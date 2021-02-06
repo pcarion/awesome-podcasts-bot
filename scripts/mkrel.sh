@@ -26,9 +26,7 @@ echo "git status after build:"
 git status
 git add -A
 git commit -m "release ${newVersion}"
-echo "git push"
 git push
-echo "checking platform value"
 git tag -a -m "${newVersion}" ${newVersion}
 git push --follow-tags
 
