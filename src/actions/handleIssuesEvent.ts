@@ -36,13 +36,13 @@ export default async function handleIssuesEvent({
 
     console.log('>adding to repository>');
     const addToRepository = await addFilesToRepository(octokit, repoInformation);
-    await addToRepository.addFileWithlines(`${podcastYamlDirectory}/${result.fileName}`, result.lines);
-    await addToRepository.addJsonFile(`${podcastJsonDirectory}/${podcastEnhanced.pid}.json`, podcastEnhanced);
     if (imageBuffer) {
       const logoRepoImage = `${podcastEnhanced.pid}.png`;
       podcastEnhanced.extra.logoRepoImage = logoRepoImage;
       await addToRepository.addBuffer(`${podcastJsonDirectory}/${logoRepoImage}`, imageBuffer);
     }
+    await addToRepository.addFileWithlines(`${podcastYamlDirectory}/${result.fileName}`, result.lines);
+    await addToRepository.addJsonFile(`${podcastJsonDirectory}/${podcastEnhanced.pid}.json`, podcastEnhanced);
 
     await addToRepository.commit(`adding podcast: ${podcastEnhanced.title} - ${podcastEnhanced.yamlDescriptionFile}`);
 
