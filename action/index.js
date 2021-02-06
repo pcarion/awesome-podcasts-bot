@@ -92,7 +92,7 @@ function run() {
             switch (_b.label) {
                 case 0:
                     _b.trys.push([0, 4, , 5]);
-                    console.log('> Starting github action');
+                    console.log('> Starting github action...');
                     token = core.getInput('repo-token', { required: true });
                     octokit = github_1.getOctokit(token);
                     repo = getRepositoryOwner();
@@ -1616,28 +1616,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-var got_1 = __importDefault(__nccwpck_require__(3061));
-var sharp_1 = __importDefault(__nccwpck_require__(4185));
+var jimp_1 = __importDefault(__nccwpck_require__(3794));
 function resizePodcastImage(imageUrl, size) {
     return __awaiter(this, void 0, void 0, function () {
-        var sharpStream, promise;
         return __generator(this, function (_a) {
-            console.log("@@@ resizing image: " + imageUrl + " ...");
-            sharpStream = sharp_1.default({
-                failOnError: false,
-            });
-            promise = sharpStream.clone().resize({ width: size }).jpeg({ quality: 100 }).toBuffer({
-                resolveWithObject: true,
-            });
-            got_1.default.stream(imageUrl).pipe(sharpStream);
-            return [2 /*return*/, promise
-                    .then(function (obj) {
-                    console.log('>data>', obj.info);
-                    return obj.data;
+            console.log("> resizing image: " + imageUrl + " ...");
+            return [2 /*return*/, jimp_1.default.read(imageUrl)
+                    .then(function (image) {
+                    return image.cover(size, size);
+                })
+                    .then(function (image) {
+                    return image.quality(90);
+                })
+                    .then(function (image) {
+                    return image.getBufferAsync(jimp_1.default.MIME_PNG);
                 })
                     .catch(function (err) {
-                    console.log('>error resizing image>', imageUrl);
-                    console.log(err);
+                    console.log("> Error resizing image: " + imageUrl + ":", err);
                     return null;
                 })];
         });
@@ -6102,6 +6097,2243 @@ module.exports = exports.default;
 
 /***/ }),
 
+/***/ 1485:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var _interopRequireDefault = __nccwpck_require__(3298);
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _typeof2 = _interopRequireDefault(__nccwpck_require__(1042));
+
+var _utils = __nccwpck_require__(7403);
+
+var _default = function _default() {
+  return {
+    /**
+     * Blits a source image on to this image
+     * @param {Jimp} src the source Jimp instance
+     * @param {number} x the x position to blit the image
+     * @param {number} y the y position to blit the image
+     * @param {number} srcx (optional) the x position from which to crop the source image
+     * @param {number} srcy (optional) the y position from which to crop the source image
+     * @param {number} srcw (optional) the width to which to crop the source image
+     * @param {number} srch (optional) the height to which to crop the source image
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp} this for chaining of methods
+     */
+    blit: function blit(src, x, y, srcx, srcy, srcw, srch, cb) {
+      if (!(src instanceof this.constructor)) {
+        return _utils.throwError.call(this, 'The source must be a Jimp image', cb);
+      }
+
+      if (typeof x !== 'number' || typeof y !== 'number') {
+        return _utils.throwError.call(this, 'x and y must be numbers', cb);
+      }
+
+      if (typeof srcx === 'function') {
+        cb = srcx;
+        srcx = 0;
+        srcy = 0;
+        srcw = src.bitmap.width;
+        srch = src.bitmap.height;
+      } else if ((0, _typeof2["default"])(srcx) === (0, _typeof2["default"])(srcy) && (0, _typeof2["default"])(srcy) === (0, _typeof2["default"])(srcw) && (0, _typeof2["default"])(srcw) === (0, _typeof2["default"])(srch)) {
+        srcx = srcx || 0;
+        srcy = srcy || 0;
+        srcw = srcw || src.bitmap.width;
+        srch = srch || src.bitmap.height;
+      } else {
+        return _utils.throwError.call(this, 'srcx, srcy, srcw, srch must be numbers', cb);
+      } // round input
+
+
+      x = Math.round(x);
+      y = Math.round(y); // round input
+
+      srcx = Math.round(srcx);
+      srcy = Math.round(srcy);
+      srcw = Math.round(srcw);
+      srch = Math.round(srch);
+      var maxWidth = this.bitmap.width;
+      var maxHeight = this.bitmap.height;
+      var baseImage = this;
+      src.scanQuiet(srcx, srcy, srcw, srch, function (sx, sy, idx) {
+        var xOffset = x + sx - srcx;
+        var yOffset = y + sy - srcy;
+
+        if (xOffset >= 0 && yOffset >= 0 && maxWidth - xOffset > 0 && maxHeight - yOffset > 0) {
+          var dstIdx = baseImage.getPixelIndex(xOffset, yOffset);
+          var _src = {
+            r: this.bitmap.data[idx],
+            g: this.bitmap.data[idx + 1],
+            b: this.bitmap.data[idx + 2],
+            a: this.bitmap.data[idx + 3]
+          };
+          var dst = {
+            r: baseImage.bitmap.data[dstIdx],
+            g: baseImage.bitmap.data[dstIdx + 1],
+            b: baseImage.bitmap.data[dstIdx + 2],
+            a: baseImage.bitmap.data[dstIdx + 3]
+          };
+          baseImage.bitmap.data[dstIdx] = (_src.a * (_src.r - dst.r) - dst.r + 255 >> 8) + dst.r;
+          baseImage.bitmap.data[dstIdx + 1] = (_src.a * (_src.g - dst.g) - dst.g + 255 >> 8) + dst.g;
+          baseImage.bitmap.data[dstIdx + 2] = (_src.a * (_src.b - dst.b) - dst.b + 255 >> 8) + dst.b;
+          baseImage.bitmap.data[dstIdx + 3] = this.constructor.limit255(dst.a + _src.a);
+        }
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 5803:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.shgTable = exports.mulTable = void 0;
+var mulTable = [1, 57, 41, 21, 203, 34, 97, 73, 227, 91, 149, 62, 105, 45, 39, 137, 241, 107, 3, 173, 39, 71, 65, 238, 219, 101, 187, 87, 81, 151, 141, 133, 249, 117, 221, 209, 197, 187, 177, 169, 5, 153, 73, 139, 133, 127, 243, 233, 223, 107, 103, 99, 191, 23, 177, 171, 165, 159, 77, 149, 9, 139, 135, 131, 253, 245, 119, 231, 224, 109, 211, 103, 25, 195, 189, 23, 45, 175, 171, 83, 81, 79, 155, 151, 147, 9, 141, 137, 67, 131, 129, 251, 123, 30, 235, 115, 113, 221, 217, 53, 13, 51, 50, 49, 193, 189, 185, 91, 179, 175, 43, 169, 83, 163, 5, 79, 155, 19, 75, 147, 145, 143, 35, 69, 17, 67, 33, 65, 255, 251, 247, 243, 239, 59, 29, 229, 113, 111, 219, 27, 213, 105, 207, 51, 201, 199, 49, 193, 191, 47, 93, 183, 181, 179, 11, 87, 43, 85, 167, 165, 163, 161, 159, 157, 155, 77, 19, 75, 37, 73, 145, 143, 141, 35, 138, 137, 135, 67, 33, 131, 129, 255, 63, 250, 247, 61, 121, 239, 237, 117, 29, 229, 227, 225, 111, 55, 109, 216, 213, 211, 209, 207, 205, 203, 201, 199, 197, 195, 193, 48, 190, 47, 93, 185, 183, 181, 179, 178, 176, 175, 173, 171, 85, 21, 167, 165, 41, 163, 161, 5, 79, 157, 78, 154, 153, 19, 75, 149, 74, 147, 73, 144, 143, 71, 141, 140, 139, 137, 17, 135, 134, 133, 66, 131, 65, 129, 1];
+exports.mulTable = mulTable;
+var shgTable = [0, 9, 10, 10, 14, 12, 14, 14, 16, 15, 16, 15, 16, 15, 15, 17, 18, 17, 12, 18, 16, 17, 17, 19, 19, 18, 19, 18, 18, 19, 19, 19, 20, 19, 20, 20, 20, 20, 20, 20, 15, 20, 19, 20, 20, 20, 21, 21, 21, 20, 20, 20, 21, 18, 21, 21, 21, 21, 20, 21, 17, 21, 21, 21, 22, 22, 21, 22, 22, 21, 22, 21, 19, 22, 22, 19, 20, 22, 22, 21, 21, 21, 22, 22, 22, 18, 22, 22, 21, 22, 22, 23, 22, 20, 23, 22, 22, 23, 23, 21, 19, 21, 21, 21, 23, 23, 23, 22, 23, 23, 21, 23, 22, 23, 18, 22, 23, 20, 22, 23, 23, 23, 21, 22, 20, 22, 21, 22, 24, 24, 24, 24, 24, 22, 21, 24, 23, 23, 24, 21, 24, 23, 24, 22, 24, 24, 22, 24, 24, 22, 23, 24, 24, 24, 20, 23, 22, 23, 24, 24, 24, 24, 24, 24, 24, 23, 21, 23, 22, 23, 24, 24, 24, 22, 24, 24, 24, 23, 22, 24, 24, 25, 23, 25, 25, 23, 24, 25, 25, 24, 22, 25, 25, 25, 24, 23, 24, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 23, 25, 23, 24, 25, 25, 25, 25, 25, 25, 25, 25, 25, 24, 22, 25, 25, 23, 25, 25, 20, 24, 25, 24, 25, 25, 22, 24, 25, 24, 25, 24, 25, 25, 24, 25, 25, 25, 25, 22, 25, 25, 25, 24, 25, 24, 25, 18];
+exports.shgTable = shgTable;
+//# sourceMappingURL=blur-tables.js.map
+
+/***/ }),
+
+/***/ 6223:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+var _blurTables = __nccwpck_require__(5803);
+
+/*
+    Superfast Blur (0.5)
+    http://www.quasimondo.com/BoxBlurForCanvas/FastBlur.js
+
+    Copyright (c) 2011 Mario Klingemann
+
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without
+    restriction, including without limitation the rights to use,
+    copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following
+    conditions:
+
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+    OTHER DEALINGS IN THE SOFTWARE.
+*/
+var _default = function _default() {
+  return {
+    /**
+     * A fast blur algorithm that produces similar effect to a Gaussian blur - but MUCH quicker
+     * @param {number} r the pixel radius of the blur
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp} this for chaining of methods
+     */
+    blur: function blur(r, cb) {
+      if (typeof r !== 'number') return _utils.throwError.call(this, 'r must be a number', cb);
+      if (r < 1) return _utils.throwError.call(this, 'r must be greater than 0', cb);
+      var rsum;
+      var gsum;
+      var bsum;
+      var asum;
+      var x;
+      var y;
+      var i;
+      var p;
+      var p1;
+      var p2;
+      var yp;
+      var yi;
+      var yw;
+      var pa;
+      var wm = this.bitmap.width - 1;
+      var hm = this.bitmap.height - 1; // const wh = this.bitmap.width * this.bitmap.height;
+
+      var rad1 = r + 1;
+      var mulSum = _blurTables.mulTable[r];
+      var shgSum = _blurTables.shgTable[r];
+      var red = [];
+      var green = [];
+      var blue = [];
+      var alpha = [];
+      var vmin = [];
+      var vmax = [];
+      var iterations = 2;
+
+      while (iterations-- > 0) {
+        yi = 0;
+        yw = 0;
+
+        for (y = 0; y < this.bitmap.height; y++) {
+          rsum = this.bitmap.data[yw] * rad1;
+          gsum = this.bitmap.data[yw + 1] * rad1;
+          bsum = this.bitmap.data[yw + 2] * rad1;
+          asum = this.bitmap.data[yw + 3] * rad1;
+
+          for (i = 1; i <= r; i++) {
+            p = yw + ((i > wm ? wm : i) << 2);
+            rsum += this.bitmap.data[p++];
+            gsum += this.bitmap.data[p++];
+            bsum += this.bitmap.data[p++];
+            asum += this.bitmap.data[p];
+          }
+
+          for (x = 0; x < this.bitmap.width; x++) {
+            red[yi] = rsum;
+            green[yi] = gsum;
+            blue[yi] = bsum;
+            alpha[yi] = asum;
+
+            if (y === 0) {
+              vmin[x] = ((p = x + rad1) < wm ? p : wm) << 2;
+              vmax[x] = (p = x - r) > 0 ? p << 2 : 0;
+            }
+
+            p1 = yw + vmin[x];
+            p2 = yw + vmax[x];
+            rsum += this.bitmap.data[p1++] - this.bitmap.data[p2++];
+            gsum += this.bitmap.data[p1++] - this.bitmap.data[p2++];
+            bsum += this.bitmap.data[p1++] - this.bitmap.data[p2++];
+            asum += this.bitmap.data[p1] - this.bitmap.data[p2];
+            yi++;
+          }
+
+          yw += this.bitmap.width << 2;
+        }
+
+        for (x = 0; x < this.bitmap.width; x++) {
+          yp = x;
+          rsum = red[yp] * rad1;
+          gsum = green[yp] * rad1;
+          bsum = blue[yp] * rad1;
+          asum = alpha[yp] * rad1;
+
+          for (i = 1; i <= r; i++) {
+            yp += i > hm ? 0 : this.bitmap.width;
+            rsum += red[yp];
+            gsum += green[yp];
+            bsum += blue[yp];
+            asum += alpha[yp];
+          }
+
+          yi = x << 2;
+
+          for (y = 0; y < this.bitmap.height; y++) {
+            pa = asum * mulSum >>> shgSum;
+            this.bitmap.data[yi + 3] = pa; // normalize alpha
+
+            if (pa > 255) {
+              this.bitmap.data[yi + 3] = 255;
+            }
+
+            if (pa > 0) {
+              pa = 255 / pa;
+              this.bitmap.data[yi] = (rsum * mulSum >>> shgSum) * pa;
+              this.bitmap.data[yi + 1] = (gsum * mulSum >>> shgSum) * pa;
+              this.bitmap.data[yi + 2] = (bsum * mulSum >>> shgSum) * pa;
+            } else {
+              this.bitmap.data[yi + 2] = 0;
+              this.bitmap.data[yi + 1] = 0;
+              this.bitmap.data[yi] = 0;
+            }
+
+            if (x === 0) {
+              vmin[y] = ((p = y + rad1) < hm ? p : hm) * this.bitmap.width;
+              vmax[y] = (p = y - r) > 0 ? p * this.bitmap.width : 0;
+            }
+
+            p1 = x + vmin[y];
+            p2 = x + vmax[y];
+            rsum += red[p1] - red[p2];
+            gsum += green[p1] - green[p2];
+            bsum += blue[p1] - blue[p2];
+            asum += alpha[p1] - alpha[p2];
+            yi += this.bitmap.width << 2;
+          }
+        }
+      }
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 2005:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Creates a circle out of an image.
+ * @param {function(Error, Jimp)} options (optional) radius, x, y
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+var _default = function _default() {
+  return {
+    circle: function circle() {
+      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var cb = arguments.length > 1 ? arguments[1] : undefined;
+
+      if (typeof options === 'function') {
+        cb = options;
+        options = {};
+      }
+
+      var radius = options.radius || (this.bitmap.width > this.bitmap.height ? this.bitmap.height : this.bitmap.width) / 2;
+      var center = {
+        x: typeof options.x === 'number' ? options.x : this.bitmap.width / 2,
+        y: typeof options.y === 'number' ? options.y : this.bitmap.height / 2
+      };
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        var curR = Math.sqrt(Math.pow(x - center.x, 2) + Math.pow(y - center.y, 2));
+
+        if (radius - curR <= 0.0) {
+          this.bitmap.data[idx + 3] = 0;
+        } else if (radius - curR < 1.0) {
+          this.bitmap.data[idx + 3] = 255 * (radius - curR);
+        }
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 5432:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var _interopRequireDefault = __nccwpck_require__(3298);
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _toConsumableArray2 = _interopRequireDefault(__nccwpck_require__(9491));
+
+var _tinycolor = _interopRequireDefault(__nccwpck_require__(5479));
+
+var _utils = __nccwpck_require__(7403);
+
+function applyKernel(im, kernel, x, y) {
+  var value = [0, 0, 0];
+  var size = (kernel.length - 1) / 2;
+
+  for (var kx = 0; kx < kernel.length; kx += 1) {
+    for (var ky = 0; ky < kernel[kx].length; ky += 1) {
+      var idx = im.getPixelIndex(x + kx - size, y + ky - size);
+      value[0] += im.bitmap.data[idx] * kernel[kx][ky];
+      value[1] += im.bitmap.data[idx + 1] * kernel[kx][ky];
+      value[2] += im.bitmap.data[idx + 2] * kernel[kx][ky];
+    }
+  }
+
+  return value;
+}
+
+var isDef = function isDef(v) {
+  return typeof v !== 'undefined' && v !== null;
+};
+
+function greyscale(cb) {
+  this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+    var grey = parseInt(0.2126 * this.bitmap.data[idx] + 0.7152 * this.bitmap.data[idx + 1] + 0.0722 * this.bitmap.data[idx + 2], 10);
+    this.bitmap.data[idx] = grey;
+    this.bitmap.data[idx + 1] = grey;
+    this.bitmap.data[idx + 2] = grey;
+  });
+
+  if ((0, _utils.isNodePattern)(cb)) {
+    cb.call(this, null, this);
+  }
+
+  return this;
+}
+
+function mix(clr, clr2) {
+  var p = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 50;
+  return {
+    r: (clr2.r - clr.r) * (p / 100) + clr.r,
+    g: (clr2.g - clr.g) * (p / 100) + clr.g,
+    b: (clr2.b - clr.b) * (p / 100) + clr.b
+  };
+}
+
+function colorFn(actions, cb) {
+  var _this = this;
+
+  if (!actions || !Array.isArray(actions)) {
+    return _utils.throwError.call(this, 'actions must be an array', cb);
+  }
+
+  actions = actions.map(function (action) {
+    if (action.apply === 'xor' || action.apply === 'mix') {
+      action.params[0] = (0, _tinycolor["default"])(action.params[0]).toRgb();
+    }
+
+    return action;
+  });
+  this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+    var clr = {
+      r: _this.bitmap.data[idx],
+      g: _this.bitmap.data[idx + 1],
+      b: _this.bitmap.data[idx + 2]
+    };
+
+    var colorModifier = function colorModifier(i, amount) {
+      return _this.constructor.limit255(clr[i] + amount);
+    };
+
+    actions.forEach(function (action) {
+      if (action.apply === 'mix') {
+        clr = mix(clr, action.params[0], action.params[1]);
+      } else if (action.apply === 'tint') {
+        clr = mix(clr, {
+          r: 255,
+          g: 255,
+          b: 255
+        }, action.params[0]);
+      } else if (action.apply === 'shade') {
+        clr = mix(clr, {
+          r: 0,
+          g: 0,
+          b: 0
+        }, action.params[0]);
+      } else if (action.apply === 'xor') {
+        clr = {
+          r: clr.r ^ action.params[0].r,
+          g: clr.g ^ action.params[0].g,
+          b: clr.b ^ action.params[0].b
+        };
+      } else if (action.apply === 'red') {
+        clr.r = colorModifier('r', action.params[0]);
+      } else if (action.apply === 'green') {
+        clr.g = colorModifier('g', action.params[0]);
+      } else if (action.apply === 'blue') {
+        clr.b = colorModifier('b', action.params[0]);
+      } else {
+        var _clr;
+
+        if (action.apply === 'hue') {
+          action.apply = 'spin';
+        }
+
+        clr = (0, _tinycolor["default"])(clr);
+
+        if (!clr[action.apply]) {
+          return _utils.throwError.call(_this, 'action ' + action.apply + ' not supported', cb);
+        }
+
+        clr = (_clr = clr)[action.apply].apply(_clr, (0, _toConsumableArray2["default"])(action.params)).toRgb();
+      }
+    });
+    _this.bitmap.data[idx] = clr.r;
+    _this.bitmap.data[idx + 1] = clr.g;
+    _this.bitmap.data[idx + 2] = clr.b;
+  });
+
+  if ((0, _utils.isNodePattern)(cb)) {
+    cb.call(this, null, this);
+  }
+
+  return this;
+}
+
+var _default = function _default() {
+  return {
+    /**
+     * Adjusts the brightness of the image
+     * @param {number} val the amount to adjust the brightness, a number between -1 and +1
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    brightness: function brightness(val, cb) {
+      if (typeof val !== 'number') {
+        return _utils.throwError.call(this, 'val must be numbers', cb);
+      }
+
+      if (val < -1 || val > +1) {
+        return _utils.throwError.call(this, 'val must be a number between -1 and +1', cb);
+      }
+
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        if (val < 0.0) {
+          this.bitmap.data[idx] = this.bitmap.data[idx] * (1 + val);
+          this.bitmap.data[idx + 1] = this.bitmap.data[idx + 1] * (1 + val);
+          this.bitmap.data[idx + 2] = this.bitmap.data[idx + 2] * (1 + val);
+        } else {
+          this.bitmap.data[idx] = this.bitmap.data[idx] + (255 - this.bitmap.data[idx]) * val;
+          this.bitmap.data[idx + 1] = this.bitmap.data[idx + 1] + (255 - this.bitmap.data[idx + 1]) * val;
+          this.bitmap.data[idx + 2] = this.bitmap.data[idx + 2] + (255 - this.bitmap.data[idx + 2]) * val;
+        }
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    },
+
+    /**
+     * Adjusts the contrast of the image
+     * @param {number} val the amount to adjust the contrast, a number between -1 and +1
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    contrast: function contrast(val, cb) {
+      if (typeof val !== 'number') {
+        return _utils.throwError.call(this, 'val must be numbers', cb);
+      }
+
+      if (val < -1 || val > +1) {
+        return _utils.throwError.call(this, 'val must be a number between -1 and +1', cb);
+      }
+
+      var factor = (val + 1) / (1 - val);
+
+      function adjust(value) {
+        value = Math.floor(factor * (value - 127) + 127);
+        return value < 0 ? 0 : value > 255 ? 255 : value;
+      }
+
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        this.bitmap.data[idx] = adjust(this.bitmap.data[idx]);
+        this.bitmap.data[idx + 1] = adjust(this.bitmap.data[idx + 1]);
+        this.bitmap.data[idx + 2] = adjust(this.bitmap.data[idx + 2]);
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    },
+
+    /**
+     * Apply a posterize effect
+     * @param {number} n the amount to adjust the contrast, minimum threshold is two
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    posterize: function posterize(n, cb) {
+      if (typeof n !== 'number') {
+        return _utils.throwError.call(this, 'n must be numbers', cb);
+      }
+
+      if (n < 2) {
+        n = 2;
+      } // minimum of 2 levels
+
+
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        this.bitmap.data[idx] = Math.floor(this.bitmap.data[idx] / 255 * (n - 1)) / (n - 1) * 255;
+        this.bitmap.data[idx + 1] = Math.floor(this.bitmap.data[idx + 1] / 255 * (n - 1)) / (n - 1) * 255;
+        this.bitmap.data[idx + 2] = Math.floor(this.bitmap.data[idx + 2] / 255 * (n - 1)) / (n - 1) * 255;
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    },
+
+    /**
+     * Removes colour from the image using ITU Rec 709 luminance values
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    greyscale: greyscale,
+    // Alias of greyscale for our American friends
+    grayscale: greyscale,
+
+    /**
+     * Multiplies the opacity of each pixel by a factor between 0 and 1
+     * @param {number} f A number, the factor by which to multiply the opacity of each pixel
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    opacity: function opacity(f, cb) {
+      if (typeof f !== 'number') return _utils.throwError.call(this, 'f must be a number', cb);
+      if (f < 0 || f > 1) return _utils.throwError.call(this, 'f must be a number from 0 to 1', cb);
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        var v = this.bitmap.data[idx + 3] * f;
+        this.bitmap.data[idx + 3] = v;
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    },
+
+    /**
+     * Applies a sepia tone to the image
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    sepia: function sepia(cb) {
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        var red = this.bitmap.data[idx];
+        var green = this.bitmap.data[idx + 1];
+        var blue = this.bitmap.data[idx + 2];
+        red = red * 0.393 + green * 0.769 + blue * 0.189;
+        green = red * 0.349 + green * 0.686 + blue * 0.168;
+        blue = red * 0.272 + green * 0.534 + blue * 0.131;
+        this.bitmap.data[idx] = red < 255 ? red : 255;
+        this.bitmap.data[idx + 1] = green < 255 ? green : 255;
+        this.bitmap.data[idx + 2] = blue < 255 ? blue : 255;
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    },
+
+    /**
+     * Fades each pixel by a factor between 0 and 1
+     * @param {number} f A number from 0 to 1. 0 will haven no effect. 1 will turn the image completely transparent.
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    fade: function fade(f, cb) {
+      if (typeof f !== 'number') {
+        return _utils.throwError.call(this, 'f must be a number', cb);
+      }
+
+      if (f < 0 || f > 1) {
+        return _utils.throwError.call(this, 'f must be a number from 0 to 1', cb);
+      } // this method is an alternative to opacity (which may be deprecated)
+
+
+      this.opacity(1 - f);
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    },
+
+    /**
+     * Adds each element of the image to its local neighbors, weighted by the kernel
+     * @param {array} kernel a matrix to weight the neighbors sum
+     * @param {string} edgeHandling (optional) define how to sum pixels from outside the border
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    convolution: function convolution(kernel, edgeHandling, cb) {
+      if (typeof edgeHandling === 'function' && typeof cb === 'undefined') {
+        cb = edgeHandling;
+        edgeHandling = null;
+      }
+
+      if (!edgeHandling) {
+        edgeHandling = this.constructor.EDGE_EXTEND;
+      }
+
+      var newData = Buffer.from(this.bitmap.data);
+      var kRows = kernel.length;
+      var kCols = kernel[0].length;
+      var rowEnd = Math.floor(kRows / 2);
+      var colEnd = Math.floor(kCols / 2);
+      var rowIni = -rowEnd;
+      var colIni = -colEnd;
+      var weight;
+      var rSum;
+      var gSum;
+      var bSum;
+      var ri;
+      var gi;
+      var bi;
+      var xi;
+      var yi;
+      var idxi;
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        bSum = 0;
+        gSum = 0;
+        rSum = 0;
+
+        for (var row = rowIni; row <= rowEnd; row++) {
+          for (var col = colIni; col <= colEnd; col++) {
+            xi = x + col;
+            yi = y + row;
+            weight = kernel[row + rowEnd][col + colEnd];
+            idxi = this.getPixelIndex(xi, yi, edgeHandling);
+
+            if (idxi === -1) {
+              bi = 0;
+              gi = 0;
+              ri = 0;
+            } else {
+              ri = this.bitmap.data[idxi + 0];
+              gi = this.bitmap.data[idxi + 1];
+              bi = this.bitmap.data[idxi + 2];
+            }
+
+            rSum += weight * ri;
+            gSum += weight * gi;
+            bSum += weight * bi;
+          }
+        }
+
+        if (rSum < 0) {
+          rSum = 0;
+        }
+
+        if (gSum < 0) {
+          gSum = 0;
+        }
+
+        if (bSum < 0) {
+          bSum = 0;
+        }
+
+        if (rSum > 255) {
+          rSum = 255;
+        }
+
+        if (gSum > 255) {
+          gSum = 255;
+        }
+
+        if (bSum > 255) {
+          bSum = 255;
+        }
+
+        newData[idx + 0] = rSum;
+        newData[idx + 1] = gSum;
+        newData[idx + 2] = bSum;
+      });
+      this.bitmap.data = newData;
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    },
+
+    /**
+     * Set the alpha channel on every pixel to fully opaque
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    opaque: function opaque(cb) {
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        this.bitmap.data[idx + 3] = 255;
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    },
+
+    /**
+     * Pixelates the image or a region
+     * @param {number} size the size of the pixels
+     * @param {number} x (optional) the x position of the region to pixelate
+     * @param {number} y (optional) the y position of the region to pixelate
+     * @param {number} w (optional) the width of the region to pixelate
+     * @param {number} h (optional) the height of the region to pixelate
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    pixelate: function pixelate(size, x, y, w, h, cb) {
+      if (typeof x === 'function') {
+        cb = x;
+        h = null;
+        w = null;
+        y = null;
+        x = null;
+      } else {
+        if (typeof size !== 'number') {
+          return _utils.throwError.call(this, 'size must be a number', cb);
+        }
+
+        if (isDef(x) && typeof x !== 'number') {
+          return _utils.throwError.call(this, 'x must be a number', cb);
+        }
+
+        if (isDef(y) && typeof y !== 'number') {
+          return _utils.throwError.call(this, 'y must be a number', cb);
+        }
+
+        if (isDef(w) && typeof w !== 'number') {
+          return _utils.throwError.call(this, 'w must be a number', cb);
+        }
+
+        if (isDef(h) && typeof h !== 'number') {
+          return _utils.throwError.call(this, 'h must be a number', cb);
+        }
+      }
+
+      var kernel = [[1 / 16, 2 / 16, 1 / 16], [2 / 16, 4 / 16, 2 / 16], [1 / 16, 2 / 16, 1 / 16]];
+      x = x || 0;
+      y = y || 0;
+      w = isDef(w) ? w : this.bitmap.width - x;
+      h = isDef(h) ? h : this.bitmap.height - y;
+      var source = this.cloneQuiet();
+      this.scanQuiet(x, y, w, h, function (xx, yx, idx) {
+        xx = size * Math.floor(xx / size);
+        yx = size * Math.floor(yx / size);
+        var value = applyKernel(source, kernel, xx, yx);
+        this.bitmap.data[idx] = value[0];
+        this.bitmap.data[idx + 1] = value[1];
+        this.bitmap.data[idx + 2] = value[2];
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    },
+
+    /**
+     * Applies a convolution kernel to the image or a region
+     * @param {array} kernel the convolution kernel
+     * @param {number} x (optional) the x position of the region to apply convolution to
+     * @param {number} y (optional) the y position of the region to apply convolution to
+     * @param {number} w (optional) the width of the region to apply convolution to
+     * @param {number} h (optional) the height of the region to apply convolution to
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    convolute: function convolute(kernel, x, y, w, h, cb) {
+      if (!Array.isArray(kernel)) return _utils.throwError.call(this, 'the kernel must be an array', cb);
+
+      if (typeof x === 'function') {
+        cb = x;
+        x = null;
+        y = null;
+        w = null;
+        h = null;
+      } else {
+        if (isDef(x) && typeof x !== 'number') {
+          return _utils.throwError.call(this, 'x must be a number', cb);
+        }
+
+        if (isDef(y) && typeof y !== 'number') {
+          return _utils.throwError.call(this, 'y must be a number', cb);
+        }
+
+        if (isDef(w) && typeof w !== 'number') {
+          return _utils.throwError.call(this, 'w must be a number', cb);
+        }
+
+        if (isDef(h) && typeof h !== 'number') {
+          return _utils.throwError.call(this, 'h must be a number', cb);
+        }
+      }
+
+      var ksize = (kernel.length - 1) / 2;
+      x = isDef(x) ? x : ksize;
+      y = isDef(y) ? y : ksize;
+      w = isDef(w) ? w : this.bitmap.width - x;
+      h = isDef(h) ? h : this.bitmap.height - y;
+      var source = this.cloneQuiet();
+      this.scanQuiet(x, y, w, h, function (xx, yx, idx) {
+        var value = applyKernel(source, kernel, xx, yx);
+        this.bitmap.data[idx] = this.constructor.limit255(value[0]);
+        this.bitmap.data[idx + 1] = this.constructor.limit255(value[1]);
+        this.bitmap.data[idx + 2] = this.constructor.limit255(value[2]);
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    },
+
+    /**
+     * Apply multiple color modification rules
+     * @param {array} actions list of color modification rules, in following format: { apply: '<rule-name>', params: [ <rule-parameters> ]  }
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp }this for chaining of methods
+     */
+    color: colorFn,
+    colour: colorFn
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 7125:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Scale the image to the given width and height keeping the aspect ratio. Some parts of the image may be letter boxed.
+ * @param {number} w the width to resize the image to
+ * @param {number} h the height to resize the image to
+ * @param {number} alignBits (optional) A bitmask for horizontal and vertical alignment
+ * @param {string} mode (optional) a scaling method (e.g. Jimp.RESIZE_BEZIER)
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+var _default = function _default() {
+  return {
+    contain: function contain(w, h, alignBits, mode, cb) {
+      if (typeof w !== 'number' || typeof h !== 'number') {
+        return _utils.throwError.call(this, 'w and h must be numbers', cb);
+      } // permit any sort of optional parameters combination
+
+
+      if (typeof alignBits === 'string') {
+        if (typeof mode === 'function' && typeof cb === 'undefined') cb = mode;
+        mode = alignBits;
+        alignBits = null;
+      }
+
+      if (typeof alignBits === 'function') {
+        if (typeof cb === 'undefined') cb = alignBits;
+        mode = null;
+        alignBits = null;
+      }
+
+      if (typeof mode === 'function' && typeof cb === 'undefined') {
+        cb = mode;
+        mode = null;
+      }
+
+      alignBits = alignBits || this.constructor.HORIZONTAL_ALIGN_CENTER | this.constructor.VERTICAL_ALIGN_MIDDLE;
+      var hbits = alignBits & (1 << 3) - 1;
+      var vbits = alignBits >> 3; // check if more flags than one is in the bit sets
+
+      if (!(hbits !== 0 && !(hbits & hbits - 1) || vbits !== 0 && !(vbits & vbits - 1))) {
+        return _utils.throwError.call(this, 'only use one flag per alignment direction', cb);
+      }
+
+      var alignH = hbits >> 1; // 0, 1, 2
+
+      var alignV = vbits >> 1; // 0, 1, 2
+
+      var f = w / h > this.bitmap.width / this.bitmap.height ? h / this.bitmap.height : w / this.bitmap.width;
+      var c = this.cloneQuiet().scale(f, mode);
+      this.resize(w, h, mode);
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        this.bitmap.data.writeUInt32BE(this._background, idx);
+      });
+      this.blit(c, (this.bitmap.width - c.bitmap.width) / 2 * alignH, (this.bitmap.height - c.bitmap.height) / 2 * alignV);
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 937:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Scale the image so the given width and height keeping the aspect ratio. Some parts of the image may be clipped.
+ * @param {number} w the width to resize the image to
+ * @param {number} h the height to resize the image to
+ * @param {number} alignBits (optional) A bitmask for horizontal and vertical alignment
+ * @param {string} mode (optional) a scaling method (e.g. Jimp.RESIZE_BEZIER)
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+var _default = function _default() {
+  return {
+    cover: function cover(w, h, alignBits, mode, cb) {
+      if (typeof w !== 'number' || typeof h !== 'number') {
+        return _utils.throwError.call(this, 'w and h must be numbers', cb);
+      }
+
+      if (alignBits && typeof alignBits === 'function' && typeof cb === 'undefined') {
+        cb = alignBits;
+        alignBits = null;
+        mode = null;
+      } else if (typeof mode === 'function' && typeof cb === 'undefined') {
+        cb = mode;
+        mode = null;
+      }
+
+      alignBits = alignBits || this.constructor.HORIZONTAL_ALIGN_CENTER | this.constructor.VERTICAL_ALIGN_MIDDLE;
+      var hbits = alignBits & (1 << 3) - 1;
+      var vbits = alignBits >> 3; // check if more flags than one is in the bit sets
+
+      if (!(hbits !== 0 && !(hbits & hbits - 1) || vbits !== 0 && !(vbits & vbits - 1))) return _utils.throwError.call(this, 'only use one flag per alignment direction', cb);
+      var alignH = hbits >> 1; // 0, 1, 2
+
+      var alignV = vbits >> 1; // 0, 1, 2
+
+      var f = w / h > this.bitmap.width / this.bitmap.height ? w / this.bitmap.width : h / this.bitmap.height;
+      this.scale(f, mode);
+      this.crop((this.bitmap.width - w) / 2 * alignH, (this.bitmap.height - h) / 2 * alignV, w, h);
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 1623:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var _interopRequireDefault = __nccwpck_require__(3298);
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = pluginCrop;
+
+var _typeof2 = _interopRequireDefault(__nccwpck_require__(1042));
+
+var _utils = __nccwpck_require__(7403);
+
+/* eslint-disable no-labels */
+function pluginCrop(event) {
+  /**
+   * Crops the image at a given point to a give size
+   * @param {number} x the x coordinate to crop form
+   * @param {number} y the y coordinate to crop form
+   * @param w the width of the crop region
+   * @param h the height of the crop region
+   * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+   * @returns {Jimp} this for chaining of methods
+   */
+  event('crop', function (x, y, w, h, cb) {
+    if (typeof x !== 'number' || typeof y !== 'number') return _utils.throwError.call(this, 'x and y must be numbers', cb);
+    if (typeof w !== 'number' || typeof h !== 'number') return _utils.throwError.call(this, 'w and h must be numbers', cb); // round input
+
+    x = Math.round(x);
+    y = Math.round(y);
+    w = Math.round(w);
+    h = Math.round(h);
+
+    if (x === 0 && w === this.bitmap.width) {
+      // shortcut
+      var start = w * y + x << 2;
+      var end = start + h * w << 2;
+      this.bitmap.data = this.bitmap.data.slice(start, end);
+    } else {
+      var bitmap = Buffer.allocUnsafe(w * h * 4);
+      var offset = 0;
+      this.scanQuiet(x, y, w, h, function (x, y, idx) {
+        var data = this.bitmap.data.readUInt32BE(idx, true);
+        bitmap.writeUInt32BE(data, offset, true);
+        offset += 4;
+      });
+      this.bitmap.data = bitmap;
+    }
+
+    this.bitmap.width = w;
+    this.bitmap.height = h;
+
+    if ((0, _utils.isNodePattern)(cb)) {
+      cb.call(this, null, this);
+    }
+
+    return this;
+  });
+  return {
+    "class": {
+      /**
+       * Autocrop same color borders from this image
+       * @param {number} tolerance (optional): a percent value of tolerance for pixels color difference (default: 0.0002%)
+       * @param {boolean} cropOnlyFrames (optional): flag to crop only real frames: all 4 sides of the image must have some border (default: true)
+       * @param {function(Error, Jimp)} cb (optional): a callback for when complete (default: no callback)
+       * @returns {Jimp} this for chaining of methods
+       */
+      autocrop: function autocrop() {
+        var w = this.bitmap.width;
+        var h = this.bitmap.height;
+        var minPixelsPerSide = 1; // to avoid cropping completely the image, resulting in an invalid 0 sized image
+
+        var cb; // callback
+
+        var leaveBorder = 0; // Amount of pixels in border to leave
+
+        var tolerance = 0.0002; // percent of color difference tolerance (default value)
+
+        var cropOnlyFrames = true; // flag to force cropping only if the image has a real "frame"
+        // i.e. all 4 sides have some border (default value)
+
+        var cropSymmetric = false; // flag to force cropping top be symmetric.
+        // i.e. north and south / east and west are cropped by the same value
+
+        var ignoreSides = {
+          north: false,
+          south: false,
+          east: false,
+          west: false
+        }; // parse arguments
+
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        for (var a = 0, len = args.length; a < len; a++) {
+          if (typeof args[a] === 'number') {
+            // tolerance value passed
+            tolerance = args[a];
+          }
+
+          if (typeof args[a] === 'boolean') {
+            // cropOnlyFrames value passed
+            cropOnlyFrames = args[a];
+          }
+
+          if (typeof args[a] === 'function') {
+            // callback value passed
+            cb = args[a];
+          }
+
+          if ((0, _typeof2["default"])(args[a]) === 'object') {
+            // config object passed
+            var config = args[a];
+
+            if (typeof config.tolerance !== 'undefined') {
+              tolerance = config.tolerance;
+            }
+
+            if (typeof config.cropOnlyFrames !== 'undefined') {
+              cropOnlyFrames = config.cropOnlyFrames;
+            }
+
+            if (typeof config.cropSymmetric !== 'undefined') {
+              cropSymmetric = config.cropSymmetric;
+            }
+
+            if (typeof config.leaveBorder !== 'undefined') {
+              leaveBorder = config.leaveBorder;
+            }
+
+            if (typeof config.ignoreSides !== 'undefined') {
+              ignoreSides = config.ignoreSides;
+            }
+          }
+        }
+        /**
+         * All borders must be of the same color as the top left pixel, to be cropped.
+         * It should be possible to crop borders each with a different color,
+         * but since there are many ways for corners to intersect, it would
+         * introduce unnecessary complexity to the algorithm.
+         */
+        // scan each side for same color borders
+
+
+        var colorTarget = this.getPixelColor(0, 0); // top left pixel color is the target color
+
+        var rgba1 = this.constructor.intToRGBA(colorTarget); // for north and east sides
+
+        var northPixelsToCrop = 0;
+        var eastPixelsToCrop = 0;
+        var southPixelsToCrop = 0;
+        var westPixelsToCrop = 0; // north side (scan rows from north to south)
+
+        colorTarget = this.getPixelColor(0, 0);
+
+        if (!ignoreSides.north) {
+          north: for (var y = 0; y < h - minPixelsPerSide; y++) {
+            for (var x = 0; x < w; x++) {
+              var colorXY = this.getPixelColor(x, y);
+              var rgba2 = this.constructor.intToRGBA(colorXY);
+
+              if (this.constructor.colorDiff(rgba1, rgba2) > tolerance) {
+                // this pixel is too distant from the first one: abort this side scan
+                break north;
+              }
+            } // this row contains all pixels with the same color: increment this side pixels to crop
+
+
+            northPixelsToCrop++;
+          }
+        } // east side (scan columns from east to west)
+
+
+        colorTarget = this.getPixelColor(w, 0);
+
+        if (!ignoreSides.east) {
+          east: for (var _x = 0; _x < w - minPixelsPerSide; _x++) {
+            for (var _y = 0 + northPixelsToCrop; _y < h; _y++) {
+              var _colorXY = this.getPixelColor(_x, _y);
+
+              var _rgba = this.constructor.intToRGBA(_colorXY);
+
+              if (this.constructor.colorDiff(rgba1, _rgba) > tolerance) {
+                // this pixel is too distant from the first one: abort this side scan
+                break east;
+              }
+            } // this column contains all pixels with the same color: increment this side pixels to crop
+
+
+            eastPixelsToCrop++;
+          }
+        } // south side (scan rows from south to north)
+
+
+        colorTarget = this.getPixelColor(0, h);
+
+        if (!ignoreSides.south) {
+          south: for (var _y2 = h - 1; _y2 >= northPixelsToCrop + minPixelsPerSide; _y2--) {
+            for (var _x2 = w - eastPixelsToCrop - 1; _x2 >= 0; _x2--) {
+              var _colorXY2 = this.getPixelColor(_x2, _y2);
+
+              var _rgba2 = this.constructor.intToRGBA(_colorXY2);
+
+              if (this.constructor.colorDiff(rgba1, _rgba2) > tolerance) {
+                // this pixel is too distant from the first one: abort this side scan
+                break south;
+              }
+            } // this row contains all pixels with the same color: increment this side pixels to crop
+
+
+            southPixelsToCrop++;
+          }
+        } // west side (scan columns from west to east)
+
+
+        colorTarget = this.getPixelColor(w, h);
+
+        if (!ignoreSides.west) {
+          west: for (var _x3 = w - 1; _x3 >= 0 + eastPixelsToCrop + minPixelsPerSide; _x3--) {
+            for (var _y3 = h - 1; _y3 >= 0 + northPixelsToCrop; _y3--) {
+              var _colorXY3 = this.getPixelColor(_x3, _y3);
+
+              var _rgba3 = this.constructor.intToRGBA(_colorXY3);
+
+              if (this.constructor.colorDiff(rgba1, _rgba3) > tolerance) {
+                // this pixel is too distant from the first one: abort this side scan
+                break west;
+              }
+            } // this column contains all pixels with the same color: increment this side pixels to crop
+
+
+            westPixelsToCrop++;
+          }
+        } // decide if a crop is needed
+
+
+        var doCrop = false; // apply leaveBorder
+
+        westPixelsToCrop -= leaveBorder;
+        eastPixelsToCrop -= leaveBorder;
+        northPixelsToCrop -= leaveBorder;
+        southPixelsToCrop -= leaveBorder;
+
+        if (cropSymmetric) {
+          var horizontal = Math.min(eastPixelsToCrop, westPixelsToCrop);
+          var vertical = Math.min(northPixelsToCrop, southPixelsToCrop);
+          westPixelsToCrop = horizontal;
+          eastPixelsToCrop = horizontal;
+          northPixelsToCrop = vertical;
+          southPixelsToCrop = vertical;
+        } // make sure that crops are >= 0
+
+
+        westPixelsToCrop = westPixelsToCrop >= 0 ? westPixelsToCrop : 0;
+        eastPixelsToCrop = eastPixelsToCrop >= 0 ? eastPixelsToCrop : 0;
+        northPixelsToCrop = northPixelsToCrop >= 0 ? northPixelsToCrop : 0;
+        southPixelsToCrop = southPixelsToCrop >= 0 ? southPixelsToCrop : 0; // safety checks
+
+        var widthOfRemainingPixels = w - (westPixelsToCrop + eastPixelsToCrop);
+        var heightOfRemainingPixels = h - (southPixelsToCrop + northPixelsToCrop);
+
+        if (cropOnlyFrames) {
+          // crop image if all sides should be cropped
+          doCrop = eastPixelsToCrop !== 0 && northPixelsToCrop !== 0 && westPixelsToCrop !== 0 && southPixelsToCrop !== 0;
+        } else {
+          // crop image if at least one side should be cropped
+          doCrop = eastPixelsToCrop !== 0 || northPixelsToCrop !== 0 || westPixelsToCrop !== 0 || southPixelsToCrop !== 0;
+        }
+
+        if (doCrop) {
+          // do the real crop
+          this.crop(eastPixelsToCrop, northPixelsToCrop, widthOfRemainingPixels, heightOfRemainingPixels);
+        }
+
+        if ((0, _utils.isNodePattern)(cb)) {
+          cb.call(this, null, this);
+        }
+
+        return this;
+      }
+    }
+  };
+}
+
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 6096:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var _interopRequireDefault = __nccwpck_require__(3298);
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _typeof2 = _interopRequireDefault(__nccwpck_require__(1042));
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Displaces the image based on the provided displacement map
+ * @param {object} map the source Jimp instance
+ * @param {number} offset the maximum displacement value
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+var _default = function _default() {
+  return {
+    displace: function displace(map, offset, cb) {
+      if ((0, _typeof2["default"])(map) !== 'object' || map.constructor !== this.constructor) {
+        return _utils.throwError.call(this, 'The source must be a Jimp image', cb);
+      }
+
+      if (typeof offset !== 'number') {
+        return _utils.throwError.call(this, 'factor must be a number', cb);
+      }
+
+      var source = this.cloneQuiet();
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        var displacement = map.bitmap.data[idx] / 256 * offset;
+        displacement = Math.round(displacement);
+        var ids = this.getPixelIndex(x + displacement, y);
+        this.bitmap.data[ids] = source.bitmap.data[idx];
+        this.bitmap.data[ids + 1] = source.bitmap.data[idx + 1];
+        this.bitmap.data[ids + 2] = source.bitmap.data[idx + 2];
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 5808:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Apply a ordered dithering effect
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+function dither(cb) {
+  var rgb565Matrix = [1, 9, 3, 11, 13, 5, 15, 7, 4, 12, 2, 10, 16, 8, 14, 6];
+  this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+    var thresholdId = ((y & 3) << 2) + x % 4;
+    var dither = rgb565Matrix[thresholdId];
+    this.bitmap.data[idx] = Math.min(this.bitmap.data[idx] + dither, 0xff);
+    this.bitmap.data[idx + 1] = Math.min(this.bitmap.data[idx + 1] + dither, 0xff);
+    this.bitmap.data[idx + 2] = Math.min(this.bitmap.data[idx + 2] + dither, 0xff);
+  });
+
+  if ((0, _utils.isNodePattern)(cb)) {
+    cb.call(this, null, this);
+  }
+
+  return this;
+}
+
+var _default = function _default() {
+  return {
+    dither565: dither,
+    dither16: dither
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 1885:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Creates a circle out of an image.
+ * @param {object} options (optional) r: radius of effect
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+var _default = function _default() {
+  return {
+    fisheye: function fisheye() {
+      var _this = this;
+
+      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {
+        r: 2.5
+      };
+      var cb = arguments.length > 1 ? arguments[1] : undefined;
+
+      if (typeof options === 'function') {
+        cb = options;
+        options = {
+          r: 2.5
+        };
+      }
+
+      var source = this.cloneQuiet();
+      var _source$bitmap = source.bitmap,
+          width = _source$bitmap.width,
+          height = _source$bitmap.height;
+      source.scanQuiet(0, 0, width, height, function (x, y) {
+        var hx = x / width;
+        var hy = y / height;
+        var r = Math.sqrt(Math.pow(hx - 0.5, 2) + Math.pow(hy - 0.5, 2));
+        var rn = 2 * Math.pow(r, options.r);
+        var cosA = (hx - 0.5) / r;
+        var sinA = (hy - 0.5) / r;
+        var newX = Math.round((rn * cosA + 0.5) * width);
+        var newY = Math.round((rn * sinA + 0.5) * height);
+        var color = source.getPixelColor(newX, newY);
+
+        _this.setPixelColor(color, x, y);
+      });
+      /* Set center pixel color, otherwise it will be transparent */
+
+      this.setPixelColor(source.getPixelColor(width / 2, height / 2), width / 2, height / 2);
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 2818:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Flip the image horizontally
+ * @param {boolean} horizontal a Boolean, if true the image will be flipped horizontally
+ * @param {boolean} vertical a Boolean, if true the image will be flipped vertically
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+function flipFn(horizontal, vertical, cb) {
+  if (typeof horizontal !== 'boolean' || typeof vertical !== 'boolean') return _utils.throwError.call(this, 'horizontal and vertical must be Booleans', cb);
+  var bitmap = Buffer.alloc(this.bitmap.data.length);
+  this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+    var _x = horizontal ? this.bitmap.width - 1 - x : x;
+
+    var _y = vertical ? this.bitmap.height - 1 - y : y;
+
+    var _idx = this.bitmap.width * _y + _x << 2;
+
+    var data = this.bitmap.data.readUInt32BE(idx);
+    bitmap.writeUInt32BE(data, _idx);
+  });
+  this.bitmap.data = Buffer.from(bitmap);
+
+  if ((0, _utils.isNodePattern)(cb)) {
+    cb.call(this, null, this);
+  }
+
+  return this;
+}
+
+var _default = function _default() {
+  return {
+    flip: flipFn,
+    mirror: flipFn
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 2135:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Applies a true Gaussian blur to the image (warning: this is VERY slow)
+ * @param {number} r the pixel radius of the blur
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+var _default = function _default() {
+  return {
+    gaussian: function gaussian(r, cb) {
+      // http://blog.ivank.net/fastest-gaussian-blur.html
+      if (typeof r !== 'number') {
+        return _utils.throwError.call(this, 'r must be a number', cb);
+      }
+
+      if (r < 1) {
+        return _utils.throwError.call(this, 'r must be greater than 0', cb);
+      }
+
+      var rs = Math.ceil(r * 2.57); // significant radius
+
+      var range = rs * 2 + 1;
+      var rr2 = r * r * 2;
+      var rr2pi = rr2 * Math.PI;
+      var weights = [];
+
+      for (var y = 0; y < range; y++) {
+        weights[y] = [];
+
+        for (var x = 0; x < range; x++) {
+          var dsq = Math.pow(x - rs, 2) + Math.pow(y - rs, 2);
+          weights[y][x] = Math.exp(-dsq / rr2) / rr2pi;
+        }
+      }
+
+      for (var _y = 0; _y < this.bitmap.height; _y++) {
+        for (var _x = 0; _x < this.bitmap.width; _x++) {
+          var red = 0;
+          var green = 0;
+          var blue = 0;
+          var alpha = 0;
+          var wsum = 0;
+
+          for (var iy = 0; iy < range; iy++) {
+            for (var ix = 0; ix < range; ix++) {
+              var x1 = Math.min(this.bitmap.width - 1, Math.max(0, ix + _x - rs));
+              var y1 = Math.min(this.bitmap.height - 1, Math.max(0, iy + _y - rs));
+              var weight = weights[iy][ix];
+
+              var _idx = y1 * this.bitmap.width + x1 << 2;
+
+              red += this.bitmap.data[_idx] * weight;
+              green += this.bitmap.data[_idx + 1] * weight;
+              blue += this.bitmap.data[_idx + 2] * weight;
+              alpha += this.bitmap.data[_idx + 3] * weight;
+              wsum += weight;
+            }
+
+            var idx = _y * this.bitmap.width + _x << 2;
+            this.bitmap.data[idx] = Math.round(red / wsum);
+            this.bitmap.data[idx + 1] = Math.round(green / wsum);
+            this.bitmap.data[idx + 2] = Math.round(blue / wsum);
+            this.bitmap.data[idx + 3] = Math.round(alpha / wsum);
+          }
+        }
+      }
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 9534:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Inverts the image
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+var _default = function _default() {
+  return {
+    invert: function invert(cb) {
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        this.bitmap.data[idx] = 255 - this.bitmap.data[idx];
+        this.bitmap.data[idx + 1] = 255 - this.bitmap.data[idx + 1];
+        this.bitmap.data[idx + 2] = 255 - this.bitmap.data[idx + 2];
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 497:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Masks a source image on to this image using average pixel colour. A completely black pixel on the mask will turn a pixel in the image completely transparent.
+ * @param {Jimp} src the source Jimp instance
+ * @param {number} x the horizontal position to blit the image
+ * @param {number} y the vertical position to blit the image
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+var _default = function _default() {
+  return {
+    mask: function mask(src) {
+      var x = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      var y = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+      var cb = arguments.length > 3 ? arguments[3] : undefined;
+
+      if (!(src instanceof this.constructor)) {
+        return _utils.throwError.call(this, 'The source must be a Jimp image', cb);
+      }
+
+      if (typeof x !== 'number' || typeof y !== 'number') {
+        return _utils.throwError.call(this, 'x and y must be numbers', cb);
+      } // round input
+
+
+      x = Math.round(x);
+      y = Math.round(y);
+      var w = this.bitmap.width;
+      var h = this.bitmap.height;
+      var baseImage = this;
+      src.scanQuiet(0, 0, src.bitmap.width, src.bitmap.height, function (sx, sy, idx) {
+        var destX = x + sx;
+        var destY = y + sy;
+
+        if (destX >= 0 && destY >= 0 && destX < w && destY < h) {
+          var dstIdx = baseImage.getPixelIndex(destX, destY);
+          var data = this.bitmap.data;
+          var avg = (data[idx + 0] + data[idx + 1] + data[idx + 2]) / 3;
+          baseImage.bitmap.data[dstIdx + 3] *= avg / 255;
+        }
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 7022:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Get an image's histogram
+ * @return {object} An object with an array of color occurrence counts for each channel (r,g,b)
+ */
+function histogram() {
+  var histogram = {
+    r: new Array(256).fill(0),
+    g: new Array(256).fill(0),
+    b: new Array(256).fill(0)
+  };
+  this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, index) {
+    histogram.r[this.bitmap.data[index + 0]]++;
+    histogram.g[this.bitmap.data[index + 1]]++;
+    histogram.b[this.bitmap.data[index + 2]]++;
+  });
+  return histogram;
+}
+/**
+ * Normalize values
+ * @param  {integer} value Pixel channel value.
+ * @param  {integer} min   Minimum value for channel
+ * @param  {integer} max   Maximum value for channel
+ * @return {integer} normalized values
+ */
+
+
+var _normalize = function normalize(value, min, max) {
+  return (value - min) * 255 / (max - min);
+};
+
+var getBounds = function getBounds(histogramChannel) {
+  return [histogramChannel.findIndex(function (value) {
+    return value > 0;
+  }), 255 - histogramChannel.slice().reverse().findIndex(function (value) {
+    return value > 0;
+  })];
+};
+/**
+ * Normalizes the image
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+
+
+var _default = function _default() {
+  return {
+    normalize: function normalize(cb) {
+      var h = histogram.call(this); // store bounds (minimum and maximum values)
+
+      var bounds = {
+        r: getBounds(h.r),
+        g: getBounds(h.g),
+        b: getBounds(h.b)
+      }; // apply value transformations
+
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        var r = this.bitmap.data[idx + 0];
+        var g = this.bitmap.data[idx + 1];
+        var b = this.bitmap.data[idx + 2];
+        this.bitmap.data[idx + 0] = _normalize(r, bounds.r[0], bounds.r[1]);
+        this.bitmap.data[idx + 1] = _normalize(g, bounds.g[0], bounds.g[1]);
+        this.bitmap.data[idx + 2] = _normalize(b, bounds.b[0], bounds.b[1]);
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 7996:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var _interopRequireDefault = __nccwpck_require__(3298);
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _typeof2 = _interopRequireDefault(__nccwpck_require__(1042));
+
+var _toConsumableArray2 = _interopRequireDefault(__nccwpck_require__(9491));
+
+var _path = _interopRequireDefault(__nccwpck_require__(5622));
+
+var _loadBmfont = _interopRequireDefault(__nccwpck_require__(9919));
+
+var _utils = __nccwpck_require__(7403);
+
+var _measureText = __nccwpck_require__(4803);
+
+function xOffsetBasedOnAlignment(constants, font, line, maxWidth, alignment) {
+  if (alignment === constants.HORIZONTAL_ALIGN_LEFT) {
+    return 0;
+  }
+
+  if (alignment === constants.HORIZONTAL_ALIGN_CENTER) {
+    return (maxWidth - (0, _measureText.measureText)(font, line)) / 2;
+  }
+
+  return maxWidth - (0, _measureText.measureText)(font, line);
+}
+
+function drawCharacter(image, font, x, y, _char) {
+  if (_char.width > 0 && _char.height > 0) {
+    var characterPage = font.pages[_char.page];
+    image.blit(characterPage, x + _char.xoffset, y + _char.yoffset, _char.x, _char.y, _char.width, _char.height);
+  }
+
+  return image;
+}
+
+function printText(font, x, y, text, defaultCharWidth) {
+  for (var i = 0; i < text.length; i++) {
+    var _char2 = void 0;
+
+    if (font.chars[text[i]]) {
+      _char2 = text[i];
+    } else if (/\s/.test(text[i])) {
+      _char2 = '';
+    } else {
+      _char2 = '?';
+    }
+
+    var fontChar = font.chars[_char2] || {};
+    var fontKerning = font.kernings[_char2];
+    drawCharacter(this, font, x, y, fontChar || {});
+    var kerning = fontKerning && fontKerning[text[i + 1]] ? fontKerning[text[i + 1]] : 0;
+    x += kerning + (fontChar.xadvance || defaultCharWidth);
+  }
+}
+
+function splitLines(font, text, maxWidth) {
+  var words = text.split(' ');
+  var lines = [];
+  var currentLine = [];
+  var longestLine = 0;
+  words.forEach(function (word) {
+    var line = [].concat((0, _toConsumableArray2["default"])(currentLine), [word]).join(' ');
+    var length = (0, _measureText.measureText)(font, line);
+
+    if (length <= maxWidth) {
+      if (length > longestLine) {
+        longestLine = length;
+      }
+
+      currentLine.push(word);
+    } else {
+      lines.push(currentLine);
+      currentLine = [word];
+    }
+  });
+  lines.push(currentLine);
+  return {
+    lines: lines,
+    longestLine: longestLine
+  };
+}
+
+function loadPages(Jimp, dir, pages) {
+  var newPages = pages.map(function (page) {
+    return Jimp.read(dir + '/' + page);
+  });
+  return Promise.all(newPages);
+}
+
+var dir = process.env.DIRNAME || "".concat(__dirname, "/../");
+
+var _default = function _default() {
+  return {
+    constants: {
+      measureText: _measureText.measureText,
+      measureTextHeight: _measureText.measureTextHeight,
+      FONT_SANS_8_BLACK: _path["default"].join(dir, 'fonts/open-sans/open-sans-8-black/open-sans-8-black.fnt'),
+      FONT_SANS_10_BLACK: _path["default"].join(dir, 'fonts/open-sans/open-sans-10-black/open-sans-10-black.fnt'),
+      FONT_SANS_12_BLACK: _path["default"].join(dir, 'fonts/open-sans/open-sans-12-black/open-sans-12-black.fnt'),
+      FONT_SANS_14_BLACK: _path["default"].join(dir, 'fonts/open-sans/open-sans-14-black/open-sans-14-black.fnt'),
+      FONT_SANS_16_BLACK: _path["default"].join(dir, 'fonts/open-sans/open-sans-16-black/open-sans-16-black.fnt'),
+      FONT_SANS_32_BLACK: _path["default"].join(dir, 'fonts/open-sans/open-sans-32-black/open-sans-32-black.fnt'),
+      FONT_SANS_64_BLACK: _path["default"].join(dir, 'fonts/open-sans/open-sans-64-black/open-sans-64-black.fnt'),
+      FONT_SANS_128_BLACK: _path["default"].join(dir, 'fonts/open-sans/open-sans-128-black/open-sans-128-black.fnt'),
+      FONT_SANS_8_WHITE: _path["default"].join(dir, 'fonts/open-sans/open-sans-8-white/open-sans-8-white.fnt'),
+      FONT_SANS_16_WHITE: _path["default"].join(dir, 'fonts/open-sans/open-sans-16-white/open-sans-16-white.fnt'),
+      FONT_SANS_32_WHITE: _path["default"].join(dir, 'fonts/open-sans/open-sans-32-white/open-sans-32-white.fnt'),
+      FONT_SANS_64_WHITE: _path["default"].join(dir, 'fonts/open-sans/open-sans-64-white/open-sans-64-white.fnt'),
+      FONT_SANS_128_WHITE: _path["default"].join(dir, 'fonts/open-sans/open-sans-128-white/open-sans-128-white.fnt'),
+
+      /**
+       * Loads a bitmap font from a file
+       * @param {string} file the file path of a .fnt file
+       * @param {function(Error, Jimp)} cb (optional) a function to call when the font is loaded
+       * @returns {Promise} a promise
+       */
+      loadFont: function loadFont(file, cb) {
+        var _this = this;
+
+        if (typeof file !== 'string') return _utils.throwError.call(this, 'file must be a string', cb);
+        return new Promise(function (resolve, reject) {
+          cb = cb || function (err, font) {
+            if (err) reject(err);else resolve(font);
+          };
+
+          (0, _loadBmfont["default"])(file, function (err, font) {
+            var chars = {};
+            var kernings = {};
+
+            if (err) {
+              return _utils.throwError.call(_this, err, cb);
+            }
+
+            for (var i = 0; i < font.chars.length; i++) {
+              chars[String.fromCharCode(font.chars[i].id)] = font.chars[i];
+            }
+
+            for (var _i = 0; _i < font.kernings.length; _i++) {
+              var firstString = String.fromCharCode(font.kernings[_i].first);
+              kernings[firstString] = kernings[firstString] || {};
+              kernings[firstString][String.fromCharCode(font.kernings[_i].second)] = font.kernings[_i].amount;
+            }
+
+            loadPages(_this, _path["default"].dirname(file), font.pages).then(function (pages) {
+              cb(null, {
+                chars: chars,
+                kernings: kernings,
+                pages: pages,
+                common: font.common,
+                info: font.info
+              });
+            });
+          });
+        });
+      }
+    },
+    "class": {
+      /**
+       * Draws a text on a image on a given boundary
+       * @param {Jimp} font a bitmap font loaded from `Jimp.loadFont` command
+       * @param {number} x the x position to start drawing the text
+       * @param {number} y the y position to start drawing the text
+       * @param {any} text the text to draw (string or object with `text`, `alignmentX`, and/or `alignmentY`)
+       * @param {number} maxWidth (optional) the boundary width to draw in
+       * @param {number} maxHeight (optional) the boundary height to draw in
+       * @param {function(Error, Jimp)} cb (optional) a function to call when the text is written
+       * @returns {Jimp} this for chaining of methods
+       */
+      print: function print(font, x, y, text, maxWidth, maxHeight, cb) {
+        var _this2 = this;
+
+        if (typeof maxWidth === 'function' && typeof cb === 'undefined') {
+          cb = maxWidth;
+          maxWidth = Infinity;
+        }
+
+        if (typeof maxWidth === 'undefined') {
+          maxWidth = Infinity;
+        }
+
+        if (typeof maxHeight === 'function' && typeof cb === 'undefined') {
+          cb = maxHeight;
+          maxHeight = Infinity;
+        }
+
+        if (typeof maxHeight === 'undefined') {
+          maxHeight = Infinity;
+        }
+
+        if ((0, _typeof2["default"])(font) !== 'object') {
+          return _utils.throwError.call(this, 'font must be a Jimp loadFont', cb);
+        }
+
+        if (typeof x !== 'number' || typeof y !== 'number' || typeof maxWidth !== 'number') {
+          return _utils.throwError.call(this, 'x, y and maxWidth must be numbers', cb);
+        }
+
+        if (typeof maxWidth !== 'number') {
+          return _utils.throwError.call(this, 'maxWidth must be a number', cb);
+        }
+
+        if (typeof maxHeight !== 'number') {
+          return _utils.throwError.call(this, 'maxHeight must be a number', cb);
+        }
+
+        var alignmentX;
+        var alignmentY;
+
+        if ((0, _typeof2["default"])(text) === 'object' && text.text !== null && text.text !== undefined) {
+          alignmentX = text.alignmentX || this.constructor.HORIZONTAL_ALIGN_LEFT;
+          alignmentY = text.alignmentY || this.constructor.VERTICAL_ALIGN_TOP;
+          var _text = text;
+          text = _text.text;
+        } else {
+          alignmentX = this.constructor.HORIZONTAL_ALIGN_LEFT;
+          alignmentY = this.constructor.VERTICAL_ALIGN_TOP;
+          text = text.toString();
+        }
+
+        if (maxHeight !== Infinity && alignmentY === this.constructor.VERTICAL_ALIGN_BOTTOM) {
+          y += maxHeight - (0, _measureText.measureTextHeight)(font, text, maxWidth);
+        } else if (maxHeight !== Infinity && alignmentY === this.constructor.VERTICAL_ALIGN_MIDDLE) {
+          y += maxHeight / 2 - (0, _measureText.measureTextHeight)(font, text, maxWidth) / 2;
+        }
+
+        var defaultCharWidth = Object.entries(font.chars)[0][1].xadvance;
+
+        var _splitLines = splitLines(font, text, maxWidth),
+            lines = _splitLines.lines,
+            longestLine = _splitLines.longestLine;
+
+        lines.forEach(function (line) {
+          var lineString = line.join(' ');
+          var alignmentWidth = xOffsetBasedOnAlignment(_this2.constructor, font, lineString, maxWidth, alignmentX);
+          printText.call(_this2, font, x + alignmentWidth, y, lineString, defaultCharWidth);
+          y += font.common.lineHeight;
+        });
+
+        if ((0, _utils.isNodePattern)(cb)) {
+          cb.call(this, null, this, {
+            x: x + longestLine,
+            y: y
+          });
+        }
+
+        return this;
+      }
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 4803:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.measureText = measureText;
+exports.measureTextHeight = measureTextHeight;
+
+function measureText(font, text) {
+  var x = 0;
+
+  for (var i = 0; i < text.length; i++) {
+    if (font.chars[text[i]]) {
+      var kerning = font.kernings[text[i]] && font.kernings[text[i]][text[i + 1]] ? font.kernings[text[i]][text[i + 1]] : 0;
+      x += (font.chars[text[i]].xadvance || 0) + kerning;
+    }
+  }
+
+  return x;
+}
+
+function measureTextHeight(font, text, maxWidth) {
+  var words = text.split(' ');
+  var line = '';
+  var textTotalHeight = font.common.lineHeight;
+
+  for (var n = 0; n < words.length; n++) {
+    var testLine = line + words[n] + ' ';
+    var testWidth = measureText(font, testLine);
+
+    if (testWidth > maxWidth && n > 0) {
+      textTotalHeight += font.common.lineHeight;
+      line = words[n] + ' ';
+    } else {
+      line = testLine;
+    }
+  }
+
+  return textTotalHeight;
+}
+//# sourceMappingURL=measure-text.js.map
+
+/***/ }),
+
 /***/ 5555:
 /***/ ((module, exports, __nccwpck_require__) => {
 
@@ -6888,6 +9120,476 @@ module.exports = {
   }
 };
 //# sourceMappingURL=resize2.js.map
+
+/***/ }),
+
+/***/ 6880:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Rotates an image clockwise by an arbitrary number of degrees. NB: 'this' must be a Jimp object.
+ * @param {number} deg the number of degrees to rotate the image by
+ * @param {string|boolean} mode (optional) resize mode or a boolean, if false then the width and height of the image will not be changed
+ */
+function advancedRotate(deg, mode) {
+  deg %= 360;
+  var rad = deg * Math.PI / 180;
+  var cosine = Math.cos(rad);
+  var sine = Math.sin(rad); // the final width and height will change if resize == true
+
+  var w = this.bitmap.width;
+  var h = this.bitmap.height;
+
+  if (mode === true || typeof mode === 'string') {
+    // resize the image to it maximum dimension and blit the existing image
+    // onto the center so that when it is rotated the image is kept in bounds
+    // http://stackoverflow.com/questions/3231176/how-to-get-size-of-a-rotated-rectangle
+    // Plus 1 border pixel to ensure to show all rotated result for some cases.
+    w = Math.ceil(Math.abs(this.bitmap.width * cosine) + Math.abs(this.bitmap.height * sine)) + 1;
+    h = Math.ceil(Math.abs(this.bitmap.width * sine) + Math.abs(this.bitmap.height * cosine)) + 1; // Ensure destination to have even size to a better result.
+
+    if (w % 2 !== 0) {
+      w++;
+    }
+
+    if (h % 2 !== 0) {
+      h++;
+    }
+
+    var c = this.cloneQuiet();
+    this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+      this.bitmap.data.writeUInt32BE(this._background, idx);
+    });
+    var max = Math.max(w, h, this.bitmap.width, this.bitmap.height);
+    this.resize(max, max, mode);
+    this.blit(c, this.bitmap.width / 2 - c.bitmap.width / 2, this.bitmap.height / 2 - c.bitmap.height / 2);
+  }
+
+  var bW = this.bitmap.width;
+  var bH = this.bitmap.height;
+  var dstBuffer = Buffer.alloc(this.bitmap.data.length);
+
+  function createTranslationFunction(deltaX, deltaY) {
+    return function (x, y) {
+      return {
+        x: x + deltaX,
+        y: y + deltaY
+      };
+    };
+  }
+
+  var translate2Cartesian = createTranslationFunction(-(bW / 2), -(bH / 2));
+  var translate2Screen = createTranslationFunction(bW / 2 + 0.5, bH / 2 + 0.5);
+
+  for (var y = 1; y <= bH; y++) {
+    for (var x = 1; x <= bW; x++) {
+      var cartesian = translate2Cartesian(x, y);
+      var source = translate2Screen(cosine * cartesian.x - sine * cartesian.y, cosine * cartesian.y + sine * cartesian.x);
+      var dstIdx = bW * (y - 1) + x - 1 << 2;
+
+      if (source.x >= 0 && source.x < bW && source.y >= 0 && source.y < bH) {
+        var srcIdx = (bW * (source.y | 0) + source.x | 0) << 2;
+        var pixelRGBA = this.bitmap.data.readUInt32BE(srcIdx);
+        dstBuffer.writeUInt32BE(pixelRGBA, dstIdx);
+      } else {
+        // reset off-image pixels
+        dstBuffer.writeUInt32BE(this._background, dstIdx);
+      }
+    }
+  }
+
+  this.bitmap.data = dstBuffer;
+
+  if (mode === true || typeof mode === 'string') {
+    // now crop the image to the final size
+    var _x = bW / 2 - w / 2;
+
+    var _y = bH / 2 - h / 2;
+
+    this.crop(_x, _y, w, h);
+  }
+}
+
+var _default = function _default() {
+  return {
+    /**
+     * Rotates the image clockwise by a number of degrees. By default the width and height of the image will be resized appropriately.
+     * @param {number} deg the number of degrees to rotate the image by
+     * @param {string|boolean} mode (optional) resize mode or a boolean, if false then the width and height of the image will not be changed
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp} this for chaining of methods
+     */
+    rotate: function rotate(deg, mode, cb) {
+      // enable overloading
+      if (typeof mode === 'undefined' || mode === null) {
+        // e.g. image.resize(120);
+        // e.g. image.resize(120, null, cb);
+        // e.g. image.resize(120, undefined, cb);
+        mode = true;
+      }
+
+      if (typeof mode === 'function' && typeof cb === 'undefined') {
+        // e.g. image.resize(120, cb);
+        cb = mode;
+        mode = true;
+      }
+
+      if (typeof deg !== 'number') {
+        return _utils.throwError.call(this, 'deg must be a number', cb);
+      }
+
+      if (typeof mode !== 'boolean' && typeof mode !== 'string') {
+        return _utils.throwError.call(this, 'mode must be a boolean or a string', cb);
+      }
+
+      advancedRotate.call(this, deg, mode, cb);
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 8212:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+var _default = function _default() {
+  return {
+    /**
+     * Uniformly scales the image by a factor.
+     * @param {number} f the factor to scale the image by
+     * @param {string} mode (optional) a scaling method (e.g. Jimp.RESIZE_BEZIER)
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp} this for chaining of methods
+     */
+    scale: function scale(f, mode, cb) {
+      if (typeof f !== 'number') {
+        return _utils.throwError.call(this, 'f must be a number', cb);
+      }
+
+      if (f < 0) {
+        return _utils.throwError.call(this, 'f must be a positive number', cb);
+      }
+
+      if (typeof mode === 'function' && typeof cb === 'undefined') {
+        cb = mode;
+        mode = null;
+      }
+
+      var w = this.bitmap.width * f;
+      var h = this.bitmap.height * f;
+      this.resize(w, h, mode);
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    },
+
+    /**
+     * Scale the image to the largest size that fits inside the rectangle that has the given width and height.
+     * @param {number} w the width to resize the image to
+     * @param {number} h the height to resize the image to
+     * @param {string} mode (optional) a scaling method (e.g. Jimp.RESIZE_BEZIER)
+     * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+     * @returns {Jimp} this for chaining of methods
+     */
+    scaleToFit: function scaleToFit(w, h, mode, cb) {
+      if (typeof w !== 'number' || typeof h !== 'number') {
+        return _utils.throwError.call(this, 'w and h must be numbers', cb);
+      }
+
+      if (typeof mode === 'function' && typeof cb === 'undefined') {
+        cb = mode;
+        mode = null;
+      }
+
+      var f = w / h > this.bitmap.width / this.bitmap.height ? h / this.bitmap.height : w / this.bitmap.width;
+      this.scale(f, mode);
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 627:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Creates a circle out of an image.
+ * @param {function(Error, Jimp)} options (optional)
+ * opacity - opacity of the shadow between 0 and 1
+ * size,- of the shadow
+ * blur - how blurry the shadow is
+ * x- x position of shadow
+ * y - y position of shadow
+ * @param {function(Error, Jimp)} cb (optional) a callback for when complete
+ * @returns {Jimp} this for chaining of methods
+ */
+var _default = function _default() {
+  return {
+    shadow: function shadow() {
+      var _this = this;
+
+      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var cb = arguments.length > 1 ? arguments[1] : undefined;
+
+      if (typeof options === 'function') {
+        cb = options;
+        options = {};
+      }
+
+      var _options = options,
+          _options$opacity = _options.opacity,
+          opacity = _options$opacity === void 0 ? 0.7 : _options$opacity,
+          _options$size = _options.size,
+          size = _options$size === void 0 ? 1.1 : _options$size,
+          _options$x = _options.x,
+          x = _options$x === void 0 ? -25 : _options$x,
+          _options$y = _options.y,
+          y = _options$y === void 0 ? 25 : _options$y,
+          _options$blur = _options.blur,
+          blur = _options$blur === void 0 ? 5 : _options$blur; // clone the image
+
+      var orig = this.clone();
+      var shadow = this.clone(); // turn all it's pixels black
+
+      shadow.scan(0, 0, shadow.bitmap.width, shadow.bitmap.height, function (x, y, idx) {
+        shadow.bitmap.data[idx] = 0x00;
+        shadow.bitmap.data[idx + 1] = 0x00;
+        shadow.bitmap.data[idx + 2] = 0x00; // up the opacity a little,
+
+        shadow.bitmap.data[idx + 3] = shadow.constructor.limit255(shadow.bitmap.data[idx + 3] * opacity);
+        _this.bitmap.data[idx] = 0x00;
+        _this.bitmap.data[idx + 1] = 0x00;
+        _this.bitmap.data[idx + 2] = 0x00;
+        _this.bitmap.data[idx + 3] = 0x00;
+      }); // enlarge it. This creates a "shadow".
+
+      shadow.resize(shadow.bitmap.width * size, shadow.bitmap.height * size).blur(blur); // Then blit the "shadow" onto the background and the image on top of that.
+
+      this.composite(shadow, x, y);
+      this.composite(orig, 0, 0);
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 897:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _utils = __nccwpck_require__(7403);
+
+/**
+ * Applies a minimum color threshold to a greyscale image.  Converts image to greyscale by default
+ * @param {number} options object
+ *  max: A number auto limited between 0 - 255
+ *  replace: (optional) A number auto limited between 0 - 255 (default 255)
+ *  autoGreyscale: (optional) A boolean whether to apply greyscale beforehand (default true)
+ * @param {number} cb (optional) a callback for when complete
+ * @return {this} this for chaining of methods
+ */
+var _default = function _default() {
+  return {
+    threshold: function threshold(_ref, cb) {
+      var _this = this;
+
+      var max = _ref.max,
+          _ref$replace = _ref.replace,
+          replace = _ref$replace === void 0 ? 255 : _ref$replace,
+          _ref$autoGreyscale = _ref.autoGreyscale,
+          autoGreyscale = _ref$autoGreyscale === void 0 ? true : _ref$autoGreyscale;
+
+      if (typeof max !== 'number') {
+        return _utils.throwError.call(this, 'max must be a number', cb);
+      }
+
+      if (typeof replace !== 'number') {
+        return _utils.throwError.call(this, 'replace must be a number', cb);
+      }
+
+      if (typeof autoGreyscale !== 'boolean') {
+        return _utils.throwError.call(this, 'autoGreyscale must be a boolean', cb);
+      }
+
+      max = this.constructor.limit255(max);
+      replace = this.constructor.limit255(replace);
+
+      if (autoGreyscale) {
+        this.greyscale();
+      }
+
+      this.scanQuiet(0, 0, this.bitmap.width, this.bitmap.height, function (x, y, idx) {
+        var grey = _this.bitmap.data[idx] < max ? _this.bitmap.data[idx] : replace;
+        _this.bitmap.data[idx] = grey;
+        _this.bitmap.data[idx + 1] = grey;
+        _this.bitmap.data[idx + 2] = grey;
+      });
+
+      if ((0, _utils.isNodePattern)(cb)) {
+        cb.call(this, null, this);
+      }
+
+      return this;
+    }
+  };
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 4976:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var _interopRequireDefault = __nccwpck_require__(3298);
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _toConsumableArray2 = _interopRequireDefault(__nccwpck_require__(9491));
+
+var _timm = __nccwpck_require__(3567);
+
+var _pluginBlit = _interopRequireDefault(__nccwpck_require__(1485));
+
+var _pluginBlur = _interopRequireDefault(__nccwpck_require__(6223));
+
+var _pluginCircle = _interopRequireDefault(__nccwpck_require__(2005));
+
+var _pluginColor = _interopRequireDefault(__nccwpck_require__(5432));
+
+var _pluginContain = _interopRequireDefault(__nccwpck_require__(7125));
+
+var _pluginCover = _interopRequireDefault(__nccwpck_require__(937));
+
+var _pluginCrop = _interopRequireDefault(__nccwpck_require__(1623));
+
+var _pluginDisplace = _interopRequireDefault(__nccwpck_require__(6096));
+
+var _pluginDither = _interopRequireDefault(__nccwpck_require__(5808));
+
+var _pluginFisheye = _interopRequireDefault(__nccwpck_require__(1885));
+
+var _pluginFlip = _interopRequireDefault(__nccwpck_require__(2818));
+
+var _pluginGaussian = _interopRequireDefault(__nccwpck_require__(2135));
+
+var _pluginInvert = _interopRequireDefault(__nccwpck_require__(9534));
+
+var _pluginMask = _interopRequireDefault(__nccwpck_require__(497));
+
+var _pluginNormalize = _interopRequireDefault(__nccwpck_require__(7022));
+
+var _pluginPrint = _interopRequireDefault(__nccwpck_require__(7996));
+
+var _pluginResize = _interopRequireDefault(__nccwpck_require__(5555));
+
+var _pluginRotate = _interopRequireDefault(__nccwpck_require__(6880));
+
+var _pluginScale = _interopRequireDefault(__nccwpck_require__(8212));
+
+var _pluginShadow = _interopRequireDefault(__nccwpck_require__(627));
+
+var _pluginThreshold = _interopRequireDefault(__nccwpck_require__(897));
+
+var plugins = [_pluginBlit["default"], _pluginBlur["default"], _pluginCircle["default"], _pluginColor["default"], _pluginContain["default"], _pluginCover["default"], _pluginCrop["default"], _pluginDisplace["default"], _pluginDither["default"], _pluginFisheye["default"], _pluginFlip["default"], _pluginGaussian["default"], _pluginInvert["default"], _pluginMask["default"], _pluginNormalize["default"], _pluginPrint["default"], _pluginResize["default"], _pluginRotate["default"], _pluginScale["default"], _pluginShadow["default"], _pluginThreshold["default"]];
+
+var _default = function _default(jimpEvChange) {
+  var initializedPlugins = plugins.map(function (pluginModule) {
+    var plugin = pluginModule(jimpEvChange) || {};
+
+    if (!plugin["class"] && !plugin.constants) {
+      // Default to class function
+      plugin = {
+        "class": plugin
+      };
+    }
+
+    return plugin;
+  });
+  return _timm.mergeDeep.apply(void 0, (0, _toConsumableArray2["default"])(initializedPlugins));
+};
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
 
 /***/ }),
 
@@ -9523,549 +12225,6 @@ const request = withDefaults(endpoint.endpoint, {
 
 exports.request = request;
 //# sourceMappingURL=index.js.map
-
-
-/***/ }),
-
-/***/ 7678:
-/***/ ((module, exports) => {
-
-"use strict";
-
-/// <reference lib="es2018"/>
-/// <reference lib="dom"/>
-/// <reference types="node"/>
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const typedArrayTypeNames = [
-    'Int8Array',
-    'Uint8Array',
-    'Uint8ClampedArray',
-    'Int16Array',
-    'Uint16Array',
-    'Int32Array',
-    'Uint32Array',
-    'Float32Array',
-    'Float64Array',
-    'BigInt64Array',
-    'BigUint64Array'
-];
-function isTypedArrayName(name) {
-    return typedArrayTypeNames.includes(name);
-}
-const objectTypeNames = [
-    'Function',
-    'Generator',
-    'AsyncGenerator',
-    'GeneratorFunction',
-    'AsyncGeneratorFunction',
-    'AsyncFunction',
-    'Observable',
-    'Array',
-    'Buffer',
-    'Object',
-    'RegExp',
-    'Date',
-    'Error',
-    'Map',
-    'Set',
-    'WeakMap',
-    'WeakSet',
-    'ArrayBuffer',
-    'SharedArrayBuffer',
-    'DataView',
-    'Promise',
-    'URL',
-    'HTMLElement',
-    ...typedArrayTypeNames
-];
-function isObjectTypeName(name) {
-    return objectTypeNames.includes(name);
-}
-const primitiveTypeNames = [
-    'null',
-    'undefined',
-    'string',
-    'number',
-    'bigint',
-    'boolean',
-    'symbol'
-];
-function isPrimitiveTypeName(name) {
-    return primitiveTypeNames.includes(name);
-}
-// eslint-disable-next-line @typescript-eslint/ban-types
-function isOfType(type) {
-    return (value) => typeof value === type;
-}
-const { toString } = Object.prototype;
-const getObjectType = (value) => {
-    const objectTypeName = toString.call(value).slice(8, -1);
-    if (/HTML\w+Element/.test(objectTypeName) && is.domElement(value)) {
-        return 'HTMLElement';
-    }
-    if (isObjectTypeName(objectTypeName)) {
-        return objectTypeName;
-    }
-    return undefined;
-};
-const isObjectOfType = (type) => (value) => getObjectType(value) === type;
-function is(value) {
-    if (value === null) {
-        return 'null';
-    }
-    switch (typeof value) {
-        case 'undefined':
-            return 'undefined';
-        case 'string':
-            return 'string';
-        case 'number':
-            return 'number';
-        case 'boolean':
-            return 'boolean';
-        case 'function':
-            return 'Function';
-        case 'bigint':
-            return 'bigint';
-        case 'symbol':
-            return 'symbol';
-        default:
-    }
-    if (is.observable(value)) {
-        return 'Observable';
-    }
-    if (is.array(value)) {
-        return 'Array';
-    }
-    if (is.buffer(value)) {
-        return 'Buffer';
-    }
-    const tagType = getObjectType(value);
-    if (tagType) {
-        return tagType;
-    }
-    if (value instanceof String || value instanceof Boolean || value instanceof Number) {
-        throw new TypeError('Please don\'t use object wrappers for primitive types');
-    }
-    return 'Object';
-}
-is.undefined = isOfType('undefined');
-is.string = isOfType('string');
-const isNumberType = isOfType('number');
-is.number = (value) => isNumberType(value) && !is.nan(value);
-is.bigint = isOfType('bigint');
-// eslint-disable-next-line @typescript-eslint/ban-types
-is.function_ = isOfType('function');
-is.null_ = (value) => value === null;
-is.class_ = (value) => is.function_(value) && value.toString().startsWith('class ');
-is.boolean = (value) => value === true || value === false;
-is.symbol = isOfType('symbol');
-is.numericString = (value) => is.string(value) && !is.emptyStringOrWhitespace(value) && !Number.isNaN(Number(value));
-is.array = (value, assertion) => {
-    if (!Array.isArray(value)) {
-        return false;
-    }
-    if (!is.function_(assertion)) {
-        return true;
-    }
-    return value.every(assertion);
-};
-is.buffer = (value) => { var _a, _b, _c, _d; return (_d = (_c = (_b = (_a = value) === null || _a === void 0 ? void 0 : _a.constructor) === null || _b === void 0 ? void 0 : _b.isBuffer) === null || _c === void 0 ? void 0 : _c.call(_b, value)) !== null && _d !== void 0 ? _d : false; };
-is.nullOrUndefined = (value) => is.null_(value) || is.undefined(value);
-is.object = (value) => !is.null_(value) && (typeof value === 'object' || is.function_(value));
-is.iterable = (value) => { var _a; return is.function_((_a = value) === null || _a === void 0 ? void 0 : _a[Symbol.iterator]); };
-is.asyncIterable = (value) => { var _a; return is.function_((_a = value) === null || _a === void 0 ? void 0 : _a[Symbol.asyncIterator]); };
-is.generator = (value) => is.iterable(value) && is.function_(value.next) && is.function_(value.throw);
-is.asyncGenerator = (value) => is.asyncIterable(value) && is.function_(value.next) && is.function_(value.throw);
-is.nativePromise = (value) => isObjectOfType('Promise')(value);
-const hasPromiseAPI = (value) => {
-    var _a, _b;
-    return is.function_((_a = value) === null || _a === void 0 ? void 0 : _a.then) &&
-        is.function_((_b = value) === null || _b === void 0 ? void 0 : _b.catch);
-};
-is.promise = (value) => is.nativePromise(value) || hasPromiseAPI(value);
-is.generatorFunction = isObjectOfType('GeneratorFunction');
-is.asyncGeneratorFunction = (value) => getObjectType(value) === 'AsyncGeneratorFunction';
-is.asyncFunction = (value) => getObjectType(value) === 'AsyncFunction';
-// eslint-disable-next-line no-prototype-builtins, @typescript-eslint/ban-types
-is.boundFunction = (value) => is.function_(value) && !value.hasOwnProperty('prototype');
-is.regExp = isObjectOfType('RegExp');
-is.date = isObjectOfType('Date');
-is.error = isObjectOfType('Error');
-is.map = (value) => isObjectOfType('Map')(value);
-is.set = (value) => isObjectOfType('Set')(value);
-is.weakMap = (value) => isObjectOfType('WeakMap')(value);
-is.weakSet = (value) => isObjectOfType('WeakSet')(value);
-is.int8Array = isObjectOfType('Int8Array');
-is.uint8Array = isObjectOfType('Uint8Array');
-is.uint8ClampedArray = isObjectOfType('Uint8ClampedArray');
-is.int16Array = isObjectOfType('Int16Array');
-is.uint16Array = isObjectOfType('Uint16Array');
-is.int32Array = isObjectOfType('Int32Array');
-is.uint32Array = isObjectOfType('Uint32Array');
-is.float32Array = isObjectOfType('Float32Array');
-is.float64Array = isObjectOfType('Float64Array');
-is.bigInt64Array = isObjectOfType('BigInt64Array');
-is.bigUint64Array = isObjectOfType('BigUint64Array');
-is.arrayBuffer = isObjectOfType('ArrayBuffer');
-is.sharedArrayBuffer = isObjectOfType('SharedArrayBuffer');
-is.dataView = isObjectOfType('DataView');
-is.directInstanceOf = (instance, class_) => Object.getPrototypeOf(instance) === class_.prototype;
-is.urlInstance = (value) => isObjectOfType('URL')(value);
-is.urlString = (value) => {
-    if (!is.string(value)) {
-        return false;
-    }
-    try {
-        new URL(value); // eslint-disable-line no-new
-        return true;
-    }
-    catch (_a) {
-        return false;
-    }
-};
-// TODO: Use the `not` operator with a type guard here when it's available.
-// Example: `is.truthy = (value: unknown): value is (not false | not 0 | not '' | not undefined | not null) => Boolean(value);`
-is.truthy = (value) => Boolean(value);
-// Example: `is.falsy = (value: unknown): value is (not true | 0 | '' | undefined | null) => Boolean(value);`
-is.falsy = (value) => !value;
-is.nan = (value) => Number.isNaN(value);
-is.primitive = (value) => is.null_(value) || isPrimitiveTypeName(typeof value);
-is.integer = (value) => Number.isInteger(value);
-is.safeInteger = (value) => Number.isSafeInteger(value);
-is.plainObject = (value) => {
-    // From: https://github.com/sindresorhus/is-plain-obj/blob/master/index.js
-    if (toString.call(value) !== '[object Object]') {
-        return false;
-    }
-    const prototype = Object.getPrototypeOf(value);
-    return prototype === null || prototype === Object.getPrototypeOf({});
-};
-is.typedArray = (value) => isTypedArrayName(getObjectType(value));
-const isValidLength = (value) => is.safeInteger(value) && value >= 0;
-is.arrayLike = (value) => !is.nullOrUndefined(value) && !is.function_(value) && isValidLength(value.length);
-is.inRange = (value, range) => {
-    if (is.number(range)) {
-        return value >= Math.min(0, range) && value <= Math.max(range, 0);
-    }
-    if (is.array(range) && range.length === 2) {
-        return value >= Math.min(...range) && value <= Math.max(...range);
-    }
-    throw new TypeError(`Invalid range: ${JSON.stringify(range)}`);
-};
-const NODE_TYPE_ELEMENT = 1;
-const DOM_PROPERTIES_TO_CHECK = [
-    'innerHTML',
-    'ownerDocument',
-    'style',
-    'attributes',
-    'nodeValue'
-];
-is.domElement = (value) => {
-    return is.object(value) &&
-        value.nodeType === NODE_TYPE_ELEMENT &&
-        is.string(value.nodeName) &&
-        !is.plainObject(value) &&
-        DOM_PROPERTIES_TO_CHECK.every(property => property in value);
-};
-is.observable = (value) => {
-    var _a, _b, _c, _d;
-    if (!value) {
-        return false;
-    }
-    // eslint-disable-next-line no-use-extend-native/no-use-extend-native
-    if (value === ((_b = (_a = value)[Symbol.observable]) === null || _b === void 0 ? void 0 : _b.call(_a))) {
-        return true;
-    }
-    if (value === ((_d = (_c = value)['@@observable']) === null || _d === void 0 ? void 0 : _d.call(_c))) {
-        return true;
-    }
-    return false;
-};
-is.nodeStream = (value) => is.object(value) && is.function_(value.pipe) && !is.observable(value);
-is.infinite = (value) => value === Infinity || value === -Infinity;
-const isAbsoluteMod2 = (remainder) => (value) => is.integer(value) && Math.abs(value % 2) === remainder;
-is.evenInteger = isAbsoluteMod2(0);
-is.oddInteger = isAbsoluteMod2(1);
-is.emptyArray = (value) => is.array(value) && value.length === 0;
-is.nonEmptyArray = (value) => is.array(value) && value.length > 0;
-is.emptyString = (value) => is.string(value) && value.length === 0;
-// TODO: Use `not ''` when the `not` operator is available.
-is.nonEmptyString = (value) => is.string(value) && value.length > 0;
-const isWhiteSpaceString = (value) => is.string(value) && !/\S/.test(value);
-is.emptyStringOrWhitespace = (value) => is.emptyString(value) || isWhiteSpaceString(value);
-is.emptyObject = (value) => is.object(value) && !is.map(value) && !is.set(value) && Object.keys(value).length === 0;
-// TODO: Use `not` operator here to remove `Map` and `Set` from type guard:
-// - https://github.com/Microsoft/TypeScript/pull/29317
-is.nonEmptyObject = (value) => is.object(value) && !is.map(value) && !is.set(value) && Object.keys(value).length > 0;
-is.emptySet = (value) => is.set(value) && value.size === 0;
-is.nonEmptySet = (value) => is.set(value) && value.size > 0;
-is.emptyMap = (value) => is.map(value) && value.size === 0;
-is.nonEmptyMap = (value) => is.map(value) && value.size > 0;
-const predicateOnArray = (method, predicate, values) => {
-    if (!is.function_(predicate)) {
-        throw new TypeError(`Invalid predicate: ${JSON.stringify(predicate)}`);
-    }
-    if (values.length === 0) {
-        throw new TypeError('Invalid number of values');
-    }
-    return method.call(values, predicate);
-};
-is.any = (predicate, ...values) => {
-    const predicates = is.array(predicate) ? predicate : [predicate];
-    return predicates.some(singlePredicate => predicateOnArray(Array.prototype.some, singlePredicate, values));
-};
-is.all = (predicate, ...values) => predicateOnArray(Array.prototype.every, predicate, values);
-const assertType = (condition, description, value) => {
-    if (!condition) {
-        throw new TypeError(`Expected value which is \`${description}\`, received value of type \`${is(value)}\`.`);
-    }
-};
-exports.assert = {
-    // Unknowns.
-    undefined: (value) => assertType(is.undefined(value), 'undefined', value),
-    string: (value) => assertType(is.string(value), 'string', value),
-    number: (value) => assertType(is.number(value), 'number', value),
-    bigint: (value) => assertType(is.bigint(value), 'bigint', value),
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    function_: (value) => assertType(is.function_(value), 'Function', value),
-    null_: (value) => assertType(is.null_(value), 'null', value),
-    class_: (value) => assertType(is.class_(value), "Class" /* class_ */, value),
-    boolean: (value) => assertType(is.boolean(value), 'boolean', value),
-    symbol: (value) => assertType(is.symbol(value), 'symbol', value),
-    numericString: (value) => assertType(is.numericString(value), "string with a number" /* numericString */, value),
-    array: (value, assertion) => {
-        const assert = assertType;
-        assert(is.array(value), 'Array', value);
-        if (assertion) {
-            value.forEach(assertion);
-        }
-    },
-    buffer: (value) => assertType(is.buffer(value), 'Buffer', value),
-    nullOrUndefined: (value) => assertType(is.nullOrUndefined(value), "null or undefined" /* nullOrUndefined */, value),
-    object: (value) => assertType(is.object(value), 'Object', value),
-    iterable: (value) => assertType(is.iterable(value), "Iterable" /* iterable */, value),
-    asyncIterable: (value) => assertType(is.asyncIterable(value), "AsyncIterable" /* asyncIterable */, value),
-    generator: (value) => assertType(is.generator(value), 'Generator', value),
-    asyncGenerator: (value) => assertType(is.asyncGenerator(value), 'AsyncGenerator', value),
-    nativePromise: (value) => assertType(is.nativePromise(value), "native Promise" /* nativePromise */, value),
-    promise: (value) => assertType(is.promise(value), 'Promise', value),
-    generatorFunction: (value) => assertType(is.generatorFunction(value), 'GeneratorFunction', value),
-    asyncGeneratorFunction: (value) => assertType(is.asyncGeneratorFunction(value), 'AsyncGeneratorFunction', value),
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    asyncFunction: (value) => assertType(is.asyncFunction(value), 'AsyncFunction', value),
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    boundFunction: (value) => assertType(is.boundFunction(value), 'Function', value),
-    regExp: (value) => assertType(is.regExp(value), 'RegExp', value),
-    date: (value) => assertType(is.date(value), 'Date', value),
-    error: (value) => assertType(is.error(value), 'Error', value),
-    map: (value) => assertType(is.map(value), 'Map', value),
-    set: (value) => assertType(is.set(value), 'Set', value),
-    weakMap: (value) => assertType(is.weakMap(value), 'WeakMap', value),
-    weakSet: (value) => assertType(is.weakSet(value), 'WeakSet', value),
-    int8Array: (value) => assertType(is.int8Array(value), 'Int8Array', value),
-    uint8Array: (value) => assertType(is.uint8Array(value), 'Uint8Array', value),
-    uint8ClampedArray: (value) => assertType(is.uint8ClampedArray(value), 'Uint8ClampedArray', value),
-    int16Array: (value) => assertType(is.int16Array(value), 'Int16Array', value),
-    uint16Array: (value) => assertType(is.uint16Array(value), 'Uint16Array', value),
-    int32Array: (value) => assertType(is.int32Array(value), 'Int32Array', value),
-    uint32Array: (value) => assertType(is.uint32Array(value), 'Uint32Array', value),
-    float32Array: (value) => assertType(is.float32Array(value), 'Float32Array', value),
-    float64Array: (value) => assertType(is.float64Array(value), 'Float64Array', value),
-    bigInt64Array: (value) => assertType(is.bigInt64Array(value), 'BigInt64Array', value),
-    bigUint64Array: (value) => assertType(is.bigUint64Array(value), 'BigUint64Array', value),
-    arrayBuffer: (value) => assertType(is.arrayBuffer(value), 'ArrayBuffer', value),
-    sharedArrayBuffer: (value) => assertType(is.sharedArrayBuffer(value), 'SharedArrayBuffer', value),
-    dataView: (value) => assertType(is.dataView(value), 'DataView', value),
-    urlInstance: (value) => assertType(is.urlInstance(value), 'URL', value),
-    urlString: (value) => assertType(is.urlString(value), "string with a URL" /* urlString */, value),
-    truthy: (value) => assertType(is.truthy(value), "truthy" /* truthy */, value),
-    falsy: (value) => assertType(is.falsy(value), "falsy" /* falsy */, value),
-    nan: (value) => assertType(is.nan(value), "NaN" /* nan */, value),
-    primitive: (value) => assertType(is.primitive(value), "primitive" /* primitive */, value),
-    integer: (value) => assertType(is.integer(value), "integer" /* integer */, value),
-    safeInteger: (value) => assertType(is.safeInteger(value), "integer" /* safeInteger */, value),
-    plainObject: (value) => assertType(is.plainObject(value), "plain object" /* plainObject */, value),
-    typedArray: (value) => assertType(is.typedArray(value), "TypedArray" /* typedArray */, value),
-    arrayLike: (value) => assertType(is.arrayLike(value), "array-like" /* arrayLike */, value),
-    domElement: (value) => assertType(is.domElement(value), "HTMLElement" /* domElement */, value),
-    observable: (value) => assertType(is.observable(value), 'Observable', value),
-    nodeStream: (value) => assertType(is.nodeStream(value), "Node.js Stream" /* nodeStream */, value),
-    infinite: (value) => assertType(is.infinite(value), "infinite number" /* infinite */, value),
-    emptyArray: (value) => assertType(is.emptyArray(value), "empty array" /* emptyArray */, value),
-    nonEmptyArray: (value) => assertType(is.nonEmptyArray(value), "non-empty array" /* nonEmptyArray */, value),
-    emptyString: (value) => assertType(is.emptyString(value), "empty string" /* emptyString */, value),
-    nonEmptyString: (value) => assertType(is.nonEmptyString(value), "non-empty string" /* nonEmptyString */, value),
-    emptyStringOrWhitespace: (value) => assertType(is.emptyStringOrWhitespace(value), "empty string or whitespace" /* emptyStringOrWhitespace */, value),
-    emptyObject: (value) => assertType(is.emptyObject(value), "empty object" /* emptyObject */, value),
-    nonEmptyObject: (value) => assertType(is.nonEmptyObject(value), "non-empty object" /* nonEmptyObject */, value),
-    emptySet: (value) => assertType(is.emptySet(value), "empty set" /* emptySet */, value),
-    nonEmptySet: (value) => assertType(is.nonEmptySet(value), "non-empty set" /* nonEmptySet */, value),
-    emptyMap: (value) => assertType(is.emptyMap(value), "empty map" /* emptyMap */, value),
-    nonEmptyMap: (value) => assertType(is.nonEmptyMap(value), "non-empty map" /* nonEmptyMap */, value),
-    // Numbers.
-    evenInteger: (value) => assertType(is.evenInteger(value), "even integer" /* evenInteger */, value),
-    oddInteger: (value) => assertType(is.oddInteger(value), "odd integer" /* oddInteger */, value),
-    // Two arguments.
-    directInstanceOf: (instance, class_) => assertType(is.directInstanceOf(instance, class_), "T" /* directInstanceOf */, instance),
-    inRange: (value, range) => assertType(is.inRange(value, range), "in range" /* inRange */, value),
-    // Variadic functions.
-    any: (predicate, ...values) => assertType(is.any(predicate, ...values), "predicate returns truthy for any value" /* any */, values),
-    all: (predicate, ...values) => assertType(is.all(predicate, ...values), "predicate returns truthy for all values" /* all */, values)
-};
-// Some few keywords are reserved, but we'll populate them for Node.js users
-// See https://github.com/Microsoft/TypeScript/issues/2536
-Object.defineProperties(is, {
-    class: {
-        value: is.class_
-    },
-    function: {
-        value: is.function_
-    },
-    null: {
-        value: is.null_
-    }
-});
-Object.defineProperties(exports.assert, {
-    class: {
-        value: exports.assert.class_
-    },
-    function: {
-        value: exports.assert.function_
-    },
-    null: {
-        value: exports.assert.null_
-    }
-});
-exports.default = is;
-// For CommonJS default export support
-module.exports = is;
-module.exports.default = is;
-module.exports.assert = exports.assert;
-
-
-/***/ }),
-
-/***/ 8097:
-/***/ ((module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const defer_to_connect_1 = __nccwpck_require__(6214);
-const nodejsMajorVersion = Number(process.versions.node.split('.')[0]);
-const timer = (request) => {
-    const timings = {
-        start: Date.now(),
-        socket: undefined,
-        lookup: undefined,
-        connect: undefined,
-        secureConnect: undefined,
-        upload: undefined,
-        response: undefined,
-        end: undefined,
-        error: undefined,
-        abort: undefined,
-        phases: {
-            wait: undefined,
-            dns: undefined,
-            tcp: undefined,
-            tls: undefined,
-            request: undefined,
-            firstByte: undefined,
-            download: undefined,
-            total: undefined
-        }
-    };
-    request.timings = timings;
-    const handleError = (origin) => {
-        const emit = origin.emit.bind(origin);
-        origin.emit = (event, ...args) => {
-            // Catches the `error` event
-            if (event === 'error') {
-                timings.error = Date.now();
-                timings.phases.total = timings.error - timings.start;
-                origin.emit = emit;
-            }
-            // Saves the original behavior
-            return emit(event, ...args);
-        };
-    };
-    handleError(request);
-    request.prependOnceListener('abort', () => {
-        timings.abort = Date.now();
-        // Let the `end` response event be responsible for setting the total phase,
-        // unless the Node.js major version is >= 13.
-        if (!timings.response || nodejsMajorVersion >= 13) {
-            timings.phases.total = Date.now() - timings.start;
-        }
-    });
-    const onSocket = (socket) => {
-        timings.socket = Date.now();
-        timings.phases.wait = timings.socket - timings.start;
-        const lookupListener = () => {
-            timings.lookup = Date.now();
-            timings.phases.dns = timings.lookup - timings.socket;
-        };
-        socket.prependOnceListener('lookup', lookupListener);
-        defer_to_connect_1.default(socket, {
-            connect: () => {
-                timings.connect = Date.now();
-                if (timings.lookup === undefined) {
-                    socket.removeListener('lookup', lookupListener);
-                    timings.lookup = timings.connect;
-                    timings.phases.dns = timings.lookup - timings.socket;
-                }
-                timings.phases.tcp = timings.connect - timings.lookup;
-                // This callback is called before flushing any data,
-                // so we don't need to set `timings.phases.request` here.
-            },
-            secureConnect: () => {
-                timings.secureConnect = Date.now();
-                timings.phases.tls = timings.secureConnect - timings.connect;
-            }
-        });
-    };
-    if (request.socket) {
-        onSocket(request.socket);
-    }
-    else {
-        request.prependOnceListener('socket', onSocket);
-    }
-    const onUpload = () => {
-        var _a;
-        timings.upload = Date.now();
-        timings.phases.request = timings.upload - (_a = timings.secureConnect, (_a !== null && _a !== void 0 ? _a : timings.connect));
-    };
-    const writableFinished = () => {
-        if (typeof request.writableFinished === 'boolean') {
-            return request.writableFinished;
-        }
-        // Node.js doesn't have `request.writableFinished` property
-        return request.finished && request.outputSize === 0 && (!request.socket || request.socket.writableLength === 0);
-    };
-    if (writableFinished()) {
-        onUpload();
-    }
-    else {
-        request.prependOnceListener('finish', onUpload);
-    }
-    request.prependOnceListener('response', (response) => {
-        timings.response = Date.now();
-        timings.phases.firstByte = timings.response - timings.upload;
-        response.timings = timings;
-        handleError(response);
-        response.prependOnceListener('end', () => {
-            timings.end = Date.now();
-            timings.phases.download = timings.end - timings.response;
-            timings.phases.total = timings.end - timings.start;
-        });
-    });
-    return timings;
-};
-exports.default = timer;
-// For CommonJS default export support
-module.exports = timer;
-module.exports.default = timer;
 
 
 /***/ }),
@@ -14639,2323 +16798,23 @@ module.exports = function(imgData, quality) {
 
 /***/ }),
 
-/***/ 2286:
+/***/ 4664:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
-
-const {
-	V4MAPPED,
-	ADDRCONFIG,
-	ALL,
-	promises: {
-		Resolver: AsyncResolver
-	},
-	lookup: dnsLookup
-} = __nccwpck_require__(881);
-const {promisify} = __nccwpck_require__(1669);
-const os = __nccwpck_require__(2087);
-
-const kCacheableLookupCreateConnection = Symbol('cacheableLookupCreateConnection');
-const kCacheableLookupInstance = Symbol('cacheableLookupInstance');
-const kExpires = Symbol('expires');
-
-const supportsALL = typeof ALL === 'number';
-
-const verifyAgent = agent => {
-	if (!(agent && typeof agent.createConnection === 'function')) {
-		throw new Error('Expected an Agent instance as the first argument');
-	}
-};
-
-const map4to6 = entries => {
-	for (const entry of entries) {
-		if (entry.family === 6) {
-			continue;
-		}
-
-		entry.address = `::ffff:${entry.address}`;
-		entry.family = 6;
-	}
-};
-
-const getIfaceInfo = () => {
-	let has4 = false;
-	let has6 = false;
-
-	for (const device of Object.values(os.networkInterfaces())) {
-		for (const iface of device) {
-			if (iface.internal) {
-				continue;
-			}
-
-			if (iface.family === 'IPv6') {
-				has6 = true;
-			} else {
-				has4 = true;
-			}
-
-			if (has4 && has6) {
-				return {has4, has6};
-			}
-		}
-	}
-
-	return {has4, has6};
-};
-
-const isIterable = map => {
-	return Symbol.iterator in map;
-};
-
-const ttl = {ttl: true};
-const all = {all: true};
-
-class CacheableLookup {
-	constructor({
-		cache = new Map(),
-		maxTtl = Infinity,
-		fallbackDuration = 3600,
-		errorTtl = 0.15,
-		resolver = new AsyncResolver(),
-		lookup = dnsLookup
-	} = {}) {
-		this.maxTtl = maxTtl;
-		this.errorTtl = errorTtl;
-
-		this._cache = cache;
-		this._resolver = resolver;
-		this._dnsLookup = promisify(lookup);
-
-		if (this._resolver instanceof AsyncResolver) {
-			this._resolve4 = this._resolver.resolve4.bind(this._resolver);
-			this._resolve6 = this._resolver.resolve6.bind(this._resolver);
-		} else {
-			this._resolve4 = promisify(this._resolver.resolve4.bind(this._resolver));
-			this._resolve6 = promisify(this._resolver.resolve6.bind(this._resolver));
-		}
-
-		this._iface = getIfaceInfo();
-
-		this._pending = {};
-		this._nextRemovalTime = false;
-		this._hostnamesToFallback = new Set();
-
-		if (fallbackDuration < 1) {
-			this._fallback = false;
-		} else {
-			this._fallback = true;
-
-			const interval = setInterval(() => {
-				this._hostnamesToFallback.clear();
-			}, fallbackDuration * 1000);
-
-			/* istanbul ignore next: There is no `interval.unref()` when running inside an Electron renderer */
-			if (interval.unref) {
-				interval.unref();
-			}
-		}
-
-		this.lookup = this.lookup.bind(this);
-		this.lookupAsync = this.lookupAsync.bind(this);
-	}
-
-	set servers(servers) {
-		this.clear();
-
-		this._resolver.setServers(servers);
-	}
-
-	get servers() {
-		return this._resolver.getServers();
-	}
-
-	lookup(hostname, options, callback) {
-		if (typeof options === 'function') {
-			callback = options;
-			options = {};
-		} else if (typeof options === 'number') {
-			options = {
-				family: options
-			};
-		}
-
-		if (!callback) {
-			throw new Error('Callback must be a function.');
-		}
-
-		// eslint-disable-next-line promise/prefer-await-to-then
-		this.lookupAsync(hostname, options).then(result => {
-			if (options.all) {
-				callback(null, result);
-			} else {
-				callback(null, result.address, result.family, result.expires, result.ttl);
-			}
-		}, callback);
-	}
-
-	async lookupAsync(hostname, options = {}) {
-		if (typeof options === 'number') {
-			options = {
-				family: options
-			};
-		}
-
-		let cached = await this.query(hostname);
-
-		if (options.family === 6) {
-			const filtered = cached.filter(entry => entry.family === 6);
-
-			if (options.hints & V4MAPPED) {
-				if ((supportsALL && options.hints & ALL) || filtered.length === 0) {
-					map4to6(cached);
-				} else {
-					cached = filtered;
-				}
-			} else {
-				cached = filtered;
-			}
-		} else if (options.family === 4) {
-			cached = cached.filter(entry => entry.family === 4);
-		}
-
-		if (options.hints & ADDRCONFIG) {
-			const {_iface} = this;
-			cached = cached.filter(entry => entry.family === 6 ? _iface.has6 : _iface.has4);
-		}
-
-		if (cached.length === 0) {
-			const error = new Error(`cacheableLookup ENOTFOUND ${hostname}`);
-			error.code = 'ENOTFOUND';
-			error.hostname = hostname;
-
-			throw error;
-		}
-
-		if (options.all) {
-			return cached;
-		}
-
-		return cached[0];
-	}
-
-	async query(hostname) {
-		let cached = await this._cache.get(hostname);
-
-		if (!cached) {
-			const pending = this._pending[hostname];
-
-			if (pending) {
-				cached = await pending;
-			} else {
-				const newPromise = this.queryAndCache(hostname);
-				this._pending[hostname] = newPromise;
-
-				try {
-					cached = await newPromise;
-				} finally {
-					delete this._pending[hostname];
-				}
-			}
-		}
-
-		cached = cached.map(entry => {
-			return {...entry};
-		});
-
-		return cached;
-	}
-
-	async _resolve(hostname) {
-		const wrap = async promise => {
-			try {
-				return await promise;
-			} catch (error) {
-				if (error.code === 'ENODATA' || error.code === 'ENOTFOUND') {
-					return [];
-				}
-
-				throw error;
-			}
-		};
-
-		// ANY is unsafe as it doesn't trigger new queries in the underlying server.
-		const [A, AAAA] = await Promise.all([
-			this._resolve4(hostname, ttl),
-			this._resolve6(hostname, ttl)
-		].map(promise => wrap(promise)));
-
-		let aTtl = 0;
-		let aaaaTtl = 0;
-		let cacheTtl = 0;
-
-		const now = Date.now();
-
-		for (const entry of A) {
-			entry.family = 4;
-			entry.expires = now + (entry.ttl * 1000);
-
-			aTtl = Math.max(aTtl, entry.ttl);
-		}
-
-		for (const entry of AAAA) {
-			entry.family = 6;
-			entry.expires = now + (entry.ttl * 1000);
-
-			aaaaTtl = Math.max(aaaaTtl, entry.ttl);
-		}
-
-		if (A.length > 0) {
-			if (AAAA.length > 0) {
-				cacheTtl = Math.min(aTtl, aaaaTtl);
-			} else {
-				cacheTtl = aTtl;
-			}
-		} else {
-			cacheTtl = aaaaTtl;
-		}
-
-		return {
-			entries: [
-				...A,
-				...AAAA
-			],
-			cacheTtl
-		};
-	}
-
-	async _lookup(hostname) {
-		try {
-			const entries = await this._dnsLookup(hostname, {
-				all: true
-			});
-
-			return {
-				entries,
-				cacheTtl: 0
-			};
-		} catch (_) {
-			return {
-				entries: [],
-				cacheTtl: 0
-			};
-		}
-	}
-
-	async _set(hostname, data, cacheTtl) {
-		if (this.maxTtl > 0 && cacheTtl > 0) {
-			cacheTtl = Math.min(cacheTtl, this.maxTtl) * 1000;
-			data[kExpires] = Date.now() + cacheTtl;
-
-			try {
-				await this._cache.set(hostname, data, cacheTtl);
-			} catch (error) {
-				this.lookupAsync = async () => {
-					const cacheError = new Error('Cache Error. Please recreate the CacheableLookup instance.');
-					cacheError.cause = error;
-
-					throw cacheError;
-				};
-			}
-
-			if (isIterable(this._cache)) {
-				this._tick(cacheTtl);
-			}
-		}
-	}
-
-	async queryAndCache(hostname) {
-		if (this._hostnamesToFallback.has(hostname)) {
-			return this._dnsLookup(hostname, all);
-		}
-
-		let query = await this._resolve(hostname);
-
-		if (query.entries.length === 0 && this._fallback) {
-			query = await this._lookup(hostname);
-
-			if (query.entries.length !== 0) {
-				// Use `dns.lookup(...)` for that particular hostname
-				this._hostnamesToFallback.add(hostname);
-			}
-		}
-
-		const cacheTtl = query.entries.length === 0 ? this.errorTtl : query.cacheTtl;
-		await this._set(hostname, query.entries, cacheTtl);
-
-		return query.entries;
-	}
-
-	_tick(ms) {
-		const nextRemovalTime = this._nextRemovalTime;
-
-		if (!nextRemovalTime || ms < nextRemovalTime) {
-			clearTimeout(this._removalTimeout);
-
-			this._nextRemovalTime = ms;
-
-			this._removalTimeout = setTimeout(() => {
-				this._nextRemovalTime = false;
-
-				let nextExpiry = Infinity;
-
-				const now = Date.now();
-
-				for (const [hostname, entries] of this._cache) {
-					const expires = entries[kExpires];
-
-					if (now >= expires) {
-						this._cache.delete(hostname);
-					} else if (expires < nextExpiry) {
-						nextExpiry = expires;
-					}
-				}
-
-				if (nextExpiry !== Infinity) {
-					this._tick(nextExpiry - now);
-				}
-			}, ms);
-
-			/* istanbul ignore next: There is no `timeout.unref()` when running inside an Electron renderer */
-			if (this._removalTimeout.unref) {
-				this._removalTimeout.unref();
-			}
-		}
-	}
-
-	install(agent) {
-		verifyAgent(agent);
-
-		if (kCacheableLookupCreateConnection in agent) {
-			throw new Error('CacheableLookup has been already installed');
-		}
-
-		agent[kCacheableLookupCreateConnection] = agent.createConnection;
-		agent[kCacheableLookupInstance] = this;
-
-		agent.createConnection = (options, callback) => {
-			if (!('lookup' in options)) {
-				options.lookup = this.lookup;
-			}
-
-			return agent[kCacheableLookupCreateConnection](options, callback);
-		};
-	}
-
-	uninstall(agent) {
-		verifyAgent(agent);
-
-		if (agent[kCacheableLookupCreateConnection]) {
-			if (agent[kCacheableLookupInstance] !== this) {
-				throw new Error('The agent is not owned by this CacheableLookup instance');
-			}
-
-			agent.createConnection = agent[kCacheableLookupCreateConnection];
-
-			delete agent[kCacheableLookupCreateConnection];
-			delete agent[kCacheableLookupInstance];
-		}
-	}
-
-	updateInterfaceInfo() {
-		const {_iface} = this;
-
-		this._iface = getIfaceInfo();
-
-		if ((_iface.has4 && !this._iface.has4) || (_iface.has6 && !this._iface.has6)) {
-			this._cache.clear();
-		}
-	}
-
-	clear(hostname) {
-		if (hostname) {
-			this._cache.delete(hostname);
-			return;
-		}
-
-		this._cache.clear();
-	}
-}
-
-module.exports = CacheableLookup;
-module.exports.default = CacheableLookup;
-
-
-/***/ }),
-
-/***/ 4340:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const {PassThrough: PassThroughStream} = __nccwpck_require__(2413);
-
-module.exports = options => {
-	options = {...options};
-
-	const {array} = options;
-	let {encoding} = options;
-	const isBuffer = encoding === 'buffer';
-	let objectMode = false;
-
-	if (array) {
-		objectMode = !(encoding || isBuffer);
-	} else {
-		encoding = encoding || 'utf8';
-	}
-
-	if (isBuffer) {
-		encoding = null;
-	}
-
-	const stream = new PassThroughStream({objectMode});
-
-	if (encoding) {
-		stream.setEncoding(encoding);
-	}
-
-	let length = 0;
-	const chunks = [];
-
-	stream.on('data', chunk => {
-		chunks.push(chunk);
-
-		if (objectMode) {
-			length = chunks.length;
-		} else {
-			length += chunk.length;
-		}
-	});
-
-	stream.getBufferedValue = () => {
-		if (array) {
-			return chunks;
-		}
-
-		return isBuffer ? Buffer.concat(chunks, length) : chunks.join('');
-	};
-
-	stream.getBufferedLength = () => length;
-
-	return stream;
-};
-
-
-/***/ }),
-
-/***/ 7040:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const {constants: BufferConstants} = __nccwpck_require__(4293);
-const pump = __nccwpck_require__(8341);
-const bufferStream = __nccwpck_require__(4340);
-
-class MaxBufferError extends Error {
-	constructor() {
-		super('maxBuffer exceeded');
-		this.name = 'MaxBufferError';
-	}
-}
-
-async function getStream(inputStream, options) {
-	if (!inputStream) {
-		return Promise.reject(new Error('Expected a stream'));
-	}
-
-	options = {
-		maxBuffer: Infinity,
-		...options
-	};
-
-	const {maxBuffer} = options;
-
-	let stream;
-	await new Promise((resolve, reject) => {
-		const rejectPromise = error => {
-			// Don't retrieve an oversized buffer.
-			if (error && stream.getBufferedLength() <= BufferConstants.MAX_LENGTH) {
-				error.bufferedData = stream.getBufferedValue();
-			}
-
-			reject(error);
-		};
-
-		stream = pump(inputStream, bufferStream(options), error => {
-			if (error) {
-				rejectPromise(error);
-				return;
-			}
-
-			resolve();
-		});
-
-		stream.on('data', () => {
-			if (stream.getBufferedLength() > maxBuffer) {
-				rejectPromise(new MaxBufferError());
-			}
-		});
-	});
-
-	return stream.getBufferedValue();
-}
-
-module.exports = getStream;
-// TODO: Remove this for the next major release
-module.exports.default = getStream;
-module.exports.buffer = (stream, options) => getStream(stream, {...options, encoding: 'buffer'});
-module.exports.array = (stream, options) => getStream(stream, {...options, array: true});
-module.exports.MaxBufferError = MaxBufferError;
-
-
-/***/ }),
-
-/***/ 8116:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const EventEmitter = __nccwpck_require__(8614);
-const urlLib = __nccwpck_require__(8835);
-const normalizeUrl = __nccwpck_require__(7952);
-const getStream = __nccwpck_require__(7040);
-const CachePolicy = __nccwpck_require__(1002);
-const Response = __nccwpck_require__(9004);
-const lowercaseKeys = __nccwpck_require__(9662);
-const cloneResponse = __nccwpck_require__(1312);
-const Keyv = __nccwpck_require__(1531);
-
-class CacheableRequest {
-	constructor(request, cacheAdapter) {
-		if (typeof request !== 'function') {
-			throw new TypeError('Parameter `request` must be a function');
-		}
-
-		this.cache = new Keyv({
-			uri: typeof cacheAdapter === 'string' && cacheAdapter,
-			store: typeof cacheAdapter !== 'string' && cacheAdapter,
-			namespace: 'cacheable-request'
-		});
-
-		return this.createCacheableRequest(request);
-	}
-
-	createCacheableRequest(request) {
-		return (opts, cb) => {
-			let url;
-			if (typeof opts === 'string') {
-				url = normalizeUrlObject(urlLib.parse(opts));
-				opts = {};
-			} else if (opts instanceof urlLib.URL) {
-				url = normalizeUrlObject(urlLib.parse(opts.toString()));
-				opts = {};
-			} else {
-				const [pathname, ...searchParts] = (opts.path || '').split('?');
-				const search = searchParts.length > 0 ?
-					`?${searchParts.join('?')}` :
-					'';
-				url = normalizeUrlObject({ ...opts, pathname, search });
-			}
-
-			opts = {
-				headers: {},
-				method: 'GET',
-				cache: true,
-				strictTtl: false,
-				automaticFailover: false,
-				...opts,
-				...urlObjectToRequestOptions(url)
-			};
-			opts.headers = lowercaseKeys(opts.headers);
-
-			const ee = new EventEmitter();
-			const normalizedUrlString = normalizeUrl(
-				urlLib.format(url),
-				{
-					stripWWW: false,
-					removeTrailingSlash: false,
-					stripAuthentication: false
-				}
-			);
-			const key = `${opts.method}:${normalizedUrlString}`;
-			let revalidate = false;
-			let madeRequest = false;
-
-			const makeRequest = opts => {
-				madeRequest = true;
-				let requestErrored = false;
-				let requestErrorCallback;
-
-				const requestErrorPromise = new Promise(resolve => {
-					requestErrorCallback = () => {
-						if (!requestErrored) {
-							requestErrored = true;
-							resolve();
-						}
-					};
-				});
-
-				const handler = response => {
-					if (revalidate && !opts.forceRefresh) {
-						response.status = response.statusCode;
-						const revalidatedPolicy = CachePolicy.fromObject(revalidate.cachePolicy).revalidatedPolicy(opts, response);
-						if (!revalidatedPolicy.modified) {
-							const headers = revalidatedPolicy.policy.responseHeaders();
-							response = new Response(revalidate.statusCode, headers, revalidate.body, revalidate.url);
-							response.cachePolicy = revalidatedPolicy.policy;
-							response.fromCache = true;
-						}
-					}
-
-					if (!response.fromCache) {
-						response.cachePolicy = new CachePolicy(opts, response, opts);
-						response.fromCache = false;
-					}
-
-					let clonedResponse;
-					if (opts.cache && response.cachePolicy.storable()) {
-						clonedResponse = cloneResponse(response);
-
-						(async () => {
-							try {
-								const bodyPromise = getStream.buffer(response);
-
-								await Promise.race([
-									requestErrorPromise,
-									new Promise(resolve => response.once('end', resolve))
-								]);
-
-								if (requestErrored) {
-									return;
-								}
-
-								const body = await bodyPromise;
-
-								const value = {
-									cachePolicy: response.cachePolicy.toObject(),
-									url: response.url,
-									statusCode: response.fromCache ? revalidate.statusCode : response.statusCode,
-									body
-								};
-
-								let ttl = opts.strictTtl ? response.cachePolicy.timeToLive() : undefined;
-								if (opts.maxTtl) {
-									ttl = ttl ? Math.min(ttl, opts.maxTtl) : opts.maxTtl;
-								}
-
-								await this.cache.set(key, value, ttl);
-							} catch (error) {
-								ee.emit('error', new CacheableRequest.CacheError(error));
-							}
-						})();
-					} else if (opts.cache && revalidate) {
-						(async () => {
-							try {
-								await this.cache.delete(key);
-							} catch (error) {
-								ee.emit('error', new CacheableRequest.CacheError(error));
-							}
-						})();
-					}
-
-					ee.emit('response', clonedResponse || response);
-					if (typeof cb === 'function') {
-						cb(clonedResponse || response);
-					}
-				};
-
-				try {
-					const req = request(opts, handler);
-					req.once('error', requestErrorCallback);
-					req.once('abort', requestErrorCallback);
-					ee.emit('request', req);
-				} catch (error) {
-					ee.emit('error', new CacheableRequest.RequestError(error));
-				}
-			};
-
-			(async () => {
-				const get = async opts => {
-					await Promise.resolve();
-
-					const cacheEntry = opts.cache ? await this.cache.get(key) : undefined;
-					if (typeof cacheEntry === 'undefined') {
-						return makeRequest(opts);
-					}
-
-					const policy = CachePolicy.fromObject(cacheEntry.cachePolicy);
-					if (policy.satisfiesWithoutRevalidation(opts) && !opts.forceRefresh) {
-						const headers = policy.responseHeaders();
-						const response = new Response(cacheEntry.statusCode, headers, cacheEntry.body, cacheEntry.url);
-						response.cachePolicy = policy;
-						response.fromCache = true;
-
-						ee.emit('response', response);
-						if (typeof cb === 'function') {
-							cb(response);
-						}
-					} else {
-						revalidate = cacheEntry;
-						opts.headers = policy.revalidationHeaders(opts);
-						makeRequest(opts);
-					}
-				};
-
-				const errorHandler = error => ee.emit('error', new CacheableRequest.CacheError(error));
-				this.cache.once('error', errorHandler);
-				ee.on('response', () => this.cache.removeListener('error', errorHandler));
-
-				try {
-					await get(opts);
-				} catch (error) {
-					if (opts.automaticFailover && !madeRequest) {
-						makeRequest(opts);
-					}
-
-					ee.emit('error', new CacheableRequest.CacheError(error));
-				}
-			})();
-
-			return ee;
-		};
-	}
-}
-
-function urlObjectToRequestOptions(url) {
-	const options = { ...url };
-	options.path = `${url.pathname || '/'}${url.search || ''}`;
-	delete options.pathname;
-	delete options.search;
-	return options;
-}
-
-function normalizeUrlObject(url) {
-	// If url was parsed by url.parse or new URL:
-	// - hostname will be set
-	// - host will be hostname[:port]
-	// - port will be set if it was explicit in the parsed string
-	// Otherwise, url was from request options:
-	// - hostname or host may be set
-	// - host shall not have port encoded
-	return {
-		protocol: url.protocol,
-		auth: url.auth,
-		hostname: url.hostname || url.host || 'localhost',
-		port: url.port,
-		pathname: url.pathname,
-		search: url.search
-	};
-}
-
-CacheableRequest.RequestError = class extends Error {
-	constructor(error) {
-		super(error.message);
-		this.name = 'RequestError';
-		Object.assign(this, error);
-	}
-};
-
-CacheableRequest.CacheError = class extends Error {
-	constructor(error) {
-		super(error.message);
-		this.name = 'CacheError';
-		Object.assign(this, error);
-	}
-};
-
-module.exports = CacheableRequest;
-
-
-/***/ }),
-
-/***/ 1312:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const PassThrough = __nccwpck_require__(2413).PassThrough;
-const mimicResponse = __nccwpck_require__(2610);
-
-const cloneResponse = response => {
-	if (!(response && response.pipe)) {
-		throw new TypeError('Parameter `response` must be a response stream.');
-	}
-
-	const clone = new PassThrough();
-	mimicResponse(response, clone);
-
-	return response.pipe(clone);
-};
-
-module.exports = cloneResponse;
-
-
-/***/ }),
-
-/***/ 7391:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-/* MIT license */
-var cssKeywords = __nccwpck_require__(8510);
-
-// NOTE: conversions should only return primitive values (i.e. arrays, or
-//       values that give correct `typeof` results).
-//       do not use box values types (i.e. Number(), String(), etc.)
-
-var reverseKeywords = {};
-for (var key in cssKeywords) {
-	if (cssKeywords.hasOwnProperty(key)) {
-		reverseKeywords[cssKeywords[key]] = key;
-	}
-}
-
-var convert = module.exports = {
-	rgb: {channels: 3, labels: 'rgb'},
-	hsl: {channels: 3, labels: 'hsl'},
-	hsv: {channels: 3, labels: 'hsv'},
-	hwb: {channels: 3, labels: 'hwb'},
-	cmyk: {channels: 4, labels: 'cmyk'},
-	xyz: {channels: 3, labels: 'xyz'},
-	lab: {channels: 3, labels: 'lab'},
-	lch: {channels: 3, labels: 'lch'},
-	hex: {channels: 1, labels: ['hex']},
-	keyword: {channels: 1, labels: ['keyword']},
-	ansi16: {channels: 1, labels: ['ansi16']},
-	ansi256: {channels: 1, labels: ['ansi256']},
-	hcg: {channels: 3, labels: ['h', 'c', 'g']},
-	apple: {channels: 3, labels: ['r16', 'g16', 'b16']},
-	gray: {channels: 1, labels: ['gray']}
-};
-
-// hide .channels and .labels properties
-for (var model in convert) {
-	if (convert.hasOwnProperty(model)) {
-		if (!('channels' in convert[model])) {
-			throw new Error('missing channels property: ' + model);
-		}
-
-		if (!('labels' in convert[model])) {
-			throw new Error('missing channel labels property: ' + model);
-		}
-
-		if (convert[model].labels.length !== convert[model].channels) {
-			throw new Error('channel and label counts mismatch: ' + model);
-		}
-
-		var channels = convert[model].channels;
-		var labels = convert[model].labels;
-		delete convert[model].channels;
-		delete convert[model].labels;
-		Object.defineProperty(convert[model], 'channels', {value: channels});
-		Object.defineProperty(convert[model], 'labels', {value: labels});
-	}
-}
-
-convert.rgb.hsl = function (rgb) {
-	var r = rgb[0] / 255;
-	var g = rgb[1] / 255;
-	var b = rgb[2] / 255;
-	var min = Math.min(r, g, b);
-	var max = Math.max(r, g, b);
-	var delta = max - min;
-	var h;
-	var s;
-	var l;
-
-	if (max === min) {
-		h = 0;
-	} else if (r === max) {
-		h = (g - b) / delta;
-	} else if (g === max) {
-		h = 2 + (b - r) / delta;
-	} else if (b === max) {
-		h = 4 + (r - g) / delta;
-	}
-
-	h = Math.min(h * 60, 360);
-
-	if (h < 0) {
-		h += 360;
-	}
-
-	l = (min + max) / 2;
-
-	if (max === min) {
-		s = 0;
-	} else if (l <= 0.5) {
-		s = delta / (max + min);
-	} else {
-		s = delta / (2 - max - min);
-	}
-
-	return [h, s * 100, l * 100];
-};
-
-convert.rgb.hsv = function (rgb) {
-	var rdif;
-	var gdif;
-	var bdif;
-	var h;
-	var s;
-
-	var r = rgb[0] / 255;
-	var g = rgb[1] / 255;
-	var b = rgb[2] / 255;
-	var v = Math.max(r, g, b);
-	var diff = v - Math.min(r, g, b);
-	var diffc = function (c) {
-		return (v - c) / 6 / diff + 1 / 2;
-	};
-
-	if (diff === 0) {
-		h = s = 0;
-	} else {
-		s = diff / v;
-		rdif = diffc(r);
-		gdif = diffc(g);
-		bdif = diffc(b);
-
-		if (r === v) {
-			h = bdif - gdif;
-		} else if (g === v) {
-			h = (1 / 3) + rdif - bdif;
-		} else if (b === v) {
-			h = (2 / 3) + gdif - rdif;
-		}
-		if (h < 0) {
-			h += 1;
-		} else if (h > 1) {
-			h -= 1;
-		}
-	}
-
-	return [
-		h * 360,
-		s * 100,
-		v * 100
-	];
-};
-
-convert.rgb.hwb = function (rgb) {
-	var r = rgb[0];
-	var g = rgb[1];
-	var b = rgb[2];
-	var h = convert.rgb.hsl(rgb)[0];
-	var w = 1 / 255 * Math.min(r, Math.min(g, b));
-
-	b = 1 - 1 / 255 * Math.max(r, Math.max(g, b));
-
-	return [h, w * 100, b * 100];
-};
-
-convert.rgb.cmyk = function (rgb) {
-	var r = rgb[0] / 255;
-	var g = rgb[1] / 255;
-	var b = rgb[2] / 255;
-	var c;
-	var m;
-	var y;
-	var k;
-
-	k = Math.min(1 - r, 1 - g, 1 - b);
-	c = (1 - r - k) / (1 - k) || 0;
-	m = (1 - g - k) / (1 - k) || 0;
-	y = (1 - b - k) / (1 - k) || 0;
-
-	return [c * 100, m * 100, y * 100, k * 100];
-};
-
-/**
- * See https://en.m.wikipedia.org/wiki/Euclidean_distance#Squared_Euclidean_distance
- * */
-function comparativeDistance(x, y) {
-	return (
-		Math.pow(x[0] - y[0], 2) +
-		Math.pow(x[1] - y[1], 2) +
-		Math.pow(x[2] - y[2], 2)
-	);
-}
-
-convert.rgb.keyword = function (rgb) {
-	var reversed = reverseKeywords[rgb];
-	if (reversed) {
-		return reversed;
-	}
-
-	var currentClosestDistance = Infinity;
-	var currentClosestKeyword;
-
-	for (var keyword in cssKeywords) {
-		if (cssKeywords.hasOwnProperty(keyword)) {
-			var value = cssKeywords[keyword];
-
-			// Compute comparative distance
-			var distance = comparativeDistance(rgb, value);
-
-			// Check if its less, if so set as closest
-			if (distance < currentClosestDistance) {
-				currentClosestDistance = distance;
-				currentClosestKeyword = keyword;
-			}
-		}
-	}
-
-	return currentClosestKeyword;
-};
-
-convert.keyword.rgb = function (keyword) {
-	return cssKeywords[keyword];
-};
-
-convert.rgb.xyz = function (rgb) {
-	var r = rgb[0] / 255;
-	var g = rgb[1] / 255;
-	var b = rgb[2] / 255;
-
-	// assume sRGB
-	r = r > 0.04045 ? Math.pow(((r + 0.055) / 1.055), 2.4) : (r / 12.92);
-	g = g > 0.04045 ? Math.pow(((g + 0.055) / 1.055), 2.4) : (g / 12.92);
-	b = b > 0.04045 ? Math.pow(((b + 0.055) / 1.055), 2.4) : (b / 12.92);
-
-	var x = (r * 0.4124) + (g * 0.3576) + (b * 0.1805);
-	var y = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
-	var z = (r * 0.0193) + (g * 0.1192) + (b * 0.9505);
-
-	return [x * 100, y * 100, z * 100];
-};
-
-convert.rgb.lab = function (rgb) {
-	var xyz = convert.rgb.xyz(rgb);
-	var x = xyz[0];
-	var y = xyz[1];
-	var z = xyz[2];
-	var l;
-	var a;
-	var b;
-
-	x /= 95.047;
-	y /= 100;
-	z /= 108.883;
-
-	x = x > 0.008856 ? Math.pow(x, 1 / 3) : (7.787 * x) + (16 / 116);
-	y = y > 0.008856 ? Math.pow(y, 1 / 3) : (7.787 * y) + (16 / 116);
-	z = z > 0.008856 ? Math.pow(z, 1 / 3) : (7.787 * z) + (16 / 116);
-
-	l = (116 * y) - 16;
-	a = 500 * (x - y);
-	b = 200 * (y - z);
-
-	return [l, a, b];
-};
-
-convert.hsl.rgb = function (hsl) {
-	var h = hsl[0] / 360;
-	var s = hsl[1] / 100;
-	var l = hsl[2] / 100;
-	var t1;
-	var t2;
-	var t3;
-	var rgb;
-	var val;
-
-	if (s === 0) {
-		val = l * 255;
-		return [val, val, val];
-	}
-
-	if (l < 0.5) {
-		t2 = l * (1 + s);
-	} else {
-		t2 = l + s - l * s;
-	}
-
-	t1 = 2 * l - t2;
-
-	rgb = [0, 0, 0];
-	for (var i = 0; i < 3; i++) {
-		t3 = h + 1 / 3 * -(i - 1);
-		if (t3 < 0) {
-			t3++;
-		}
-		if (t3 > 1) {
-			t3--;
-		}
-
-		if (6 * t3 < 1) {
-			val = t1 + (t2 - t1) * 6 * t3;
-		} else if (2 * t3 < 1) {
-			val = t2;
-		} else if (3 * t3 < 2) {
-			val = t1 + (t2 - t1) * (2 / 3 - t3) * 6;
-		} else {
-			val = t1;
-		}
-
-		rgb[i] = val * 255;
-	}
-
-	return rgb;
-};
-
-convert.hsl.hsv = function (hsl) {
-	var h = hsl[0];
-	var s = hsl[1] / 100;
-	var l = hsl[2] / 100;
-	var smin = s;
-	var lmin = Math.max(l, 0.01);
-	var sv;
-	var v;
-
-	l *= 2;
-	s *= (l <= 1) ? l : 2 - l;
-	smin *= lmin <= 1 ? lmin : 2 - lmin;
-	v = (l + s) / 2;
-	sv = l === 0 ? (2 * smin) / (lmin + smin) : (2 * s) / (l + s);
-
-	return [h, sv * 100, v * 100];
-};
-
-convert.hsv.rgb = function (hsv) {
-	var h = hsv[0] / 60;
-	var s = hsv[1] / 100;
-	var v = hsv[2] / 100;
-	var hi = Math.floor(h) % 6;
-
-	var f = h - Math.floor(h);
-	var p = 255 * v * (1 - s);
-	var q = 255 * v * (1 - (s * f));
-	var t = 255 * v * (1 - (s * (1 - f)));
-	v *= 255;
-
-	switch (hi) {
-		case 0:
-			return [v, t, p];
-		case 1:
-			return [q, v, p];
-		case 2:
-			return [p, v, t];
-		case 3:
-			return [p, q, v];
-		case 4:
-			return [t, p, v];
-		case 5:
-			return [v, p, q];
-	}
-};
-
-convert.hsv.hsl = function (hsv) {
-	var h = hsv[0];
-	var s = hsv[1] / 100;
-	var v = hsv[2] / 100;
-	var vmin = Math.max(v, 0.01);
-	var lmin;
-	var sl;
-	var l;
-
-	l = (2 - s) * v;
-	lmin = (2 - s) * vmin;
-	sl = s * vmin;
-	sl /= (lmin <= 1) ? lmin : 2 - lmin;
-	sl = sl || 0;
-	l /= 2;
-
-	return [h, sl * 100, l * 100];
-};
-
-// http://dev.w3.org/csswg/css-color/#hwb-to-rgb
-convert.hwb.rgb = function (hwb) {
-	var h = hwb[0] / 360;
-	var wh = hwb[1] / 100;
-	var bl = hwb[2] / 100;
-	var ratio = wh + bl;
-	var i;
-	var v;
-	var f;
-	var n;
-
-	// wh + bl cant be > 1
-	if (ratio > 1) {
-		wh /= ratio;
-		bl /= ratio;
-	}
-
-	i = Math.floor(6 * h);
-	v = 1 - bl;
-	f = 6 * h - i;
-
-	if ((i & 0x01) !== 0) {
-		f = 1 - f;
-	}
-
-	n = wh + f * (v - wh); // linear interpolation
-
-	var r;
-	var g;
-	var b;
-	switch (i) {
-		default:
-		case 6:
-		case 0: r = v; g = n; b = wh; break;
-		case 1: r = n; g = v; b = wh; break;
-		case 2: r = wh; g = v; b = n; break;
-		case 3: r = wh; g = n; b = v; break;
-		case 4: r = n; g = wh; b = v; break;
-		case 5: r = v; g = wh; b = n; break;
-	}
-
-	return [r * 255, g * 255, b * 255];
-};
-
-convert.cmyk.rgb = function (cmyk) {
-	var c = cmyk[0] / 100;
-	var m = cmyk[1] / 100;
-	var y = cmyk[2] / 100;
-	var k = cmyk[3] / 100;
-	var r;
-	var g;
-	var b;
-
-	r = 1 - Math.min(1, c * (1 - k) + k);
-	g = 1 - Math.min(1, m * (1 - k) + k);
-	b = 1 - Math.min(1, y * (1 - k) + k);
-
-	return [r * 255, g * 255, b * 255];
-};
-
-convert.xyz.rgb = function (xyz) {
-	var x = xyz[0] / 100;
-	var y = xyz[1] / 100;
-	var z = xyz[2] / 100;
-	var r;
-	var g;
-	var b;
-
-	r = (x * 3.2406) + (y * -1.5372) + (z * -0.4986);
-	g = (x * -0.9689) + (y * 1.8758) + (z * 0.0415);
-	b = (x * 0.0557) + (y * -0.2040) + (z * 1.0570);
-
-	// assume sRGB
-	r = r > 0.0031308
-		? ((1.055 * Math.pow(r, 1.0 / 2.4)) - 0.055)
-		: r * 12.92;
-
-	g = g > 0.0031308
-		? ((1.055 * Math.pow(g, 1.0 / 2.4)) - 0.055)
-		: g * 12.92;
-
-	b = b > 0.0031308
-		? ((1.055 * Math.pow(b, 1.0 / 2.4)) - 0.055)
-		: b * 12.92;
-
-	r = Math.min(Math.max(0, r), 1);
-	g = Math.min(Math.max(0, g), 1);
-	b = Math.min(Math.max(0, b), 1);
-
-	return [r * 255, g * 255, b * 255];
-};
-
-convert.xyz.lab = function (xyz) {
-	var x = xyz[0];
-	var y = xyz[1];
-	var z = xyz[2];
-	var l;
-	var a;
-	var b;
-
-	x /= 95.047;
-	y /= 100;
-	z /= 108.883;
-
-	x = x > 0.008856 ? Math.pow(x, 1 / 3) : (7.787 * x) + (16 / 116);
-	y = y > 0.008856 ? Math.pow(y, 1 / 3) : (7.787 * y) + (16 / 116);
-	z = z > 0.008856 ? Math.pow(z, 1 / 3) : (7.787 * z) + (16 / 116);
-
-	l = (116 * y) - 16;
-	a = 500 * (x - y);
-	b = 200 * (y - z);
-
-	return [l, a, b];
-};
-
-convert.lab.xyz = function (lab) {
-	var l = lab[0];
-	var a = lab[1];
-	var b = lab[2];
-	var x;
-	var y;
-	var z;
-
-	y = (l + 16) / 116;
-	x = a / 500 + y;
-	z = y - b / 200;
-
-	var y2 = Math.pow(y, 3);
-	var x2 = Math.pow(x, 3);
-	var z2 = Math.pow(z, 3);
-	y = y2 > 0.008856 ? y2 : (y - 16 / 116) / 7.787;
-	x = x2 > 0.008856 ? x2 : (x - 16 / 116) / 7.787;
-	z = z2 > 0.008856 ? z2 : (z - 16 / 116) / 7.787;
-
-	x *= 95.047;
-	y *= 100;
-	z *= 108.883;
-
-	return [x, y, z];
-};
-
-convert.lab.lch = function (lab) {
-	var l = lab[0];
-	var a = lab[1];
-	var b = lab[2];
-	var hr;
-	var h;
-	var c;
-
-	hr = Math.atan2(b, a);
-	h = hr * 360 / 2 / Math.PI;
-
-	if (h < 0) {
-		h += 360;
-	}
-
-	c = Math.sqrt(a * a + b * b);
-
-	return [l, c, h];
-};
-
-convert.lch.lab = function (lch) {
-	var l = lch[0];
-	var c = lch[1];
-	var h = lch[2];
-	var a;
-	var b;
-	var hr;
-
-	hr = h / 360 * 2 * Math.PI;
-	a = c * Math.cos(hr);
-	b = c * Math.sin(hr);
-
-	return [l, a, b];
-};
-
-convert.rgb.ansi16 = function (args) {
-	var r = args[0];
-	var g = args[1];
-	var b = args[2];
-	var value = 1 in arguments ? arguments[1] : convert.rgb.hsv(args)[2]; // hsv -> ansi16 optimization
-
-	value = Math.round(value / 50);
-
-	if (value === 0) {
-		return 30;
-	}
-
-	var ansi = 30
-		+ ((Math.round(b / 255) << 2)
-		| (Math.round(g / 255) << 1)
-		| Math.round(r / 255));
-
-	if (value === 2) {
-		ansi += 60;
-	}
-
-	return ansi;
-};
-
-convert.hsv.ansi16 = function (args) {
-	// optimization here; we already know the value and don't need to get
-	// it converted for us.
-	return convert.rgb.ansi16(convert.hsv.rgb(args), args[2]);
-};
-
-convert.rgb.ansi256 = function (args) {
-	var r = args[0];
-	var g = args[1];
-	var b = args[2];
-
-	// we use the extended greyscale palette here, with the exception of
-	// black and white. normal palette only has 4 greyscale shades.
-	if (r === g && g === b) {
-		if (r < 8) {
-			return 16;
-		}
-
-		if (r > 248) {
-			return 231;
-		}
-
-		return Math.round(((r - 8) / 247) * 24) + 232;
-	}
-
-	var ansi = 16
-		+ (36 * Math.round(r / 255 * 5))
-		+ (6 * Math.round(g / 255 * 5))
-		+ Math.round(b / 255 * 5);
-
-	return ansi;
-};
-
-convert.ansi16.rgb = function (args) {
-	var color = args % 10;
-
-	// handle greyscale
-	if (color === 0 || color === 7) {
-		if (args > 50) {
-			color += 3.5;
-		}
-
-		color = color / 10.5 * 255;
-
-		return [color, color, color];
-	}
-
-	var mult = (~~(args > 50) + 1) * 0.5;
-	var r = ((color & 1) * mult) * 255;
-	var g = (((color >> 1) & 1) * mult) * 255;
-	var b = (((color >> 2) & 1) * mult) * 255;
-
-	return [r, g, b];
-};
-
-convert.ansi256.rgb = function (args) {
-	// handle greyscale
-	if (args >= 232) {
-		var c = (args - 232) * 10 + 8;
-		return [c, c, c];
-	}
-
-	args -= 16;
-
-	var rem;
-	var r = Math.floor(args / 36) / 5 * 255;
-	var g = Math.floor((rem = args % 36) / 6) / 5 * 255;
-	var b = (rem % 6) / 5 * 255;
-
-	return [r, g, b];
-};
-
-convert.rgb.hex = function (args) {
-	var integer = ((Math.round(args[0]) & 0xFF) << 16)
-		+ ((Math.round(args[1]) & 0xFF) << 8)
-		+ (Math.round(args[2]) & 0xFF);
-
-	var string = integer.toString(16).toUpperCase();
-	return '000000'.substring(string.length) + string;
-};
-
-convert.hex.rgb = function (args) {
-	var match = args.toString(16).match(/[a-f0-9]{6}|[a-f0-9]{3}/i);
-	if (!match) {
-		return [0, 0, 0];
-	}
-
-	var colorString = match[0];
-
-	if (match[0].length === 3) {
-		colorString = colorString.split('').map(function (char) {
-			return char + char;
-		}).join('');
-	}
-
-	var integer = parseInt(colorString, 16);
-	var r = (integer >> 16) & 0xFF;
-	var g = (integer >> 8) & 0xFF;
-	var b = integer & 0xFF;
-
-	return [r, g, b];
-};
-
-convert.rgb.hcg = function (rgb) {
-	var r = rgb[0] / 255;
-	var g = rgb[1] / 255;
-	var b = rgb[2] / 255;
-	var max = Math.max(Math.max(r, g), b);
-	var min = Math.min(Math.min(r, g), b);
-	var chroma = (max - min);
-	var grayscale;
-	var hue;
-
-	if (chroma < 1) {
-		grayscale = min / (1 - chroma);
-	} else {
-		grayscale = 0;
-	}
-
-	if (chroma <= 0) {
-		hue = 0;
-	} else
-	if (max === r) {
-		hue = ((g - b) / chroma) % 6;
-	} else
-	if (max === g) {
-		hue = 2 + (b - r) / chroma;
-	} else {
-		hue = 4 + (r - g) / chroma + 4;
-	}
-
-	hue /= 6;
-	hue %= 1;
-
-	return [hue * 360, chroma * 100, grayscale * 100];
-};
-
-convert.hsl.hcg = function (hsl) {
-	var s = hsl[1] / 100;
-	var l = hsl[2] / 100;
-	var c = 1;
-	var f = 0;
-
-	if (l < 0.5) {
-		c = 2.0 * s * l;
-	} else {
-		c = 2.0 * s * (1.0 - l);
-	}
-
-	if (c < 1.0) {
-		f = (l - 0.5 * c) / (1.0 - c);
-	}
-
-	return [hsl[0], c * 100, f * 100];
-};
-
-convert.hsv.hcg = function (hsv) {
-	var s = hsv[1] / 100;
-	var v = hsv[2] / 100;
-
-	var c = s * v;
-	var f = 0;
-
-	if (c < 1.0) {
-		f = (v - c) / (1 - c);
-	}
-
-	return [hsv[0], c * 100, f * 100];
-};
-
-convert.hcg.rgb = function (hcg) {
-	var h = hcg[0] / 360;
-	var c = hcg[1] / 100;
-	var g = hcg[2] / 100;
-
-	if (c === 0.0) {
-		return [g * 255, g * 255, g * 255];
-	}
-
-	var pure = [0, 0, 0];
-	var hi = (h % 1) * 6;
-	var v = hi % 1;
-	var w = 1 - v;
-	var mg = 0;
-
-	switch (Math.floor(hi)) {
-		case 0:
-			pure[0] = 1; pure[1] = v; pure[2] = 0; break;
-		case 1:
-			pure[0] = w; pure[1] = 1; pure[2] = 0; break;
-		case 2:
-			pure[0] = 0; pure[1] = 1; pure[2] = v; break;
-		case 3:
-			pure[0] = 0; pure[1] = w; pure[2] = 1; break;
-		case 4:
-			pure[0] = v; pure[1] = 0; pure[2] = 1; break;
-		default:
-			pure[0] = 1; pure[1] = 0; pure[2] = w;
-	}
-
-	mg = (1.0 - c) * g;
-
-	return [
-		(c * pure[0] + mg) * 255,
-		(c * pure[1] + mg) * 255,
-		(c * pure[2] + mg) * 255
-	];
-};
-
-convert.hcg.hsv = function (hcg) {
-	var c = hcg[1] / 100;
-	var g = hcg[2] / 100;
-
-	var v = c + g * (1.0 - c);
-	var f = 0;
-
-	if (v > 0.0) {
-		f = c / v;
-	}
-
-	return [hcg[0], f * 100, v * 100];
-};
-
-convert.hcg.hsl = function (hcg) {
-	var c = hcg[1] / 100;
-	var g = hcg[2] / 100;
-
-	var l = g * (1.0 - c) + 0.5 * c;
-	var s = 0;
-
-	if (l > 0.0 && l < 0.5) {
-		s = c / (2 * l);
-	} else
-	if (l >= 0.5 && l < 1.0) {
-		s = c / (2 * (1 - l));
-	}
-
-	return [hcg[0], s * 100, l * 100];
-};
-
-convert.hcg.hwb = function (hcg) {
-	var c = hcg[1] / 100;
-	var g = hcg[2] / 100;
-	var v = c + g * (1.0 - c);
-	return [hcg[0], (v - c) * 100, (1 - v) * 100];
-};
-
-convert.hwb.hcg = function (hwb) {
-	var w = hwb[1] / 100;
-	var b = hwb[2] / 100;
-	var v = 1 - b;
-	var c = v - w;
-	var g = 0;
-
-	if (c < 1) {
-		g = (v - c) / (1 - c);
-	}
-
-	return [hwb[0], c * 100, g * 100];
-};
-
-convert.apple.rgb = function (apple) {
-	return [(apple[0] / 65535) * 255, (apple[1] / 65535) * 255, (apple[2] / 65535) * 255];
-};
-
-convert.rgb.apple = function (rgb) {
-	return [(rgb[0] / 255) * 65535, (rgb[1] / 255) * 65535, (rgb[2] / 255) * 65535];
-};
-
-convert.gray.rgb = function (args) {
-	return [args[0] / 100 * 255, args[0] / 100 * 255, args[0] / 100 * 255];
-};
-
-convert.gray.hsl = convert.gray.hsv = function (args) {
-	return [0, 0, args[0]];
-};
-
-convert.gray.hwb = function (gray) {
-	return [0, 100, gray[0]];
-};
-
-convert.gray.cmyk = function (gray) {
-	return [0, 0, 0, gray[0]];
-};
-
-convert.gray.lab = function (gray) {
-	return [gray[0], 0, 0];
-};
-
-convert.gray.hex = function (gray) {
-	var val = Math.round(gray[0] / 100 * 255) & 0xFF;
-	var integer = (val << 16) + (val << 8) + val;
-
-	var string = integer.toString(16).toUpperCase();
-	return '000000'.substring(string.length) + string;
-};
-
-convert.rgb.gray = function (rgb) {
-	var val = (rgb[0] + rgb[1] + rgb[2]) / 3;
-	return [val / 255 * 100];
-};
-
-
-/***/ }),
-
-/***/ 6931:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var conversions = __nccwpck_require__(7391);
-var route = __nccwpck_require__(880);
-
-var convert = {};
-
-var models = Object.keys(conversions);
-
-function wrapRaw(fn) {
-	var wrappedFn = function (args) {
-		if (args === undefined || args === null) {
-			return args;
-		}
-
-		if (arguments.length > 1) {
-			args = Array.prototype.slice.call(arguments);
-		}
-
-		return fn(args);
-	};
-
-	// preserve .conversion property if there is one
-	if ('conversion' in fn) {
-		wrappedFn.conversion = fn.conversion;
-	}
-
-	return wrappedFn;
-}
-
-function wrapRounded(fn) {
-	var wrappedFn = function (args) {
-		if (args === undefined || args === null) {
-			return args;
-		}
-
-		if (arguments.length > 1) {
-			args = Array.prototype.slice.call(arguments);
-		}
-
-		var result = fn(args);
-
-		// we're assuming the result is an array here.
-		// see notice in conversions.js; don't use box types
-		// in conversion functions.
-		if (typeof result === 'object') {
-			for (var len = result.length, i = 0; i < len; i++) {
-				result[i] = Math.round(result[i]);
-			}
-		}
-
-		return result;
-	};
-
-	// preserve .conversion property if there is one
-	if ('conversion' in fn) {
-		wrappedFn.conversion = fn.conversion;
-	}
-
-	return wrappedFn;
-}
-
-models.forEach(function (fromModel) {
-	convert[fromModel] = {};
-
-	Object.defineProperty(convert[fromModel], 'channels', {value: conversions[fromModel].channels});
-	Object.defineProperty(convert[fromModel], 'labels', {value: conversions[fromModel].labels});
-
-	var routes = route(fromModel);
-	var routeModels = Object.keys(routes);
-
-	routeModels.forEach(function (toModel) {
-		var fn = routes[toModel];
-
-		convert[fromModel][toModel] = wrapRounded(fn);
-		convert[fromModel][toModel].raw = wrapRaw(fn);
-	});
-});
-
-module.exports = convert;
-
-
-/***/ }),
-
-/***/ 880:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var conversions = __nccwpck_require__(7391);
-
-/*
-	this function routes a model to all other models.
-
-	all functions that are routed have a property `.conversion` attached
-	to the returned synthetic function. This property is an array
-	of strings, each with the steps in between the 'from' and 'to'
-	color models (inclusive).
-
-	conversions that are not possible simply are not included.
-*/
-
-function buildGraph() {
-	var graph = {};
-	// https://jsperf.com/object-keys-vs-for-in-with-closure/3
-	var models = Object.keys(conversions);
-
-	for (var len = models.length, i = 0; i < len; i++) {
-		graph[models[i]] = {
-			// http://jsperf.com/1-vs-infinity
-			// micro-opt, but this is simple.
-			distance: -1,
-			parent: null
-		};
-	}
-
-	return graph;
-}
-
-// https://en.wikipedia.org/wiki/Breadth-first_search
-function deriveBFS(fromModel) {
-	var graph = buildGraph();
-	var queue = [fromModel]; // unshift -> queue -> pop
-
-	graph[fromModel].distance = 0;
-
-	while (queue.length) {
-		var current = queue.pop();
-		var adjacents = Object.keys(conversions[current]);
-
-		for (var len = adjacents.length, i = 0; i < len; i++) {
-			var adjacent = adjacents[i];
-			var node = graph[adjacent];
-
-			if (node.distance === -1) {
-				node.distance = graph[current].distance + 1;
-				node.parent = current;
-				queue.unshift(adjacent);
-			}
-		}
-	}
-
-	return graph;
-}
-
-function link(from, to) {
-	return function (args) {
-		return to(from(args));
-	};
-}
-
-function wrapConversion(toModel, graph) {
-	var path = [graph[toModel].parent, toModel];
-	var fn = conversions[graph[toModel].parent][toModel];
-
-	var cur = graph[toModel].parent;
-	while (graph[cur].parent) {
-		path.unshift(graph[cur].parent);
-		fn = link(conversions[graph[cur].parent][cur], fn);
-		cur = graph[cur].parent;
-	}
-
-	fn.conversion = path;
-	return fn;
-}
-
-module.exports = function (fromModel) {
-	var graph = deriveBFS(fromModel);
-	var conversion = {};
-
-	var models = Object.keys(graph);
-	for (var len = models.length, i = 0; i < len; i++) {
-		var toModel = models[i];
-		var node = graph[toModel];
-
-		if (node.parent === null) {
-			// no possible conversion, or this node is the source model.
-			continue;
-		}
-
-		conversion[toModel] = wrapConversion(toModel, graph);
-	}
-
-	return conversion;
-};
-
-
-
-/***/ }),
-
-/***/ 8510:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = {
-	"aliceblue": [240, 248, 255],
-	"antiquewhite": [250, 235, 215],
-	"aqua": [0, 255, 255],
-	"aquamarine": [127, 255, 212],
-	"azure": [240, 255, 255],
-	"beige": [245, 245, 220],
-	"bisque": [255, 228, 196],
-	"black": [0, 0, 0],
-	"blanchedalmond": [255, 235, 205],
-	"blue": [0, 0, 255],
-	"blueviolet": [138, 43, 226],
-	"brown": [165, 42, 42],
-	"burlywood": [222, 184, 135],
-	"cadetblue": [95, 158, 160],
-	"chartreuse": [127, 255, 0],
-	"chocolate": [210, 105, 30],
-	"coral": [255, 127, 80],
-	"cornflowerblue": [100, 149, 237],
-	"cornsilk": [255, 248, 220],
-	"crimson": [220, 20, 60],
-	"cyan": [0, 255, 255],
-	"darkblue": [0, 0, 139],
-	"darkcyan": [0, 139, 139],
-	"darkgoldenrod": [184, 134, 11],
-	"darkgray": [169, 169, 169],
-	"darkgreen": [0, 100, 0],
-	"darkgrey": [169, 169, 169],
-	"darkkhaki": [189, 183, 107],
-	"darkmagenta": [139, 0, 139],
-	"darkolivegreen": [85, 107, 47],
-	"darkorange": [255, 140, 0],
-	"darkorchid": [153, 50, 204],
-	"darkred": [139, 0, 0],
-	"darksalmon": [233, 150, 122],
-	"darkseagreen": [143, 188, 143],
-	"darkslateblue": [72, 61, 139],
-	"darkslategray": [47, 79, 79],
-	"darkslategrey": [47, 79, 79],
-	"darkturquoise": [0, 206, 209],
-	"darkviolet": [148, 0, 211],
-	"deeppink": [255, 20, 147],
-	"deepskyblue": [0, 191, 255],
-	"dimgray": [105, 105, 105],
-	"dimgrey": [105, 105, 105],
-	"dodgerblue": [30, 144, 255],
-	"firebrick": [178, 34, 34],
-	"floralwhite": [255, 250, 240],
-	"forestgreen": [34, 139, 34],
-	"fuchsia": [255, 0, 255],
-	"gainsboro": [220, 220, 220],
-	"ghostwhite": [248, 248, 255],
-	"gold": [255, 215, 0],
-	"goldenrod": [218, 165, 32],
-	"gray": [128, 128, 128],
-	"green": [0, 128, 0],
-	"greenyellow": [173, 255, 47],
-	"grey": [128, 128, 128],
-	"honeydew": [240, 255, 240],
-	"hotpink": [255, 105, 180],
-	"indianred": [205, 92, 92],
-	"indigo": [75, 0, 130],
-	"ivory": [255, 255, 240],
-	"khaki": [240, 230, 140],
-	"lavender": [230, 230, 250],
-	"lavenderblush": [255, 240, 245],
-	"lawngreen": [124, 252, 0],
-	"lemonchiffon": [255, 250, 205],
-	"lightblue": [173, 216, 230],
-	"lightcoral": [240, 128, 128],
-	"lightcyan": [224, 255, 255],
-	"lightgoldenrodyellow": [250, 250, 210],
-	"lightgray": [211, 211, 211],
-	"lightgreen": [144, 238, 144],
-	"lightgrey": [211, 211, 211],
-	"lightpink": [255, 182, 193],
-	"lightsalmon": [255, 160, 122],
-	"lightseagreen": [32, 178, 170],
-	"lightskyblue": [135, 206, 250],
-	"lightslategray": [119, 136, 153],
-	"lightslategrey": [119, 136, 153],
-	"lightsteelblue": [176, 196, 222],
-	"lightyellow": [255, 255, 224],
-	"lime": [0, 255, 0],
-	"limegreen": [50, 205, 50],
-	"linen": [250, 240, 230],
-	"magenta": [255, 0, 255],
-	"maroon": [128, 0, 0],
-	"mediumaquamarine": [102, 205, 170],
-	"mediumblue": [0, 0, 205],
-	"mediumorchid": [186, 85, 211],
-	"mediumpurple": [147, 112, 219],
-	"mediumseagreen": [60, 179, 113],
-	"mediumslateblue": [123, 104, 238],
-	"mediumspringgreen": [0, 250, 154],
-	"mediumturquoise": [72, 209, 204],
-	"mediumvioletred": [199, 21, 133],
-	"midnightblue": [25, 25, 112],
-	"mintcream": [245, 255, 250],
-	"mistyrose": [255, 228, 225],
-	"moccasin": [255, 228, 181],
-	"navajowhite": [255, 222, 173],
-	"navy": [0, 0, 128],
-	"oldlace": [253, 245, 230],
-	"olive": [128, 128, 0],
-	"olivedrab": [107, 142, 35],
-	"orange": [255, 165, 0],
-	"orangered": [255, 69, 0],
-	"orchid": [218, 112, 214],
-	"palegoldenrod": [238, 232, 170],
-	"palegreen": [152, 251, 152],
-	"paleturquoise": [175, 238, 238],
-	"palevioletred": [219, 112, 147],
-	"papayawhip": [255, 239, 213],
-	"peachpuff": [255, 218, 185],
-	"peru": [205, 133, 63],
-	"pink": [255, 192, 203],
-	"plum": [221, 160, 221],
-	"powderblue": [176, 224, 230],
-	"purple": [128, 0, 128],
-	"rebeccapurple": [102, 51, 153],
-	"red": [255, 0, 0],
-	"rosybrown": [188, 143, 143],
-	"royalblue": [65, 105, 225],
-	"saddlebrown": [139, 69, 19],
-	"salmon": [250, 128, 114],
-	"sandybrown": [244, 164, 96],
-	"seagreen": [46, 139, 87],
-	"seashell": [255, 245, 238],
-	"sienna": [160, 82, 45],
-	"silver": [192, 192, 192],
-	"skyblue": [135, 206, 235],
-	"slateblue": [106, 90, 205],
-	"slategray": [112, 128, 144],
-	"slategrey": [112, 128, 144],
-	"snow": [255, 250, 250],
-	"springgreen": [0, 255, 127],
-	"steelblue": [70, 130, 180],
-	"tan": [210, 180, 140],
-	"teal": [0, 128, 128],
-	"thistle": [216, 191, 216],
-	"tomato": [255, 99, 71],
-	"turquoise": [64, 224, 208],
-	"violet": [238, 130, 238],
-	"wheat": [245, 222, 179],
-	"white": [255, 255, 255],
-	"whitesmoke": [245, 245, 245],
-	"yellow": [255, 255, 0],
-	"yellowgreen": [154, 205, 50]
-};
-
-
-/***/ }),
-
-/***/ 1069:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-/* MIT license */
-var colorNames = __nccwpck_require__(8510);
-var swizzle = __nccwpck_require__(8679);
-
-var reverseNames = {};
-
-// create a list of reverse color names
-for (var name in colorNames) {
-	if (colorNames.hasOwnProperty(name)) {
-		reverseNames[colorNames[name]] = name;
-	}
-}
-
-var cs = module.exports = {
-	to: {},
-	get: {}
-};
-
-cs.get = function (string) {
-	var prefix = string.substring(0, 3).toLowerCase();
-	var val;
-	var model;
-	switch (prefix) {
-		case 'hsl':
-			val = cs.get.hsl(string);
-			model = 'hsl';
-			break;
-		case 'hwb':
-			val = cs.get.hwb(string);
-			model = 'hwb';
-			break;
-		default:
-			val = cs.get.rgb(string);
-			model = 'rgb';
-			break;
-	}
-
-	if (!val) {
-		return null;
-	}
-
-	return {model: model, value: val};
-};
-
-cs.get.rgb = function (string) {
-	if (!string) {
-		return null;
-	}
-
-	var abbr = /^#([a-f0-9]{3,4})$/i;
-	var hex = /^#([a-f0-9]{6})([a-f0-9]{2})?$/i;
-	var rgba = /^rgba?\(\s*([+-]?\d+)\s*,\s*([+-]?\d+)\s*,\s*([+-]?\d+)\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
-	var per = /^rgba?\(\s*([+-]?[\d\.]+)\%\s*,\s*([+-]?[\d\.]+)\%\s*,\s*([+-]?[\d\.]+)\%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
-	var keyword = /(\D+)/;
-
-	var rgb = [0, 0, 0, 1];
-	var match;
-	var i;
-	var hexAlpha;
-
-	if (match = string.match(hex)) {
-		hexAlpha = match[2];
-		match = match[1];
-
-		for (i = 0; i < 3; i++) {
-			// https://jsperf.com/slice-vs-substr-vs-substring-methods-long-string/19
-			var i2 = i * 2;
-			rgb[i] = parseInt(match.slice(i2, i2 + 2), 16);
-		}
-
-		if (hexAlpha) {
-			rgb[3] = parseInt(hexAlpha, 16) / 255;
-		}
-	} else if (match = string.match(abbr)) {
-		match = match[1];
-		hexAlpha = match[3];
-
-		for (i = 0; i < 3; i++) {
-			rgb[i] = parseInt(match[i] + match[i], 16);
-		}
-
-		if (hexAlpha) {
-			rgb[3] = parseInt(hexAlpha + hexAlpha, 16) / 255;
-		}
-	} else if (match = string.match(rgba)) {
-		for (i = 0; i < 3; i++) {
-			rgb[i] = parseInt(match[i + 1], 0);
-		}
-
-		if (match[4]) {
-			rgb[3] = parseFloat(match[4]);
-		}
-	} else if (match = string.match(per)) {
-		for (i = 0; i < 3; i++) {
-			rgb[i] = Math.round(parseFloat(match[i + 1]) * 2.55);
-		}
-
-		if (match[4]) {
-			rgb[3] = parseFloat(match[4]);
-		}
-	} else if (match = string.match(keyword)) {
-		if (match[1] === 'transparent') {
-			return [0, 0, 0, 0];
-		}
-
-		rgb = colorNames[match[1]];
-
-		if (!rgb) {
-			return null;
-		}
-
-		rgb[3] = 1;
-
-		return rgb;
-	} else {
-		return null;
-	}
-
-	for (i = 0; i < 3; i++) {
-		rgb[i] = clamp(rgb[i], 0, 255);
-	}
-	rgb[3] = clamp(rgb[3], 0, 1);
-
-	return rgb;
-};
-
-cs.get.hsl = function (string) {
-	if (!string) {
-		return null;
-	}
-
-	var hsl = /^hsla?\(\s*([+-]?(?:\d*\.)?\d+)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
-	var match = string.match(hsl);
-
-	if (match) {
-		var alpha = parseFloat(match[4]);
-		var h = (parseFloat(match[1]) + 360) % 360;
-		var s = clamp(parseFloat(match[2]), 0, 100);
-		var l = clamp(parseFloat(match[3]), 0, 100);
-		var a = clamp(isNaN(alpha) ? 1 : alpha, 0, 1);
-
-		return [h, s, l, a];
-	}
-
-	return null;
-};
-
-cs.get.hwb = function (string) {
-	if (!string) {
-		return null;
-	}
-
-	var hwb = /^hwb\(\s*([+-]?\d*[\.]?\d+)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
-	var match = string.match(hwb);
-
-	if (match) {
-		var alpha = parseFloat(match[4]);
-		var h = ((parseFloat(match[1]) % 360) + 360) % 360;
-		var w = clamp(parseFloat(match[2]), 0, 100);
-		var b = clamp(parseFloat(match[3]), 0, 100);
-		var a = clamp(isNaN(alpha) ? 1 : alpha, 0, 1);
-		return [h, w, b, a];
-	}
-
-	return null;
-};
-
-cs.to.hex = function () {
-	var rgba = swizzle(arguments);
-
-	return (
-		'#' +
-		hexDouble(rgba[0]) +
-		hexDouble(rgba[1]) +
-		hexDouble(rgba[2]) +
-		(rgba[3] < 1
-			? (hexDouble(Math.round(rgba[3] * 255)))
-			: '')
-	);
-};
-
-cs.to.rgb = function () {
-	var rgba = swizzle(arguments);
-
-	return rgba.length < 4 || rgba[3] === 1
-		? 'rgb(' + Math.round(rgba[0]) + ', ' + Math.round(rgba[1]) + ', ' + Math.round(rgba[2]) + ')'
-		: 'rgba(' + Math.round(rgba[0]) + ', ' + Math.round(rgba[1]) + ', ' + Math.round(rgba[2]) + ', ' + rgba[3] + ')';
-};
-
-cs.to.rgb.percent = function () {
-	var rgba = swizzle(arguments);
-
-	var r = Math.round(rgba[0] / 255 * 100);
-	var g = Math.round(rgba[1] / 255 * 100);
-	var b = Math.round(rgba[2] / 255 * 100);
-
-	return rgba.length < 4 || rgba[3] === 1
-		? 'rgb(' + r + '%, ' + g + '%, ' + b + '%)'
-		: 'rgba(' + r + '%, ' + g + '%, ' + b + '%, ' + rgba[3] + ')';
-};
-
-cs.to.hsl = function () {
-	var hsla = swizzle(arguments);
-	return hsla.length < 4 || hsla[3] === 1
-		? 'hsl(' + hsla[0] + ', ' + hsla[1] + '%, ' + hsla[2] + '%)'
-		: 'hsla(' + hsla[0] + ', ' + hsla[1] + '%, ' + hsla[2] + '%, ' + hsla[3] + ')';
+var Buffer = __nccwpck_require__(4293).Buffer; // for use with browserify
+
+module.exports = function (a, b) {
+    if (!Buffer.isBuffer(a)) return undefined;
+    if (!Buffer.isBuffer(b)) return undefined;
+    if (typeof a.equals === 'function') return a.equals(b);
+    if (a.length !== b.length) return false;
+    
+    for (var i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return false;
+    }
+    
+    return true;
 };
-
-// hwb is a bit different than rgb(a) & hsl(a) since there is no alpha specific syntax
-// (hwb have alpha optional & 1 is default value)
-cs.to.hwb = function () {
-	var hwba = swizzle(arguments);
-
-	var a = '';
-	if (hwba.length >= 4 && hwba[3] !== 1) {
-		a = ', ' + hwba[3];
-	}
-
-	return 'hwb(' + hwba[0] + ', ' + hwba[1] + '%, ' + hwba[2] + '%' + a + ')';
-};
-
-cs.to.keyword = function (rgb) {
-	return reverseNames[rgb.slice(0, 3)];
-};
-
-// helpers
-function clamp(num, min, max) {
-	return Math.min(Math.max(min, num), max);
-}
-
-function hexDouble(num) {
-	var str = num.toString(16).toUpperCase();
-	return (str.length < 2) ? '0' + str : str;
-}
 
 
 /***/ }),
@@ -17791,210 +17650,6 @@ formatters.O = function (v) {
 
 /***/ }),
 
-/***/ 2391:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const {Transform, PassThrough} = __nccwpck_require__(2413);
-const zlib = __nccwpck_require__(8761);
-const mimicResponse = __nccwpck_require__(3877);
-
-module.exports = response => {
-	const contentEncoding = (response.headers['content-encoding'] || '').toLowerCase();
-
-	if (!['gzip', 'deflate', 'br'].includes(contentEncoding)) {
-		return response;
-	}
-
-	// TODO: Remove this when targeting Node.js 12.
-	const isBrotli = contentEncoding === 'br';
-	if (isBrotli && typeof zlib.createBrotliDecompress !== 'function') {
-		response.destroy(new Error('Brotli is not supported on Node.js < 12'));
-		return response;
-	}
-
-	let isEmpty = true;
-
-	const checker = new Transform({
-		transform(data, _encoding, callback) {
-			isEmpty = false;
-
-			callback(null, data);
-		},
-
-		flush(callback) {
-			callback();
-		}
-	});
-
-	const finalStream = new PassThrough({
-		autoDestroy: false,
-		destroy(error, callback) {
-			response.destroy();
-
-			callback(error);
-		}
-	});
-
-	const decompressStream = isBrotli ? zlib.createBrotliDecompress() : zlib.createUnzip();
-
-	decompressStream.once('error', error => {
-		if (isEmpty && !response.readable) {
-			finalStream.end();
-			return;
-		}
-
-		finalStream.destroy(error);
-	});
-
-	mimicResponse(response, finalStream);
-	response.pipe(checker).pipe(decompressStream).pipe(finalStream);
-
-	return finalStream;
-};
-
-
-/***/ }),
-
-/***/ 3877:
-/***/ ((module) => {
-
-"use strict";
-
-
-// We define these manually to ensure they're always copied
-// even if they would move up the prototype chain
-// https://nodejs.org/api/http.html#http_class_http_incomingmessage
-const knownProperties = [
-	'aborted',
-	'complete',
-	'headers',
-	'httpVersion',
-	'httpVersionMinor',
-	'httpVersionMajor',
-	'method',
-	'rawHeaders',
-	'rawTrailers',
-	'setTimeout',
-	'socket',
-	'statusCode',
-	'statusMessage',
-	'trailers',
-	'url'
-];
-
-module.exports = (fromStream, toStream) => {
-	if (toStream._readableState.autoDestroy) {
-		throw new Error('The second stream must have the `autoDestroy` option set to `false`');
-	}
-
-	const fromProperties = new Set(Object.keys(fromStream).concat(knownProperties));
-
-	const properties = {};
-
-	for (const property of fromProperties) {
-		// Don't overwrite existing properties.
-		if (property in toStream) {
-			continue;
-		}
-
-		properties[property] = {
-			get() {
-				const value = fromStream[property];
-				const isFunction = typeof value === 'function';
-
-				return isFunction ? value.bind(fromStream) : value;
-			},
-			set(value) {
-				fromStream[property] = value;
-			},
-			enumerable: true,
-			configurable: false
-		};
-	}
-
-	Object.defineProperties(toStream, properties);
-
-	fromStream.once('aborted', () => {
-		toStream.destroy();
-
-		toStream.emit('aborted');
-	});
-
-	fromStream.once('close', () => {
-		if (fromStream.complete) {
-			if (toStream.readable) {
-				toStream.once('end', () => {
-					toStream.emit('close');
-				});
-			} else {
-				toStream.emit('close');
-			}
-		} else {
-			toStream.emit('close');
-		}
-	});
-
-	return toStream;
-};
-
-
-/***/ }),
-
-/***/ 6214:
-/***/ ((module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const tls_1 = __nccwpck_require__(4016);
-const deferToConnect = (socket, fn) => {
-    let listeners;
-    if (typeof fn === 'function') {
-        const connect = fn;
-        listeners = { connect };
-    }
-    else {
-        listeners = fn;
-    }
-    const hasConnectListener = typeof listeners.connect === 'function';
-    const hasSecureConnectListener = typeof listeners.secureConnect === 'function';
-    const hasCloseListener = typeof listeners.close === 'function';
-    const onConnect = () => {
-        if (hasConnectListener) {
-            listeners.connect();
-        }
-        if (socket instanceof tls_1.TLSSocket && hasSecureConnectListener) {
-            if (socket.authorized) {
-                listeners.secureConnect();
-            }
-            else if (!socket.authorizationError) {
-                socket.once('secureConnect', listeners.secureConnect);
-            }
-        }
-        if (hasCloseListener) {
-            socket.once('close', listeners.close);
-        }
-    };
-    if (socket.writable && !socket.connecting) {
-        onConnect();
-    }
-    else if (socket.connecting) {
-        socket.once('connect', onConnect);
-    }
-    else if (socket.destroyed && hasCloseListener) {
-        listeners.close(socket._hadError);
-    }
-};
-exports.default = deferToConnect;
-// For CommonJS default export support
-module.exports = deferToConnect;
-module.exports.default = deferToConnect;
-
-
-/***/ }),
-
 /***/ 8932:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -18019,207 +17674,6 @@ class Deprecation extends Error {
 }
 
 exports.Deprecation = Deprecation;
-
-
-/***/ }),
-
-/***/ 4889:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-var platform = __nccwpck_require__(2087).platform();
-var spawnSync = __nccwpck_require__(3129).spawnSync;
-var readdirSync = __nccwpck_require__(5747).readdirSync;
-
-var GLIBC = 'glibc';
-var MUSL = 'musl';
-
-var spawnOptions = {
-  encoding: 'utf8',
-  env: process.env
-};
-
-if (!spawnSync) {
-  spawnSync = function () {
-    return { status: 126, stdout: '', stderr: '' };
-  };
-}
-
-function contains (needle) {
-  return function (haystack) {
-    return haystack.indexOf(needle) !== -1;
-  };
-}
-
-function versionFromMuslLdd (out) {
-  return out.split(/[\r\n]+/)[1].trim().split(/\s/)[1];
-}
-
-function safeReaddirSync (path) {
-  try {
-    return readdirSync(path);
-  } catch (e) {}
-  return [];
-}
-
-var family = '';
-var version = '';
-var method = '';
-
-if (platform === 'linux') {
-  // Try getconf
-  var glibc = spawnSync('getconf', ['GNU_LIBC_VERSION'], spawnOptions);
-  if (glibc.status === 0) {
-    family = GLIBC;
-    version = glibc.stdout.trim().split(' ')[1];
-    method = 'getconf';
-  } else {
-    // Try ldd
-    var ldd = spawnSync('ldd', ['--version'], spawnOptions);
-    if (ldd.status === 0 && ldd.stdout.indexOf(MUSL) !== -1) {
-      family = MUSL;
-      version = versionFromMuslLdd(ldd.stdout);
-      method = 'ldd';
-    } else if (ldd.status === 1 && ldd.stderr.indexOf(MUSL) !== -1) {
-      family = MUSL;
-      version = versionFromMuslLdd(ldd.stderr);
-      method = 'ldd';
-    } else {
-      // Try filesystem (family only)
-      var lib = safeReaddirSync('/lib');
-      if (lib.some(contains('-linux-gnu'))) {
-        family = GLIBC;
-        method = 'filesystem';
-      } else if (lib.some(contains('libc.musl-'))) {
-        family = MUSL;
-        method = 'filesystem';
-      } else if (lib.some(contains('ld-musl-'))) {
-        family = MUSL;
-        method = 'filesystem';
-      } else {
-        var usrSbin = safeReaddirSync('/usr/sbin');
-        if (usrSbin.some(contains('glibc'))) {
-          family = GLIBC;
-          method = 'filesystem';
-        }
-      }
-    }
-  }
-}
-
-var isNonGlibcLinux = (family !== '' && family !== GLIBC);
-
-module.exports = {
-  GLIBC: GLIBC,
-  MUSL: MUSL,
-  family: family,
-  version: version,
-  method: method,
-  isNonGlibcLinux: isNonGlibcLinux
-};
-
-
-/***/ }),
-
-/***/ 1205:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var once = __nccwpck_require__(1223);
-
-var noop = function() {};
-
-var isRequest = function(stream) {
-	return stream.setHeader && typeof stream.abort === 'function';
-};
-
-var isChildProcess = function(stream) {
-	return stream.stdio && Array.isArray(stream.stdio) && stream.stdio.length === 3
-};
-
-var eos = function(stream, opts, callback) {
-	if (typeof opts === 'function') return eos(stream, null, opts);
-	if (!opts) opts = {};
-
-	callback = once(callback || noop);
-
-	var ws = stream._writableState;
-	var rs = stream._readableState;
-	var readable = opts.readable || (opts.readable !== false && stream.readable);
-	var writable = opts.writable || (opts.writable !== false && stream.writable);
-	var cancelled = false;
-
-	var onlegacyfinish = function() {
-		if (!stream.writable) onfinish();
-	};
-
-	var onfinish = function() {
-		writable = false;
-		if (!readable) callback.call(stream);
-	};
-
-	var onend = function() {
-		readable = false;
-		if (!writable) callback.call(stream);
-	};
-
-	var onexit = function(exitCode) {
-		callback.call(stream, exitCode ? new Error('exited with error code: ' + exitCode) : null);
-	};
-
-	var onerror = function(err) {
-		callback.call(stream, err);
-	};
-
-	var onclose = function() {
-		process.nextTick(onclosenexttick);
-	};
-
-	var onclosenexttick = function() {
-		if (cancelled) return;
-		if (readable && !(rs && (rs.ended && !rs.destroyed))) return callback.call(stream, new Error('premature close'));
-		if (writable && !(ws && (ws.ended && !ws.destroyed))) return callback.call(stream, new Error('premature close'));
-	};
-
-	var onrequest = function() {
-		stream.req.on('finish', onfinish);
-	};
-
-	if (isRequest(stream)) {
-		stream.on('complete', onfinish);
-		stream.on('abort', onclose);
-		if (stream.req) onrequest();
-		else stream.on('request', onrequest);
-	} else if (writable && !ws) { // legacy streams
-		stream.on('end', onlegacyfinish);
-		stream.on('close', onlegacyfinish);
-	}
-
-	if (isChildProcess(stream)) stream.on('exit', onexit);
-
-	stream.on('end', onend);
-	stream.on('finish', onfinish);
-	if (opts.error !== false) stream.on('error', onerror);
-	stream.on('close', onclose);
-
-	return function() {
-		cancelled = true;
-		stream.removeListener('complete', onfinish);
-		stream.removeListener('abort', onclose);
-		stream.removeListener('request', onrequest);
-		if (stream.req) stream.req.removeListener('finish', onfinish);
-		stream.removeListener('end', onlegacyfinish);
-		stream.removeListener('close', onlegacyfinish);
-		stream.removeListener('finish', onfinish);
-		stream.removeListener('exit', onexit);
-		stream.removeListener('end', onend);
-		stream.removeListener('error', onerror);
-		stream.removeListener('close', onclose);
-	};
-};
-
-module.exports = eos;
 
 
 /***/ }),
@@ -22556,2797 +22010,6 @@ module.exports = {
 
 /***/ }),
 
-/***/ 6457:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const types_1 = __nccwpck_require__(4597);
-function createRejection(error, ...beforeErrorGroups) {
-    const promise = (async () => {
-        if (error instanceof types_1.RequestError) {
-            try {
-                for (const hooks of beforeErrorGroups) {
-                    if (hooks) {
-                        for (const hook of hooks) {
-                            // eslint-disable-next-line no-await-in-loop
-                            error = await hook(error);
-                        }
-                    }
-                }
-            }
-            catch (error_) {
-                error = error_;
-            }
-        }
-        throw error;
-    })();
-    const returnPromise = () => promise;
-    promise.json = returnPromise;
-    promise.text = returnPromise;
-    promise.buffer = returnPromise;
-    promise.on = returnPromise;
-    return promise;
-}
-exports.default = createRejection;
-
-
-/***/ }),
-
-/***/ 6056:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const events_1 = __nccwpck_require__(8614);
-const is_1 = __nccwpck_require__(7678);
-const PCancelable = __nccwpck_require__(9072);
-const types_1 = __nccwpck_require__(4597);
-const parse_body_1 = __nccwpck_require__(8220);
-const core_1 = __nccwpck_require__(94);
-const proxy_events_1 = __nccwpck_require__(3021);
-const get_buffer_1 = __nccwpck_require__(4500);
-const is_response_ok_1 = __nccwpck_require__(9298);
-const proxiedRequestEvents = [
-    'request',
-    'response',
-    'redirect',
-    'uploadProgress',
-    'downloadProgress'
-];
-function asPromise(normalizedOptions) {
-    let globalRequest;
-    let globalResponse;
-    const emitter = new events_1.EventEmitter();
-    const promise = new PCancelable((resolve, reject, onCancel) => {
-        const makeRequest = (retryCount) => {
-            const request = new core_1.default(undefined, normalizedOptions);
-            request.retryCount = retryCount;
-            request._noPipe = true;
-            onCancel(() => request.destroy());
-            onCancel.shouldReject = false;
-            onCancel(() => reject(new types_1.CancelError(request)));
-            globalRequest = request;
-            request.once('response', async (response) => {
-                var _a;
-                response.retryCount = retryCount;
-                if (response.request.aborted) {
-                    // Canceled while downloading - will throw a `CancelError` or `TimeoutError` error
-                    return;
-                }
-                // Download body
-                let rawBody;
-                try {
-                    rawBody = await get_buffer_1.default(request);
-                    response.rawBody = rawBody;
-                }
-                catch (_b) {
-                    // The same error is caught below.
-                    // See request.once('error')
-                    return;
-                }
-                if (request._isAboutToError) {
-                    return;
-                }
-                // Parse body
-                const contentEncoding = ((_a = response.headers['content-encoding']) !== null && _a !== void 0 ? _a : '').toLowerCase();
-                const isCompressed = ['gzip', 'deflate', 'br'].includes(contentEncoding);
-                const { options } = request;
-                if (isCompressed && !options.decompress) {
-                    response.body = rawBody;
-                }
-                else {
-                    try {
-                        response.body = parse_body_1.default(response, options.responseType, options.parseJson, options.encoding);
-                    }
-                    catch (error) {
-                        // Fallback to `utf8`
-                        response.body = rawBody.toString();
-                        if (is_response_ok_1.isResponseOk(response)) {
-                            request._beforeError(error);
-                            return;
-                        }
-                    }
-                }
-                try {
-                    for (const [index, hook] of options.hooks.afterResponse.entries()) {
-                        // @ts-expect-error TS doesn't notice that CancelableRequest is a Promise
-                        // eslint-disable-next-line no-await-in-loop
-                        response = await hook(response, async (updatedOptions) => {
-                            const typedOptions = core_1.default.normalizeArguments(undefined, {
-                                ...updatedOptions,
-                                retry: {
-                                    calculateDelay: () => 0
-                                },
-                                throwHttpErrors: false,
-                                resolveBodyOnly: false
-                            }, options);
-                            // Remove any further hooks for that request, because we'll call them anyway.
-                            // The loop continues. We don't want duplicates (asPromise recursion).
-                            typedOptions.hooks.afterResponse = typedOptions.hooks.afterResponse.slice(0, index);
-                            for (const hook of typedOptions.hooks.beforeRetry) {
-                                // eslint-disable-next-line no-await-in-loop
-                                await hook(typedOptions);
-                            }
-                            const promise = asPromise(typedOptions);
-                            onCancel(() => {
-                                promise.catch(() => { });
-                                promise.cancel();
-                            });
-                            return promise;
-                        });
-                    }
-                }
-                catch (error) {
-                    request._beforeError(new types_1.RequestError(error.message, error, request));
-                    return;
-                }
-                if (!is_response_ok_1.isResponseOk(response)) {
-                    request._beforeError(new types_1.HTTPError(response));
-                    return;
-                }
-                globalResponse = response;
-                resolve(request.options.resolveBodyOnly ? response.body : response);
-            });
-            const onError = (error) => {
-                if (promise.isCanceled) {
-                    return;
-                }
-                const { options } = request;
-                if (error instanceof types_1.HTTPError && !options.throwHttpErrors) {
-                    const { response } = error;
-                    resolve(request.options.resolveBodyOnly ? response.body : response);
-                    return;
-                }
-                reject(error);
-            };
-            request.once('error', onError);
-            const previousBody = request.options.body;
-            request.once('retry', (newRetryCount, error) => {
-                var _a, _b;
-                if (previousBody === ((_a = error.request) === null || _a === void 0 ? void 0 : _a.options.body) && is_1.default.nodeStream((_b = error.request) === null || _b === void 0 ? void 0 : _b.options.body)) {
-                    onError(error);
-                    return;
-                }
-                makeRequest(newRetryCount);
-            });
-            proxy_events_1.default(request, emitter, proxiedRequestEvents);
-        };
-        makeRequest(0);
-    });
-    promise.on = (event, fn) => {
-        emitter.on(event, fn);
-        return promise;
-    };
-    const shortcut = (responseType) => {
-        const newPromise = (async () => {
-            // Wait until downloading has ended
-            await promise;
-            const { options } = globalResponse.request;
-            return parse_body_1.default(globalResponse, responseType, options.parseJson, options.encoding);
-        })();
-        Object.defineProperties(newPromise, Object.getOwnPropertyDescriptors(promise));
-        return newPromise;
-    };
-    promise.json = () => {
-        const { headers } = globalRequest.options;
-        if (!globalRequest.writableFinished && headers.accept === undefined) {
-            headers.accept = 'application/json';
-        }
-        return shortcut('json');
-    };
-    promise.buffer = () => shortcut('buffer');
-    promise.text = () => shortcut('text');
-    return promise;
-}
-exports.default = asPromise;
-__exportStar(__nccwpck_require__(4597), exports);
-
-
-/***/ }),
-
-/***/ 1048:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const is_1 = __nccwpck_require__(7678);
-const normalizeArguments = (options, defaults) => {
-    if (is_1.default.null_(options.encoding)) {
-        throw new TypeError('To get a Buffer, set `options.responseType` to `buffer` instead');
-    }
-    is_1.assert.any([is_1.default.string, is_1.default.undefined], options.encoding);
-    is_1.assert.any([is_1.default.boolean, is_1.default.undefined], options.resolveBodyOnly);
-    is_1.assert.any([is_1.default.boolean, is_1.default.undefined], options.methodRewriting);
-    is_1.assert.any([is_1.default.boolean, is_1.default.undefined], options.isStream);
-    is_1.assert.any([is_1.default.string, is_1.default.undefined], options.responseType);
-    // `options.responseType`
-    if (options.responseType === undefined) {
-        options.responseType = 'text';
-    }
-    // `options.retry`
-    const { retry } = options;
-    if (defaults) {
-        options.retry = { ...defaults.retry };
-    }
-    else {
-        options.retry = {
-            calculateDelay: retryObject => retryObject.computedValue,
-            limit: 0,
-            methods: [],
-            statusCodes: [],
-            errorCodes: [],
-            maxRetryAfter: undefined
-        };
-    }
-    if (is_1.default.object(retry)) {
-        options.retry = {
-            ...options.retry,
-            ...retry
-        };
-        options.retry.methods = [...new Set(options.retry.methods.map(method => method.toUpperCase()))];
-        options.retry.statusCodes = [...new Set(options.retry.statusCodes)];
-        options.retry.errorCodes = [...new Set(options.retry.errorCodes)];
-    }
-    else if (is_1.default.number(retry)) {
-        options.retry.limit = retry;
-    }
-    if (is_1.default.undefined(options.retry.maxRetryAfter)) {
-        options.retry.maxRetryAfter = Math.min(
-        // TypeScript is not smart enough to handle `.filter(x => is.number(x))`.
-        // eslint-disable-next-line unicorn/no-fn-reference-in-iterator
-        ...[options.timeout.request, options.timeout.connect].filter(is_1.default.number));
-    }
-    // `options.pagination`
-    if (is_1.default.object(options.pagination)) {
-        if (defaults) {
-            options.pagination = {
-                ...defaults.pagination,
-                ...options.pagination
-            };
-        }
-        const { pagination } = options;
-        if (!is_1.default.function_(pagination.transform)) {
-            throw new Error('`options.pagination.transform` must be implemented');
-        }
-        if (!is_1.default.function_(pagination.shouldContinue)) {
-            throw new Error('`options.pagination.shouldContinue` must be implemented');
-        }
-        if (!is_1.default.function_(pagination.filter)) {
-            throw new TypeError('`options.pagination.filter` must be implemented');
-        }
-        if (!is_1.default.function_(pagination.paginate)) {
-            throw new Error('`options.pagination.paginate` must be implemented');
-        }
-    }
-    // JSON mode
-    if (options.responseType === 'json' && options.headers.accept === undefined) {
-        options.headers.accept = 'application/json';
-    }
-    return options;
-};
-exports.default = normalizeArguments;
-
-
-/***/ }),
-
-/***/ 8220:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const types_1 = __nccwpck_require__(4597);
-const parseBody = (response, responseType, parseJson, encoding) => {
-    const { rawBody } = response;
-    try {
-        if (responseType === 'text') {
-            return rawBody.toString(encoding);
-        }
-        if (responseType === 'json') {
-            return rawBody.length === 0 ? '' : parseJson(rawBody.toString());
-        }
-        if (responseType === 'buffer') {
-            return rawBody;
-        }
-        throw new types_1.ParseError({
-            message: `Unknown body type '${responseType}'`,
-            name: 'Error'
-        }, response);
-    }
-    catch (error) {
-        throw new types_1.ParseError(error, response);
-    }
-};
-exports.default = parseBody;
-
-
-/***/ }),
-
-/***/ 4597:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CancelError = exports.ParseError = void 0;
-const core_1 = __nccwpck_require__(94);
-/**
-An error to be thrown when server response code is 2xx, and parsing body fails.
-Includes a `response` property.
-*/
-class ParseError extends core_1.RequestError {
-    constructor(error, response) {
-        const { options } = response.request;
-        super(`${error.message} in "${options.url.toString()}"`, error, response.request);
-        this.name = 'ParseError';
-    }
-}
-exports.ParseError = ParseError;
-/**
-An error to be thrown when the request is aborted with `.cancel()`.
-*/
-class CancelError extends core_1.RequestError {
-    constructor(request) {
-        super('Promise was canceled', {}, request);
-        this.name = 'CancelError';
-    }
-    get isCanceled() {
-        return true;
-    }
-}
-exports.CancelError = CancelError;
-__exportStar(__nccwpck_require__(94), exports);
-
-
-/***/ }),
-
-/***/ 3462:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.retryAfterStatusCodes = void 0;
-exports.retryAfterStatusCodes = new Set([413, 429, 503]);
-const calculateRetryDelay = ({ attemptCount, retryOptions, error, retryAfter }) => {
-    if (attemptCount > retryOptions.limit) {
-        return 0;
-    }
-    const hasMethod = retryOptions.methods.includes(error.options.method);
-    const hasErrorCode = retryOptions.errorCodes.includes(error.code);
-    const hasStatusCode = error.response && retryOptions.statusCodes.includes(error.response.statusCode);
-    if (!hasMethod || (!hasErrorCode && !hasStatusCode)) {
-        return 0;
-    }
-    if (error.response) {
-        if (retryAfter) {
-            if (retryOptions.maxRetryAfter === undefined || retryAfter > retryOptions.maxRetryAfter) {
-                return 0;
-            }
-            return retryAfter;
-        }
-        if (error.response.statusCode === 413) {
-            return 0;
-        }
-    }
-    const noise = Math.random() * 100;
-    return ((2 ** (attemptCount - 1)) * 1000) + noise;
-};
-exports.default = calculateRetryDelay;
-
-
-/***/ }),
-
-/***/ 94:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.UnsupportedProtocolError = exports.ReadError = exports.TimeoutError = exports.UploadError = exports.CacheError = exports.HTTPError = exports.MaxRedirectsError = exports.RequestError = exports.setNonEnumerableProperties = exports.knownHookEvents = exports.withoutBody = exports.kIsNormalizedAlready = void 0;
-const util_1 = __nccwpck_require__(1669);
-const stream_1 = __nccwpck_require__(2413);
-const fs_1 = __nccwpck_require__(5747);
-const url_1 = __nccwpck_require__(8835);
-const http = __nccwpck_require__(8605);
-const http_1 = __nccwpck_require__(8605);
-const https = __nccwpck_require__(7211);
-const http_timer_1 = __nccwpck_require__(8097);
-const cacheable_lookup_1 = __nccwpck_require__(2286);
-const CacheableRequest = __nccwpck_require__(8116);
-const decompressResponse = __nccwpck_require__(2391);
-// @ts-expect-error Missing types
-const http2wrapper = __nccwpck_require__(4645);
-const lowercaseKeys = __nccwpck_require__(9662);
-const is_1 = __nccwpck_require__(7678);
-const get_body_size_1 = __nccwpck_require__(4564);
-const is_form_data_1 = __nccwpck_require__(40);
-const proxy_events_1 = __nccwpck_require__(3021);
-const timed_out_1 = __nccwpck_require__(2454);
-const url_to_options_1 = __nccwpck_require__(8026);
-const options_to_url_1 = __nccwpck_require__(9219);
-const weakable_map_1 = __nccwpck_require__(7288);
-const get_buffer_1 = __nccwpck_require__(4500);
-const dns_ip_version_1 = __nccwpck_require__(6671);
-const is_response_ok_1 = __nccwpck_require__(9298);
-const deprecation_warning_1 = __nccwpck_require__(397);
-const normalize_arguments_1 = __nccwpck_require__(1048);
-const calculate_retry_delay_1 = __nccwpck_require__(3462);
-const globalDnsCache = new cacheable_lookup_1.default();
-const kRequest = Symbol('request');
-const kResponse = Symbol('response');
-const kResponseSize = Symbol('responseSize');
-const kDownloadedSize = Symbol('downloadedSize');
-const kBodySize = Symbol('bodySize');
-const kUploadedSize = Symbol('uploadedSize');
-const kServerResponsesPiped = Symbol('serverResponsesPiped');
-const kUnproxyEvents = Symbol('unproxyEvents');
-const kIsFromCache = Symbol('isFromCache');
-const kCancelTimeouts = Symbol('cancelTimeouts');
-const kStartedReading = Symbol('startedReading');
-const kStopReading = Symbol('stopReading');
-const kTriggerRead = Symbol('triggerRead');
-const kBody = Symbol('body');
-const kJobs = Symbol('jobs');
-const kOriginalResponse = Symbol('originalResponse');
-const kRetryTimeout = Symbol('retryTimeout');
-exports.kIsNormalizedAlready = Symbol('isNormalizedAlready');
-const supportsBrotli = is_1.default.string(process.versions.brotli);
-exports.withoutBody = new Set(['GET', 'HEAD']);
-exports.knownHookEvents = [
-    'init',
-    'beforeRequest',
-    'beforeRedirect',
-    'beforeError',
-    'beforeRetry',
-    // Promise-Only
-    'afterResponse'
-];
-function validateSearchParameters(searchParameters) {
-    // eslint-disable-next-line guard-for-in
-    for (const key in searchParameters) {
-        const value = searchParameters[key];
-        if (!is_1.default.string(value) && !is_1.default.number(value) && !is_1.default.boolean(value) && !is_1.default.null_(value) && !is_1.default.undefined(value)) {
-            throw new TypeError(`The \`searchParams\` value '${String(value)}' must be a string, number, boolean or null`);
-        }
-    }
-}
-function isClientRequest(clientRequest) {
-    return is_1.default.object(clientRequest) && !('statusCode' in clientRequest);
-}
-const cacheableStore = new weakable_map_1.default();
-const waitForOpenFile = async (file) => new Promise((resolve, reject) => {
-    const onError = (error) => {
-        reject(error);
-    };
-    // Node.js 12 has incomplete types
-    if (!file.pending) {
-        resolve();
-    }
-    file.once('error', onError);
-    file.once('ready', () => {
-        file.off('error', onError);
-        resolve();
-    });
-});
-const redirectCodes = new Set([300, 301, 302, 303, 304, 307, 308]);
-const nonEnumerableProperties = [
-    'context',
-    'body',
-    'json',
-    'form'
-];
-exports.setNonEnumerableProperties = (sources, to) => {
-    // Non enumerable properties shall not be merged
-    const properties = {};
-    for (const source of sources) {
-        if (!source) {
-            continue;
-        }
-        for (const name of nonEnumerableProperties) {
-            if (!(name in source)) {
-                continue;
-            }
-            properties[name] = {
-                writable: true,
-                configurable: true,
-                enumerable: false,
-                // @ts-expect-error TS doesn't see the check above
-                value: source[name]
-            };
-        }
-    }
-    Object.defineProperties(to, properties);
-};
-/**
-An error to be thrown when a request fails.
-Contains a `code` property with error class code, like `ECONNREFUSED`.
-*/
-class RequestError extends Error {
-    constructor(message, error, self) {
-        var _a;
-        super(message);
-        Error.captureStackTrace(this, this.constructor);
-        this.name = 'RequestError';
-        this.code = error.code;
-        if (self instanceof Request) {
-            Object.defineProperty(this, 'request', {
-                enumerable: false,
-                value: self
-            });
-            Object.defineProperty(this, 'response', {
-                enumerable: false,
-                value: self[kResponse]
-            });
-            Object.defineProperty(this, 'options', {
-                // This fails because of TS 3.7.2 useDefineForClassFields
-                // Ref: https://github.com/microsoft/TypeScript/issues/34972
-                enumerable: false,
-                value: self.options
-            });
-        }
-        else {
-            Object.defineProperty(this, 'options', {
-                // This fails because of TS 3.7.2 useDefineForClassFields
-                // Ref: https://github.com/microsoft/TypeScript/issues/34972
-                enumerable: false,
-                value: self
-            });
-        }
-        this.timings = (_a = this.request) === null || _a === void 0 ? void 0 : _a.timings;
-        // Recover the original stacktrace
-        if (is_1.default.string(error.stack) && is_1.default.string(this.stack)) {
-            const indexOfMessage = this.stack.indexOf(this.message) + this.message.length;
-            const thisStackTrace = this.stack.slice(indexOfMessage).split('\n').reverse();
-            const errorStackTrace = error.stack.slice(error.stack.indexOf(error.message) + error.message.length).split('\n').reverse();
-            // Remove duplicated traces
-            while (errorStackTrace.length !== 0 && errorStackTrace[0] === thisStackTrace[0]) {
-                thisStackTrace.shift();
-            }
-            this.stack = `${this.stack.slice(0, indexOfMessage)}${thisStackTrace.reverse().join('\n')}${errorStackTrace.reverse().join('\n')}`;
-        }
-    }
-}
-exports.RequestError = RequestError;
-/**
-An error to be thrown when the server redirects you more than ten times.
-Includes a `response` property.
-*/
-class MaxRedirectsError extends RequestError {
-    constructor(request) {
-        super(`Redirected ${request.options.maxRedirects} times. Aborting.`, {}, request);
-        this.name = 'MaxRedirectsError';
-    }
-}
-exports.MaxRedirectsError = MaxRedirectsError;
-/**
-An error to be thrown when the server response code is not 2xx nor 3xx if `options.followRedirect` is `true`, but always except for 304.
-Includes a `response` property.
-*/
-class HTTPError extends RequestError {
-    constructor(response) {
-        super(`Response code ${response.statusCode} (${response.statusMessage})`, {}, response.request);
-        this.name = 'HTTPError';
-    }
-}
-exports.HTTPError = HTTPError;
-/**
-An error to be thrown when a cache method fails.
-For example, if the database goes down or there's a filesystem error.
-*/
-class CacheError extends RequestError {
-    constructor(error, request) {
-        super(error.message, error, request);
-        this.name = 'CacheError';
-    }
-}
-exports.CacheError = CacheError;
-/**
-An error to be thrown when the request body is a stream and an error occurs while reading from that stream.
-*/
-class UploadError extends RequestError {
-    constructor(error, request) {
-        super(error.message, error, request);
-        this.name = 'UploadError';
-    }
-}
-exports.UploadError = UploadError;
-/**
-An error to be thrown when the request is aborted due to a timeout.
-Includes an `event` and `timings` property.
-*/
-class TimeoutError extends RequestError {
-    constructor(error, timings, request) {
-        super(error.message, error, request);
-        this.name = 'TimeoutError';
-        this.event = error.event;
-        this.timings = timings;
-    }
-}
-exports.TimeoutError = TimeoutError;
-/**
-An error to be thrown when reading from response stream fails.
-*/
-class ReadError extends RequestError {
-    constructor(error, request) {
-        super(error.message, error, request);
-        this.name = 'ReadError';
-    }
-}
-exports.ReadError = ReadError;
-/**
-An error to be thrown when given an unsupported protocol.
-*/
-class UnsupportedProtocolError extends RequestError {
-    constructor(options) {
-        super(`Unsupported protocol "${options.url.protocol}"`, {}, options);
-        this.name = 'UnsupportedProtocolError';
-    }
-}
-exports.UnsupportedProtocolError = UnsupportedProtocolError;
-const proxiedRequestEvents = [
-    'socket',
-    'connect',
-    'continue',
-    'information',
-    'upgrade',
-    'timeout'
-];
-class Request extends stream_1.Duplex {
-    constructor(url, options = {}, defaults) {
-        super({
-            // This must be false, to enable throwing after destroy
-            // It is used for retry logic in Promise API
-            autoDestroy: false,
-            // It needs to be zero because we're just proxying the data to another stream
-            highWaterMark: 0
-        });
-        this[kDownloadedSize] = 0;
-        this[kUploadedSize] = 0;
-        this.requestInitialized = false;
-        this[kServerResponsesPiped] = new Set();
-        this.redirects = [];
-        this[kStopReading] = false;
-        this[kTriggerRead] = false;
-        this[kJobs] = [];
-        this.retryCount = 0;
-        // TODO: Remove this when targeting Node.js >= 12
-        this._progressCallbacks = [];
-        const unlockWrite = () => this._unlockWrite();
-        const lockWrite = () => this._lockWrite();
-        this.on('pipe', (source) => {
-            source.prependListener('data', unlockWrite);
-            source.on('data', lockWrite);
-            source.prependListener('end', unlockWrite);
-            source.on('end', lockWrite);
-        });
-        this.on('unpipe', (source) => {
-            source.off('data', unlockWrite);
-            source.off('data', lockWrite);
-            source.off('end', unlockWrite);
-            source.off('end', lockWrite);
-        });
-        this.on('pipe', source => {
-            if (source instanceof http_1.IncomingMessage) {
-                this.options.headers = {
-                    ...source.headers,
-                    ...this.options.headers
-                };
-            }
-        });
-        const { json, body, form } = options;
-        if (json || body || form) {
-            this._lockWrite();
-        }
-        if (exports.kIsNormalizedAlready in options) {
-            this.options = options;
-        }
-        else {
-            try {
-                // @ts-expect-error Common TypeScript bug saying that `this.constructor` is not accessible
-                this.options = this.constructor.normalizeArguments(url, options, defaults);
-            }
-            catch (error) {
-                // TODO: Move this to `_destroy()`
-                if (is_1.default.nodeStream(options.body)) {
-                    options.body.destroy();
-                }
-                this.destroy(error);
-                return;
-            }
-        }
-        (async () => {
-            var _a;
-            try {
-                if (this.options.body instanceof fs_1.ReadStream) {
-                    await waitForOpenFile(this.options.body);
-                }
-                const { url: normalizedURL } = this.options;
-                if (!normalizedURL) {
-                    throw new TypeError('Missing `url` property');
-                }
-                this.requestUrl = normalizedURL.toString();
-                decodeURI(this.requestUrl);
-                await this._finalizeBody();
-                await this._makeRequest();
-                if (this.destroyed) {
-                    (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.destroy();
-                    return;
-                }
-                // Queued writes etc.
-                for (const job of this[kJobs]) {
-                    job();
-                }
-                // Prevent memory leak
-                this[kJobs].length = 0;
-                this.requestInitialized = true;
-            }
-            catch (error) {
-                if (error instanceof RequestError) {
-                    this._beforeError(error);
-                    return;
-                }
-                // This is a workaround for https://github.com/nodejs/node/issues/33335
-                if (!this.destroyed) {
-                    this.destroy(error);
-                }
-            }
-        })();
-    }
-    static normalizeArguments(url, options, defaults) {
-        var _a, _b, _c, _d, _e;
-        const rawOptions = options;
-        if (is_1.default.object(url) && !is_1.default.urlInstance(url)) {
-            options = { ...defaults, ...url, ...options };
-        }
-        else {
-            if (url && options && options.url !== undefined) {
-                throw new TypeError('The `url` option is mutually exclusive with the `input` argument');
-            }
-            options = { ...defaults, ...options };
-            if (url !== undefined) {
-                options.url = url;
-            }
-            if (is_1.default.urlInstance(options.url)) {
-                options.url = new url_1.URL(options.url.toString());
-            }
-        }
-        // TODO: Deprecate URL options in Got 12.
-        // Support extend-specific options
-        if (options.cache === false) {
-            options.cache = undefined;
-        }
-        if (options.dnsCache === false) {
-            options.dnsCache = undefined;
-        }
-        // Nice type assertions
-        is_1.assert.any([is_1.default.string, is_1.default.undefined], options.method);
-        is_1.assert.any([is_1.default.object, is_1.default.undefined], options.headers);
-        is_1.assert.any([is_1.default.string, is_1.default.urlInstance, is_1.default.undefined], options.prefixUrl);
-        is_1.assert.any([is_1.default.object, is_1.default.undefined], options.cookieJar);
-        is_1.assert.any([is_1.default.object, is_1.default.string, is_1.default.undefined], options.searchParams);
-        is_1.assert.any([is_1.default.object, is_1.default.string, is_1.default.undefined], options.cache);
-        is_1.assert.any([is_1.default.object, is_1.default.number, is_1.default.undefined], options.timeout);
-        is_1.assert.any([is_1.default.object, is_1.default.undefined], options.context);
-        is_1.assert.any([is_1.default.object, is_1.default.undefined], options.hooks);
-        is_1.assert.any([is_1.default.boolean, is_1.default.undefined], options.decompress);
-        is_1.assert.any([is_1.default.boolean, is_1.default.undefined], options.ignoreInvalidCookies);
-        is_1.assert.any([is_1.default.boolean, is_1.default.undefined], options.followRedirect);
-        is_1.assert.any([is_1.default.number, is_1.default.undefined], options.maxRedirects);
-        is_1.assert.any([is_1.default.boolean, is_1.default.undefined], options.throwHttpErrors);
-        is_1.assert.any([is_1.default.boolean, is_1.default.undefined], options.http2);
-        is_1.assert.any([is_1.default.boolean, is_1.default.undefined], options.allowGetBody);
-        is_1.assert.any([is_1.default.string, is_1.default.undefined], options.localAddress);
-        is_1.assert.any([dns_ip_version_1.isDnsLookupIpVersion, is_1.default.undefined], options.dnsLookupIpVersion);
-        is_1.assert.any([is_1.default.object, is_1.default.undefined], options.https);
-        is_1.assert.any([is_1.default.boolean, is_1.default.undefined], options.rejectUnauthorized);
-        if (options.https) {
-            is_1.assert.any([is_1.default.boolean, is_1.default.undefined], options.https.rejectUnauthorized);
-            is_1.assert.any([is_1.default.function_, is_1.default.undefined], options.https.checkServerIdentity);
-            is_1.assert.any([is_1.default.string, is_1.default.object, is_1.default.array, is_1.default.undefined], options.https.certificateAuthority);
-            is_1.assert.any([is_1.default.string, is_1.default.object, is_1.default.array, is_1.default.undefined], options.https.key);
-            is_1.assert.any([is_1.default.string, is_1.default.object, is_1.default.array, is_1.default.undefined], options.https.certificate);
-            is_1.assert.any([is_1.default.string, is_1.default.undefined], options.https.passphrase);
-            is_1.assert.any([is_1.default.string, is_1.default.buffer, is_1.default.array, is_1.default.undefined], options.https.pfx);
-        }
-        is_1.assert.any([is_1.default.object, is_1.default.undefined], options.cacheOptions);
-        // `options.method`
-        if (is_1.default.string(options.method)) {
-            options.method = options.method.toUpperCase();
-        }
-        else {
-            options.method = 'GET';
-        }
-        // `options.headers`
-        if (options.headers === (defaults === null || defaults === void 0 ? void 0 : defaults.headers)) {
-            options.headers = { ...options.headers };
-        }
-        else {
-            options.headers = lowercaseKeys({ ...(defaults === null || defaults === void 0 ? void 0 : defaults.headers), ...options.headers });
-        }
-        // Disallow legacy `url.Url`
-        if ('slashes' in options) {
-            throw new TypeError('The legacy `url.Url` has been deprecated. Use `URL` instead.');
-        }
-        // `options.auth`
-        if ('auth' in options) {
-            throw new TypeError('Parameter `auth` is deprecated. Use `username` / `password` instead.');
-        }
-        // `options.searchParams`
-        if ('searchParams' in options) {
-            if (options.searchParams && options.searchParams !== (defaults === null || defaults === void 0 ? void 0 : defaults.searchParams)) {
-                let searchParameters;
-                if (is_1.default.string(options.searchParams) || (options.searchParams instanceof url_1.URLSearchParams)) {
-                    searchParameters = new url_1.URLSearchParams(options.searchParams);
-                }
-                else {
-                    validateSearchParameters(options.searchParams);
-                    searchParameters = new url_1.URLSearchParams();
-                    // eslint-disable-next-line guard-for-in
-                    for (const key in options.searchParams) {
-                        const value = options.searchParams[key];
-                        if (value === null) {
-                            searchParameters.append(key, '');
-                        }
-                        else if (value !== undefined) {
-                            searchParameters.append(key, value);
-                        }
-                    }
-                }
-                // `normalizeArguments()` is also used to merge options
-                (_a = defaults === null || defaults === void 0 ? void 0 : defaults.searchParams) === null || _a === void 0 ? void 0 : _a.forEach((value, key) => {
-                    // Only use default if one isn't already defined
-                    if (!searchParameters.has(key)) {
-                        searchParameters.append(key, value);
-                    }
-                });
-                options.searchParams = searchParameters;
-            }
-        }
-        // `options.username` & `options.password`
-        options.username = (_b = options.username) !== null && _b !== void 0 ? _b : '';
-        options.password = (_c = options.password) !== null && _c !== void 0 ? _c : '';
-        // `options.prefixUrl` & `options.url`
-        if (is_1.default.undefined(options.prefixUrl)) {
-            options.prefixUrl = (_d = defaults === null || defaults === void 0 ? void 0 : defaults.prefixUrl) !== null && _d !== void 0 ? _d : '';
-        }
-        else {
-            options.prefixUrl = options.prefixUrl.toString();
-            if (options.prefixUrl !== '' && !options.prefixUrl.endsWith('/')) {
-                options.prefixUrl += '/';
-            }
-        }
-        if (is_1.default.string(options.url)) {
-            if (options.url.startsWith('/')) {
-                throw new Error('`input` must not start with a slash when using `prefixUrl`');
-            }
-            options.url = options_to_url_1.default(options.prefixUrl + options.url, options);
-        }
-        else if ((is_1.default.undefined(options.url) && options.prefixUrl !== '') || options.protocol) {
-            options.url = options_to_url_1.default(options.prefixUrl, options);
-        }
-        if (options.url) {
-            if ('port' in options) {
-                delete options.port;
-            }
-            // Make it possible to change `options.prefixUrl`
-            let { prefixUrl } = options;
-            Object.defineProperty(options, 'prefixUrl', {
-                set: (value) => {
-                    const url = options.url;
-                    if (!url.href.startsWith(value)) {
-                        throw new Error(`Cannot change \`prefixUrl\` from ${prefixUrl} to ${value}: ${url.href}`);
-                    }
-                    options.url = new url_1.URL(value + url.href.slice(prefixUrl.length));
-                    prefixUrl = value;
-                },
-                get: () => prefixUrl
-            });
-            // Support UNIX sockets
-            let { protocol } = options.url;
-            if (protocol === 'unix:') {
-                protocol = 'http:';
-                options.url = new url_1.URL(`http://unix${options.url.pathname}${options.url.search}`);
-            }
-            // Set search params
-            if (options.searchParams) {
-                // eslint-disable-next-line @typescript-eslint/no-base-to-string
-                options.url.search = options.searchParams.toString();
-            }
-            // Protocol check
-            if (protocol !== 'http:' && protocol !== 'https:') {
-                throw new UnsupportedProtocolError(options);
-            }
-            // Update `username`
-            if (options.username === '') {
-                options.username = options.url.username;
-            }
-            else {
-                options.url.username = options.username;
-            }
-            // Update `password`
-            if (options.password === '') {
-                options.password = options.url.password;
-            }
-            else {
-                options.url.password = options.password;
-            }
-        }
-        // `options.cookieJar`
-        const { cookieJar } = options;
-        if (cookieJar) {
-            let { setCookie, getCookieString } = cookieJar;
-            is_1.assert.function_(setCookie);
-            is_1.assert.function_(getCookieString);
-            /* istanbul ignore next: Horrible `tough-cookie` v3 check */
-            if (setCookie.length === 4 && getCookieString.length === 0) {
-                setCookie = util_1.promisify(setCookie.bind(options.cookieJar));
-                getCookieString = util_1.promisify(getCookieString.bind(options.cookieJar));
-                options.cookieJar = {
-                    setCookie,
-                    getCookieString: getCookieString
-                };
-            }
-        }
-        // `options.cache`
-        const { cache } = options;
-        if (cache) {
-            if (!cacheableStore.has(cache)) {
-                cacheableStore.set(cache, new CacheableRequest(((requestOptions, handler) => {
-                    const result = requestOptions[kRequest](requestOptions, handler);
-                    // TODO: remove this when `cacheable-request` supports async request functions.
-                    if (is_1.default.promise(result)) {
-                        // @ts-expect-error
-                        // We only need to implement the error handler in order to support HTTP2 caching.
-                        // The result will be a promise anyway.
-                        result.once = (event, handler) => {
-                            if (event === 'error') {
-                                result.catch(handler);
-                            }
-                            else if (event === 'abort') {
-                                // The empty catch is needed here in case when
-                                // it rejects before it's `await`ed in `_makeRequest`.
-                                (async () => {
-                                    try {
-                                        const request = (await result);
-                                        request.once('abort', handler);
-                                    }
-                                    catch (_a) { }
-                                })();
-                            }
-                            else {
-                                /* istanbul ignore next: safety check */
-                                throw new Error(`Unknown HTTP2 promise event: ${event}`);
-                            }
-                            return result;
-                        };
-                    }
-                    return result;
-                }), cache));
-            }
-        }
-        // `options.cacheOptions`
-        options.cacheOptions = { ...options.cacheOptions };
-        // `options.dnsCache`
-        if (options.dnsCache === true) {
-            options.dnsCache = globalDnsCache;
-        }
-        else if (!is_1.default.undefined(options.dnsCache) && !options.dnsCache.lookup) {
-            throw new TypeError(`Parameter \`dnsCache\` must be a CacheableLookup instance or a boolean, got ${is_1.default(options.dnsCache)}`);
-        }
-        // `options.timeout`
-        if (is_1.default.number(options.timeout)) {
-            options.timeout = { request: options.timeout };
-        }
-        else if (defaults && options.timeout !== defaults.timeout) {
-            options.timeout = {
-                ...defaults.timeout,
-                ...options.timeout
-            };
-        }
-        else {
-            options.timeout = { ...options.timeout };
-        }
-        // `options.context`
-        if (!options.context) {
-            options.context = {};
-        }
-        // `options.hooks`
-        const areHooksDefault = options.hooks === (defaults === null || defaults === void 0 ? void 0 : defaults.hooks);
-        options.hooks = { ...options.hooks };
-        for (const event of exports.knownHookEvents) {
-            if (event in options.hooks) {
-                if (is_1.default.array(options.hooks[event])) {
-                    // See https://github.com/microsoft/TypeScript/issues/31445#issuecomment-576929044
-                    options.hooks[event] = [...options.hooks[event]];
-                }
-                else {
-                    throw new TypeError(`Parameter \`${event}\` must be an Array, got ${is_1.default(options.hooks[event])}`);
-                }
-            }
-            else {
-                options.hooks[event] = [];
-            }
-        }
-        if (defaults && !areHooksDefault) {
-            for (const event of exports.knownHookEvents) {
-                const defaultHooks = defaults.hooks[event];
-                if (defaultHooks.length > 0) {
-                    // See https://github.com/microsoft/TypeScript/issues/31445#issuecomment-576929044
-                    options.hooks[event] = [
-                        ...defaults.hooks[event],
-                        ...options.hooks[event]
-                    ];
-                }
-            }
-        }
-        // DNS options
-        if ('family' in options) {
-            deprecation_warning_1.default('"options.family" was never documented, please use "options.dnsLookupIpVersion"');
-        }
-        // HTTPS options
-        if (defaults === null || defaults === void 0 ? void 0 : defaults.https) {
-            options.https = { ...defaults.https, ...options.https };
-        }
-        if ('rejectUnauthorized' in options) {
-            deprecation_warning_1.default('"options.rejectUnauthorized" is now deprecated, please use "options.https.rejectUnauthorized"');
-        }
-        if ('checkServerIdentity' in options) {
-            deprecation_warning_1.default('"options.checkServerIdentity" was never documented, please use "options.https.checkServerIdentity"');
-        }
-        if ('ca' in options) {
-            deprecation_warning_1.default('"options.ca" was never documented, please use "options.https.certificateAuthority"');
-        }
-        if ('key' in options) {
-            deprecation_warning_1.default('"options.key" was never documented, please use "options.https.key"');
-        }
-        if ('cert' in options) {
-            deprecation_warning_1.default('"options.cert" was never documented, please use "options.https.certificate"');
-        }
-        if ('passphrase' in options) {
-            deprecation_warning_1.default('"options.passphrase" was never documented, please use "options.https.passphrase"');
-        }
-        if ('pfx' in options) {
-            deprecation_warning_1.default('"options.pfx" was never documented, please use "options.https.pfx"');
-        }
-        // Other options
-        if ('followRedirects' in options) {
-            throw new TypeError('The `followRedirects` option does not exist. Use `followRedirect` instead.');
-        }
-        if (options.agent) {
-            for (const key in options.agent) {
-                if (key !== 'http' && key !== 'https' && key !== 'http2') {
-                    throw new TypeError(`Expected the \`options.agent\` properties to be \`http\`, \`https\` or \`http2\`, got \`${key}\``);
-                }
-            }
-        }
-        options.maxRedirects = (_e = options.maxRedirects) !== null && _e !== void 0 ? _e : 0;
-        // Set non-enumerable properties
-        exports.setNonEnumerableProperties([defaults, rawOptions], options);
-        return normalize_arguments_1.default(options, defaults);
-    }
-    _lockWrite() {
-        const onLockedWrite = () => {
-            throw new TypeError('The payload has been already provided');
-        };
-        this.write = onLockedWrite;
-        this.end = onLockedWrite;
-    }
-    _unlockWrite() {
-        this.write = super.write;
-        this.end = super.end;
-    }
-    async _finalizeBody() {
-        const { options } = this;
-        const { headers } = options;
-        const isForm = !is_1.default.undefined(options.form);
-        const isJSON = !is_1.default.undefined(options.json);
-        const isBody = !is_1.default.undefined(options.body);
-        const hasPayload = isForm || isJSON || isBody;
-        const cannotHaveBody = exports.withoutBody.has(options.method) && !(options.method === 'GET' && options.allowGetBody);
-        this._cannotHaveBody = cannotHaveBody;
-        if (hasPayload) {
-            if (cannotHaveBody) {
-                throw new TypeError(`The \`${options.method}\` method cannot be used with a body`);
-            }
-            if ([isBody, isForm, isJSON].filter(isTrue => isTrue).length > 1) {
-                throw new TypeError('The `body`, `json` and `form` options are mutually exclusive');
-            }
-            if (isBody &&
-                !(options.body instanceof stream_1.Readable) &&
-                !is_1.default.string(options.body) &&
-                !is_1.default.buffer(options.body) &&
-                !is_form_data_1.default(options.body)) {
-                throw new TypeError('The `body` option must be a stream.Readable, string or Buffer');
-            }
-            if (isForm && !is_1.default.object(options.form)) {
-                throw new TypeError('The `form` option must be an Object');
-            }
-            {
-                // Serialize body
-                const noContentType = !is_1.default.string(headers['content-type']);
-                if (isBody) {
-                    // Special case for https://github.com/form-data/form-data
-                    if (is_form_data_1.default(options.body) && noContentType) {
-                        headers['content-type'] = `multipart/form-data; boundary=${options.body.getBoundary()}`;
-                    }
-                    this[kBody] = options.body;
-                }
-                else if (isForm) {
-                    if (noContentType) {
-                        headers['content-type'] = 'application/x-www-form-urlencoded';
-                    }
-                    this[kBody] = (new url_1.URLSearchParams(options.form)).toString();
-                }
-                else {
-                    if (noContentType) {
-                        headers['content-type'] = 'application/json';
-                    }
-                    this[kBody] = options.stringifyJson(options.json);
-                }
-                const uploadBodySize = await get_body_size_1.default(this[kBody], options.headers);
-                // See https://tools.ietf.org/html/rfc7230#section-3.3.2
-                // A user agent SHOULD send a Content-Length in a request message when
-                // no Transfer-Encoding is sent and the request method defines a meaning
-                // for an enclosed payload body.  For example, a Content-Length header
-                // field is normally sent in a POST request even when the value is 0
-                // (indicating an empty payload body).  A user agent SHOULD NOT send a
-                // Content-Length header field when the request message does not contain
-                // a payload body and the method semantics do not anticipate such a
-                // body.
-                if (is_1.default.undefined(headers['content-length']) && is_1.default.undefined(headers['transfer-encoding'])) {
-                    if (!cannotHaveBody && !is_1.default.undefined(uploadBodySize)) {
-                        headers['content-length'] = String(uploadBodySize);
-                    }
-                }
-            }
-        }
-        else if (cannotHaveBody) {
-            this._lockWrite();
-        }
-        else {
-            this._unlockWrite();
-        }
-        this[kBodySize] = Number(headers['content-length']) || undefined;
-    }
-    async _onResponseBase(response) {
-        const { options } = this;
-        const { url } = options;
-        this[kOriginalResponse] = response;
-        if (options.decompress) {
-            response = decompressResponse(response);
-        }
-        const statusCode = response.statusCode;
-        const typedResponse = response;
-        typedResponse.statusMessage = typedResponse.statusMessage ? typedResponse.statusMessage : http.STATUS_CODES[statusCode];
-        typedResponse.url = options.url.toString();
-        typedResponse.requestUrl = this.requestUrl;
-        typedResponse.redirectUrls = this.redirects;
-        typedResponse.request = this;
-        typedResponse.isFromCache = response.fromCache || false;
-        typedResponse.ip = this.ip;
-        typedResponse.retryCount = this.retryCount;
-        this[kIsFromCache] = typedResponse.isFromCache;
-        this[kResponseSize] = Number(response.headers['content-length']) || undefined;
-        this[kResponse] = response;
-        response.once('end', () => {
-            this[kResponseSize] = this[kDownloadedSize];
-            this.emit('downloadProgress', this.downloadProgress);
-        });
-        response.once('error', (error) => {
-            // Force clean-up, because some packages don't do this.
-            // TODO: Fix decompress-response
-            response.destroy();
-            this._beforeError(new ReadError(error, this));
-        });
-        response.once('aborted', () => {
-            this._beforeError(new ReadError({
-                name: 'Error',
-                message: 'The server aborted pending request',
-                code: 'ECONNRESET'
-            }, this));
-        });
-        this.emit('downloadProgress', this.downloadProgress);
-        const rawCookies = response.headers['set-cookie'];
-        if (is_1.default.object(options.cookieJar) && rawCookies) {
-            let promises = rawCookies.map(async (rawCookie) => options.cookieJar.setCookie(rawCookie, url.toString()));
-            if (options.ignoreInvalidCookies) {
-                promises = promises.map(async (p) => p.catch(() => { }));
-            }
-            try {
-                await Promise.all(promises);
-            }
-            catch (error) {
-                this._beforeError(error);
-                return;
-            }
-        }
-        if (options.followRedirect && response.headers.location && redirectCodes.has(statusCode)) {
-            // We're being redirected, we don't care about the response.
-            // It'd be best to abort the request, but we can't because
-            // we would have to sacrifice the TCP connection. We don't want that.
-            response.resume();
-            if (this[kRequest]) {
-                this[kCancelTimeouts]();
-                // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-                delete this[kRequest];
-                this[kUnproxyEvents]();
-            }
-            const shouldBeGet = statusCode === 303 && options.method !== 'GET' && options.method !== 'HEAD';
-            if (shouldBeGet || !options.methodRewriting) {
-                // Server responded with "see other", indicating that the resource exists at another location,
-                // and the client should request it from that location via GET or HEAD.
-                options.method = 'GET';
-                if ('body' in options) {
-                    delete options.body;
-                }
-                if ('json' in options) {
-                    delete options.json;
-                }
-                if ('form' in options) {
-                    delete options.form;
-                }
-                this[kBody] = undefined;
-                delete options.headers['content-length'];
-            }
-            if (this.redirects.length >= options.maxRedirects) {
-                this._beforeError(new MaxRedirectsError(this));
-                return;
-            }
-            try {
-                // Do not remove. See https://github.com/sindresorhus/got/pull/214
-                const redirectBuffer = Buffer.from(response.headers.location, 'binary').toString();
-                // Handles invalid URLs. See https://github.com/sindresorhus/got/issues/604
-                const redirectUrl = new url_1.URL(redirectBuffer, url);
-                const redirectString = redirectUrl.toString();
-                decodeURI(redirectString);
-                // Redirecting to a different site, clear sensitive data.
-                if (redirectUrl.hostname !== url.hostname || redirectUrl.port !== url.port) {
-                    if ('host' in options.headers) {
-                        delete options.headers.host;
-                    }
-                    if ('cookie' in options.headers) {
-                        delete options.headers.cookie;
-                    }
-                    if ('authorization' in options.headers) {
-                        delete options.headers.authorization;
-                    }
-                    if (options.username || options.password) {
-                        options.username = '';
-                        options.password = '';
-                    }
-                }
-                else {
-                    redirectUrl.username = options.username;
-                    redirectUrl.password = options.password;
-                }
-                this.redirects.push(redirectString);
-                options.url = redirectUrl;
-                for (const hook of options.hooks.beforeRedirect) {
-                    // eslint-disable-next-line no-await-in-loop
-                    await hook(options, typedResponse);
-                }
-                this.emit('redirect', typedResponse, options);
-                await this._makeRequest();
-            }
-            catch (error) {
-                this._beforeError(error);
-                return;
-            }
-            return;
-        }
-        if (options.isStream && options.throwHttpErrors && !is_response_ok_1.isResponseOk(typedResponse)) {
-            this._beforeError(new HTTPError(typedResponse));
-            return;
-        }
-        response.on('readable', () => {
-            if (this[kTriggerRead]) {
-                this._read();
-            }
-        });
-        this.on('resume', () => {
-            response.resume();
-        });
-        this.on('pause', () => {
-            response.pause();
-        });
-        response.once('end', () => {
-            this.push(null);
-        });
-        this.emit('response', response);
-        for (const destination of this[kServerResponsesPiped]) {
-            if (destination.headersSent) {
-                continue;
-            }
-            // eslint-disable-next-line guard-for-in
-            for (const key in response.headers) {
-                const isAllowed = options.decompress ? key !== 'content-encoding' : true;
-                const value = response.headers[key];
-                if (isAllowed) {
-                    destination.setHeader(key, value);
-                }
-            }
-            destination.statusCode = statusCode;
-        }
-    }
-    async _onResponse(response) {
-        try {
-            await this._onResponseBase(response);
-        }
-        catch (error) {
-            /* istanbul ignore next: better safe than sorry */
-            this._beforeError(error);
-        }
-    }
-    _onRequest(request) {
-        const { options } = this;
-        const { timeout, url } = options;
-        http_timer_1.default(request);
-        this[kCancelTimeouts] = timed_out_1.default(request, timeout, url);
-        const responseEventName = options.cache ? 'cacheableResponse' : 'response';
-        request.once(responseEventName, (response) => {
-            void this._onResponse(response);
-        });
-        request.once('error', (error) => {
-            var _a;
-            // Force clean-up, because some packages (e.g. nock) don't do this.
-            request.destroy();
-            // Node.js <= 12.18.2 mistakenly emits the response `end` first.
-            (_a = request.res) === null || _a === void 0 ? void 0 : _a.removeAllListeners('end');
-            error = error instanceof timed_out_1.TimeoutError ? new TimeoutError(error, this.timings, this) : new RequestError(error.message, error, this);
-            this._beforeError(error);
-        });
-        this[kUnproxyEvents] = proxy_events_1.default(request, this, proxiedRequestEvents);
-        this[kRequest] = request;
-        this.emit('uploadProgress', this.uploadProgress);
-        // Send body
-        const body = this[kBody];
-        const currentRequest = this.redirects.length === 0 ? this : request;
-        if (is_1.default.nodeStream(body)) {
-            body.pipe(currentRequest);
-            body.once('error', (error) => {
-                this._beforeError(new UploadError(error, this));
-            });
-        }
-        else {
-            this._unlockWrite();
-            if (!is_1.default.undefined(body)) {
-                this._writeRequest(body, undefined, () => { });
-                currentRequest.end();
-                this._lockWrite();
-            }
-            else if (this._cannotHaveBody || this._noPipe) {
-                currentRequest.end();
-                this._lockWrite();
-            }
-        }
-        this.emit('request', request);
-    }
-    async _createCacheableRequest(url, options) {
-        return new Promise((resolve, reject) => {
-            // TODO: Remove `utils/url-to-options.ts` when `cacheable-request` is fixed
-            Object.assign(options, url_to_options_1.default(url));
-            // `http-cache-semantics` checks this
-            // TODO: Fix this ignore.
-            // @ts-expect-error
-            delete options.url;
-            let request;
-            // This is ugly
-            const cacheRequest = cacheableStore.get(options.cache)(options, async (response) => {
-                // TODO: Fix `cacheable-response`
-                response._readableState.autoDestroy = false;
-                if (request) {
-                    (await request).emit('cacheableResponse', response);
-                }
-                resolve(response);
-            });
-            // Restore options
-            options.url = url;
-            cacheRequest.once('error', reject);
-            cacheRequest.once('request', async (requestOrPromise) => {
-                request = requestOrPromise;
-                resolve(request);
-            });
-        });
-    }
-    async _makeRequest() {
-        var _a, _b, _c, _d, _e;
-        const { options } = this;
-        const { headers } = options;
-        for (const key in headers) {
-            if (is_1.default.undefined(headers[key])) {
-                // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-                delete headers[key];
-            }
-            else if (is_1.default.null_(headers[key])) {
-                throw new TypeError(`Use \`undefined\` instead of \`null\` to delete the \`${key}\` header`);
-            }
-        }
-        if (options.decompress && is_1.default.undefined(headers['accept-encoding'])) {
-            headers['accept-encoding'] = supportsBrotli ? 'gzip, deflate, br' : 'gzip, deflate';
-        }
-        // Set cookies
-        if (options.cookieJar) {
-            const cookieString = await options.cookieJar.getCookieString(options.url.toString());
-            if (is_1.default.nonEmptyString(cookieString)) {
-                options.headers.cookie = cookieString;
-            }
-        }
-        for (const hook of options.hooks.beforeRequest) {
-            // eslint-disable-next-line no-await-in-loop
-            const result = await hook(options);
-            if (!is_1.default.undefined(result)) {
-                // @ts-expect-error Skip the type mismatch to support abstract responses
-                options.request = () => result;
-                break;
-            }
-        }
-        if (options.body && this[kBody] !== options.body) {
-            this[kBody] = options.body;
-        }
-        const { agent, request, timeout, url } = options;
-        if (options.dnsCache && !('lookup' in options)) {
-            options.lookup = options.dnsCache.lookup;
-        }
-        // UNIX sockets
-        if (url.hostname === 'unix') {
-            const matches = /(?<socketPath>.+?):(?<path>.+)/.exec(`${url.pathname}${url.search}`);
-            if (matches === null || matches === void 0 ? void 0 : matches.groups) {
-                const { socketPath, path } = matches.groups;
-                Object.assign(options, {
-                    socketPath,
-                    path,
-                    host: ''
-                });
-            }
-        }
-        const isHttps = url.protocol === 'https:';
-        // Fallback function
-        let fallbackFn;
-        if (options.http2) {
-            fallbackFn = http2wrapper.auto;
-        }
-        else {
-            fallbackFn = isHttps ? https.request : http.request;
-        }
-        const realFn = (_a = options.request) !== null && _a !== void 0 ? _a : fallbackFn;
-        // Cache support
-        const fn = options.cache ? this._createCacheableRequest : realFn;
-        // Pass an agent directly when HTTP2 is disabled
-        if (agent && !options.http2) {
-            options.agent = agent[isHttps ? 'https' : 'http'];
-        }
-        // Prepare plain HTTP request options
-        options[kRequest] = realFn;
-        delete options.request;
-        // TODO: Fix this ignore.
-        // @ts-expect-error
-        delete options.timeout;
-        const requestOptions = options;
-        requestOptions.shared = (_b = options.cacheOptions) === null || _b === void 0 ? void 0 : _b.shared;
-        requestOptions.cacheHeuristic = (_c = options.cacheOptions) === null || _c === void 0 ? void 0 : _c.cacheHeuristic;
-        requestOptions.immutableMinTimeToLive = (_d = options.cacheOptions) === null || _d === void 0 ? void 0 : _d.immutableMinTimeToLive;
-        requestOptions.ignoreCargoCult = (_e = options.cacheOptions) === null || _e === void 0 ? void 0 : _e.ignoreCargoCult;
-        // If `dnsLookupIpVersion` is not present do not override `family`
-        if (options.dnsLookupIpVersion !== undefined) {
-            try {
-                requestOptions.family = dns_ip_version_1.dnsLookupIpVersionToFamily(options.dnsLookupIpVersion);
-            }
-            catch (_f) {
-                throw new Error('Invalid `dnsLookupIpVersion` option value');
-            }
-        }
-        // HTTPS options remapping
-        if (options.https) {
-            if ('rejectUnauthorized' in options.https) {
-                requestOptions.rejectUnauthorized = options.https.rejectUnauthorized;
-            }
-            if (options.https.checkServerIdentity) {
-                requestOptions.checkServerIdentity = options.https.checkServerIdentity;
-            }
-            if (options.https.certificateAuthority) {
-                requestOptions.ca = options.https.certificateAuthority;
-            }
-            if (options.https.certificate) {
-                requestOptions.cert = options.https.certificate;
-            }
-            if (options.https.key) {
-                requestOptions.key = options.https.key;
-            }
-            if (options.https.passphrase) {
-                requestOptions.passphrase = options.https.passphrase;
-            }
-            if (options.https.pfx) {
-                requestOptions.pfx = options.https.pfx;
-            }
-        }
-        try {
-            let requestOrResponse = await fn(url, requestOptions);
-            if (is_1.default.undefined(requestOrResponse)) {
-                requestOrResponse = fallbackFn(url, requestOptions);
-            }
-            // Restore options
-            options.request = request;
-            options.timeout = timeout;
-            options.agent = agent;
-            // HTTPS options restore
-            if (options.https) {
-                if ('rejectUnauthorized' in options.https) {
-                    delete requestOptions.rejectUnauthorized;
-                }
-                if (options.https.checkServerIdentity) {
-                    // @ts-expect-error - This one will be removed when we remove the alias.
-                    delete requestOptions.checkServerIdentity;
-                }
-                if (options.https.certificateAuthority) {
-                    delete requestOptions.ca;
-                }
-                if (options.https.certificate) {
-                    delete requestOptions.cert;
-                }
-                if (options.https.key) {
-                    delete requestOptions.key;
-                }
-                if (options.https.passphrase) {
-                    delete requestOptions.passphrase;
-                }
-                if (options.https.pfx) {
-                    delete requestOptions.pfx;
-                }
-            }
-            if (isClientRequest(requestOrResponse)) {
-                this._onRequest(requestOrResponse);
-                // Emit the response after the stream has been ended
-            }
-            else if (this.writable) {
-                this.once('finish', () => {
-                    void this._onResponse(requestOrResponse);
-                });
-                this._unlockWrite();
-                this.end();
-                this._lockWrite();
-            }
-            else {
-                void this._onResponse(requestOrResponse);
-            }
-        }
-        catch (error) {
-            if (error instanceof CacheableRequest.CacheError) {
-                throw new CacheError(error, this);
-            }
-            throw new RequestError(error.message, error, this);
-        }
-    }
-    async _error(error) {
-        try {
-            for (const hook of this.options.hooks.beforeError) {
-                // eslint-disable-next-line no-await-in-loop
-                error = await hook(error);
-            }
-        }
-        catch (error_) {
-            error = new RequestError(error_.message, error_, this);
-        }
-        this.destroy(error);
-    }
-    _beforeError(error) {
-        if (this[kStopReading]) {
-            return;
-        }
-        const { options } = this;
-        const retryCount = this.retryCount + 1;
-        this[kStopReading] = true;
-        if (!(error instanceof RequestError)) {
-            error = new RequestError(error.message, error, this);
-        }
-        const typedError = error;
-        const { response } = typedError;
-        void (async () => {
-            if (response && !response.body) {
-                response.setEncoding(this._readableState.encoding);
-                try {
-                    response.rawBody = await get_buffer_1.default(response);
-                    response.body = response.rawBody.toString();
-                }
-                catch (_a) { }
-            }
-            if (this.listenerCount('retry') !== 0) {
-                let backoff;
-                try {
-                    let retryAfter;
-                    if (response && 'retry-after' in response.headers) {
-                        retryAfter = Number(response.headers['retry-after']);
-                        if (Number.isNaN(retryAfter)) {
-                            retryAfter = Date.parse(response.headers['retry-after']) - Date.now();
-                            if (retryAfter <= 0) {
-                                retryAfter = 1;
-                            }
-                        }
-                        else {
-                            retryAfter *= 1000;
-                        }
-                    }
-                    backoff = await options.retry.calculateDelay({
-                        attemptCount: retryCount,
-                        retryOptions: options.retry,
-                        error: typedError,
-                        retryAfter,
-                        computedValue: calculate_retry_delay_1.default({
-                            attemptCount: retryCount,
-                            retryOptions: options.retry,
-                            error: typedError,
-                            retryAfter,
-                            computedValue: 0
-                        })
-                    });
-                }
-                catch (error_) {
-                    void this._error(new RequestError(error_.message, error_, this));
-                    return;
-                }
-                if (backoff) {
-                    const retry = async () => {
-                        try {
-                            for (const hook of this.options.hooks.beforeRetry) {
-                                // eslint-disable-next-line no-await-in-loop
-                                await hook(this.options, typedError, retryCount);
-                            }
-                        }
-                        catch (error_) {
-                            void this._error(new RequestError(error_.message, error, this));
-                            return;
-                        }
-                        // Something forced us to abort the retry
-                        if (this.destroyed) {
-                            return;
-                        }
-                        this.destroy();
-                        this.emit('retry', retryCount, error);
-                    };
-                    this[kRetryTimeout] = setTimeout(retry, backoff);
-                    return;
-                }
-            }
-            void this._error(typedError);
-        })();
-    }
-    _read() {
-        this[kTriggerRead] = true;
-        const response = this[kResponse];
-        if (response && !this[kStopReading]) {
-            // We cannot put this in the `if` above
-            // because `.read()` also triggers the `end` event
-            if (response.readableLength) {
-                this[kTriggerRead] = false;
-            }
-            let data;
-            while ((data = response.read()) !== null) {
-                this[kDownloadedSize] += data.length;
-                this[kStartedReading] = true;
-                const progress = this.downloadProgress;
-                if (progress.percent < 1) {
-                    this.emit('downloadProgress', progress);
-                }
-                this.push(data);
-            }
-        }
-    }
-    // Node.js 12 has incorrect types, so the encoding must be a string
-    _write(chunk, encoding, callback) {
-        const write = () => {
-            this._writeRequest(chunk, encoding, callback);
-        };
-        if (this.requestInitialized) {
-            write();
-        }
-        else {
-            this[kJobs].push(write);
-        }
-    }
-    _writeRequest(chunk, encoding, callback) {
-        if (this[kRequest].destroyed) {
-            // Probably the `ClientRequest` instance will throw
-            return;
-        }
-        this._progressCallbacks.push(() => {
-            this[kUploadedSize] += Buffer.byteLength(chunk, encoding);
-            const progress = this.uploadProgress;
-            if (progress.percent < 1) {
-                this.emit('uploadProgress', progress);
-            }
-        });
-        // TODO: What happens if it's from cache? Then this[kRequest] won't be defined.
-        this[kRequest].write(chunk, encoding, (error) => {
-            if (!error && this._progressCallbacks.length > 0) {
-                this._progressCallbacks.shift()();
-            }
-            callback(error);
-        });
-    }
-    _final(callback) {
-        const endRequest = () => {
-            // FIX: Node.js 10 calls the write callback AFTER the end callback!
-            while (this._progressCallbacks.length !== 0) {
-                this._progressCallbacks.shift()();
-            }
-            // We need to check if `this[kRequest]` is present,
-            // because it isn't when we use cache.
-            if (!(kRequest in this)) {
-                callback();
-                return;
-            }
-            if (this[kRequest].destroyed) {
-                callback();
-                return;
-            }
-            this[kRequest].end((error) => {
-                if (!error) {
-                    this[kBodySize] = this[kUploadedSize];
-                    this.emit('uploadProgress', this.uploadProgress);
-                    this[kRequest].emit('upload-complete');
-                }
-                callback(error);
-            });
-        };
-        if (this.requestInitialized) {
-            endRequest();
-        }
-        else {
-            this[kJobs].push(endRequest);
-        }
-    }
-    _destroy(error, callback) {
-        var _a;
-        this[kStopReading] = true;
-        // Prevent further retries
-        clearTimeout(this[kRetryTimeout]);
-        if (kRequest in this) {
-            this[kCancelTimeouts]();
-            // TODO: Remove the next `if` when these get fixed:
-            // - https://github.com/nodejs/node/issues/32851
-            if (!((_a = this[kResponse]) === null || _a === void 0 ? void 0 : _a.complete)) {
-                this[kRequest].destroy();
-            }
-        }
-        if (error !== null && !is_1.default.undefined(error) && !(error instanceof RequestError)) {
-            error = new RequestError(error.message, error, this);
-        }
-        callback(error);
-    }
-    get _isAboutToError() {
-        return this[kStopReading];
-    }
-    /**
-    The remote IP address.
-    */
-    get ip() {
-        var _a;
-        return (_a = this.socket) === null || _a === void 0 ? void 0 : _a.remoteAddress;
-    }
-    /**
-    Indicates whether the request has been aborted or not.
-    */
-    get aborted() {
-        var _a, _b, _c;
-        return ((_b = (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.destroyed) !== null && _b !== void 0 ? _b : this.destroyed) && !((_c = this[kOriginalResponse]) === null || _c === void 0 ? void 0 : _c.complete);
-    }
-    get socket() {
-        var _a, _b;
-        return (_b = (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.socket) !== null && _b !== void 0 ? _b : undefined;
-    }
-    /**
-    Progress event for downloading (receiving a response).
-    */
-    get downloadProgress() {
-        let percent;
-        if (this[kResponseSize]) {
-            percent = this[kDownloadedSize] / this[kResponseSize];
-        }
-        else if (this[kResponseSize] === this[kDownloadedSize]) {
-            percent = 1;
-        }
-        else {
-            percent = 0;
-        }
-        return {
-            percent,
-            transferred: this[kDownloadedSize],
-            total: this[kResponseSize]
-        };
-    }
-    /**
-    Progress event for uploading (sending a request).
-    */
-    get uploadProgress() {
-        let percent;
-        if (this[kBodySize]) {
-            percent = this[kUploadedSize] / this[kBodySize];
-        }
-        else if (this[kBodySize] === this[kUploadedSize]) {
-            percent = 1;
-        }
-        else {
-            percent = 0;
-        }
-        return {
-            percent,
-            transferred: this[kUploadedSize],
-            total: this[kBodySize]
-        };
-    }
-    /**
-    The object contains the following properties:
-
-    - `start` - Time when the request started.
-    - `socket` - Time when a socket was assigned to the request.
-    - `lookup` - Time when the DNS lookup finished.
-    - `connect` - Time when the socket successfully connected.
-    - `secureConnect` - Time when the socket securely connected.
-    - `upload` - Time when the request finished uploading.
-    - `response` - Time when the request fired `response` event.
-    - `end` - Time when the response fired `end` event.
-    - `error` - Time when the request fired `error` event.
-    - `abort` - Time when the request fired `abort` event.
-    - `phases`
-        - `wait` - `timings.socket - timings.start`
-        - `dns` - `timings.lookup - timings.socket`
-        - `tcp` - `timings.connect - timings.lookup`
-        - `tls` - `timings.secureConnect - timings.connect`
-        - `request` - `timings.upload - (timings.secureConnect || timings.connect)`
-        - `firstByte` - `timings.response - timings.upload`
-        - `download` - `timings.end - timings.response`
-        - `total` - `(timings.end || timings.error || timings.abort) - timings.start`
-
-    If something has not been measured yet, it will be `undefined`.
-
-    __Note__: The time is a `number` representing the milliseconds elapsed since the UNIX epoch.
-    */
-    get timings() {
-        var _a;
-        return (_a = this[kRequest]) === null || _a === void 0 ? void 0 : _a.timings;
-    }
-    /**
-    Whether the response was retrieved from the cache.
-    */
-    get isFromCache() {
-        return this[kIsFromCache];
-    }
-    pipe(destination, options) {
-        if (this[kStartedReading]) {
-            throw new Error('Failed to pipe. The response has been emitted already.');
-        }
-        if (destination instanceof http_1.ServerResponse) {
-            this[kServerResponsesPiped].add(destination);
-        }
-        return super.pipe(destination, options);
-    }
-    unpipe(destination) {
-        if (destination instanceof http_1.ServerResponse) {
-            this[kServerResponsesPiped].delete(destination);
-        }
-        super.unpipe(destination);
-        return this;
-    }
-}
-exports.default = Request;
-
-
-/***/ }),
-
-/***/ 6671:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.dnsLookupIpVersionToFamily = exports.isDnsLookupIpVersion = void 0;
-const conversionTable = {
-    auto: 0,
-    ipv4: 4,
-    ipv6: 6
-};
-exports.isDnsLookupIpVersion = (value) => {
-    return value in conversionTable;
-};
-exports.dnsLookupIpVersionToFamily = (dnsLookupIpVersion) => {
-    if (exports.isDnsLookupIpVersion(dnsLookupIpVersion)) {
-        return conversionTable[dnsLookupIpVersion];
-    }
-    throw new Error('Invalid DNS lookup IP version');
-};
-
-
-/***/ }),
-
-/***/ 4564:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const fs_1 = __nccwpck_require__(5747);
-const util_1 = __nccwpck_require__(1669);
-const is_1 = __nccwpck_require__(7678);
-const is_form_data_1 = __nccwpck_require__(40);
-const statAsync = util_1.promisify(fs_1.stat);
-exports.default = async (body, headers) => {
-    if (headers && 'content-length' in headers) {
-        return Number(headers['content-length']);
-    }
-    if (!body) {
-        return 0;
-    }
-    if (is_1.default.string(body)) {
-        return Buffer.byteLength(body);
-    }
-    if (is_1.default.buffer(body)) {
-        return body.length;
-    }
-    if (is_form_data_1.default(body)) {
-        return util_1.promisify(body.getLength.bind(body))();
-    }
-    if (body instanceof fs_1.ReadStream) {
-        const { size } = await statAsync(body.path);
-        if (size === 0) {
-            return undefined;
-        }
-        return size;
-    }
-    return undefined;
-};
-
-
-/***/ }),
-
-/***/ 4500:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-// TODO: Update https://github.com/sindresorhus/get-stream
-const getBuffer = async (stream) => {
-    const chunks = [];
-    let length = 0;
-    for await (const chunk of stream) {
-        chunks.push(chunk);
-        length += Buffer.byteLength(chunk);
-    }
-    if (Buffer.isBuffer(chunks[0])) {
-        return Buffer.concat(chunks, length);
-    }
-    return Buffer.from(chunks.join(''));
-};
-exports.default = getBuffer;
-
-
-/***/ }),
-
-/***/ 40:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const is_1 = __nccwpck_require__(7678);
-exports.default = (body) => is_1.default.nodeStream(body) && is_1.default.function_(body.getBoundary);
-
-
-/***/ }),
-
-/***/ 9298:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isResponseOk = void 0;
-exports.isResponseOk = (response) => {
-    const { statusCode } = response;
-    const limitStatusCode = response.request.options.followRedirect ? 299 : 399;
-    return (statusCode >= 200 && statusCode <= limitStatusCode) || statusCode === 304;
-};
-
-
-/***/ }),
-
-/***/ 9219:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-/* istanbul ignore file: deprecated */
-const url_1 = __nccwpck_require__(8835);
-const keys = [
-    'protocol',
-    'host',
-    'hostname',
-    'port',
-    'pathname',
-    'search'
-];
-exports.default = (origin, options) => {
-    var _a, _b;
-    if (options.path) {
-        if (options.pathname) {
-            throw new TypeError('Parameters `path` and `pathname` are mutually exclusive.');
-        }
-        if (options.search) {
-            throw new TypeError('Parameters `path` and `search` are mutually exclusive.');
-        }
-        if (options.searchParams) {
-            throw new TypeError('Parameters `path` and `searchParams` are mutually exclusive.');
-        }
-    }
-    if (options.search && options.searchParams) {
-        throw new TypeError('Parameters `search` and `searchParams` are mutually exclusive.');
-    }
-    if (!origin) {
-        if (!options.protocol) {
-            throw new TypeError('No URL protocol specified');
-        }
-        origin = `${options.protocol}//${(_b = (_a = options.hostname) !== null && _a !== void 0 ? _a : options.host) !== null && _b !== void 0 ? _b : ''}`;
-    }
-    const url = new url_1.URL(origin);
-    if (options.path) {
-        const searchIndex = options.path.indexOf('?');
-        if (searchIndex === -1) {
-            options.pathname = options.path;
-        }
-        else {
-            options.pathname = options.path.slice(0, searchIndex);
-            options.search = options.path.slice(searchIndex + 1);
-        }
-        delete options.path;
-    }
-    for (const key of keys) {
-        if (options[key]) {
-            url[key] = options[key].toString();
-        }
-    }
-    return url;
-};
-
-
-/***/ }),
-
-/***/ 3021:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-function default_1(from, to, events) {
-    const fns = {};
-    for (const event of events) {
-        fns[event] = (...args) => {
-            to.emit(event, ...args);
-        };
-        from.on(event, fns[event]);
-    }
-    return () => {
-        for (const event of events) {
-            from.off(event, fns[event]);
-        }
-    };
-}
-exports.default = default_1;
-
-
-/***/ }),
-
-/***/ 2454:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.TimeoutError = void 0;
-const net = __nccwpck_require__(1631);
-const unhandle_1 = __nccwpck_require__(1593);
-const reentry = Symbol('reentry');
-const noop = () => { };
-class TimeoutError extends Error {
-    constructor(threshold, event) {
-        super(`Timeout awaiting '${event}' for ${threshold}ms`);
-        this.event = event;
-        this.name = 'TimeoutError';
-        this.code = 'ETIMEDOUT';
-    }
-}
-exports.TimeoutError = TimeoutError;
-exports.default = (request, delays, options) => {
-    if (reentry in request) {
-        return noop;
-    }
-    request[reentry] = true;
-    const cancelers = [];
-    const { once, unhandleAll } = unhandle_1.default();
-    const addTimeout = (delay, callback, event) => {
-        var _a;
-        const timeout = setTimeout(callback, delay, delay, event);
-        (_a = timeout.unref) === null || _a === void 0 ? void 0 : _a.call(timeout);
-        const cancel = () => {
-            clearTimeout(timeout);
-        };
-        cancelers.push(cancel);
-        return cancel;
-    };
-    const { host, hostname } = options;
-    const timeoutHandler = (delay, event) => {
-        request.destroy(new TimeoutError(delay, event));
-    };
-    const cancelTimeouts = () => {
-        for (const cancel of cancelers) {
-            cancel();
-        }
-        unhandleAll();
-    };
-    request.once('error', error => {
-        cancelTimeouts();
-        // Save original behavior
-        /* istanbul ignore next */
-        if (request.listenerCount('error') === 0) {
-            throw error;
-        }
-    });
-    request.once('close', cancelTimeouts);
-    once(request, 'response', (response) => {
-        once(response, 'end', cancelTimeouts);
-    });
-    if (typeof delays.request !== 'undefined') {
-        addTimeout(delays.request, timeoutHandler, 'request');
-    }
-    if (typeof delays.socket !== 'undefined') {
-        const socketTimeoutHandler = () => {
-            timeoutHandler(delays.socket, 'socket');
-        };
-        request.setTimeout(delays.socket, socketTimeoutHandler);
-        // `request.setTimeout(0)` causes a memory leak.
-        // We can just remove the listener and forget about the timer - it's unreffed.
-        // See https://github.com/sindresorhus/got/issues/690
-        cancelers.push(() => {
-            request.removeListener('timeout', socketTimeoutHandler);
-        });
-    }
-    once(request, 'socket', (socket) => {
-        var _a;
-        const { socketPath } = request;
-        /* istanbul ignore next: hard to test */
-        if (socket.connecting) {
-            const hasPath = Boolean(socketPath !== null && socketPath !== void 0 ? socketPath : net.isIP((_a = hostname !== null && hostname !== void 0 ? hostname : host) !== null && _a !== void 0 ? _a : '') !== 0);
-            if (typeof delays.lookup !== 'undefined' && !hasPath && typeof socket.address().address === 'undefined') {
-                const cancelTimeout = addTimeout(delays.lookup, timeoutHandler, 'lookup');
-                once(socket, 'lookup', cancelTimeout);
-            }
-            if (typeof delays.connect !== 'undefined') {
-                const timeConnect = () => addTimeout(delays.connect, timeoutHandler, 'connect');
-                if (hasPath) {
-                    once(socket, 'connect', timeConnect());
-                }
-                else {
-                    once(socket, 'lookup', (error) => {
-                        if (error === null) {
-                            once(socket, 'connect', timeConnect());
-                        }
-                    });
-                }
-            }
-            if (typeof delays.secureConnect !== 'undefined' && options.protocol === 'https:') {
-                once(socket, 'connect', () => {
-                    const cancelTimeout = addTimeout(delays.secureConnect, timeoutHandler, 'secureConnect');
-                    once(socket, 'secureConnect', cancelTimeout);
-                });
-            }
-        }
-        if (typeof delays.send !== 'undefined') {
-            const timeRequest = () => addTimeout(delays.send, timeoutHandler, 'send');
-            /* istanbul ignore next: hard to test */
-            if (socket.connecting) {
-                once(socket, 'connect', () => {
-                    once(request, 'upload-complete', timeRequest());
-                });
-            }
-            else {
-                once(request, 'upload-complete', timeRequest());
-            }
-        }
-    });
-    if (typeof delays.response !== 'undefined') {
-        once(request, 'upload-complete', () => {
-            const cancelTimeout = addTimeout(delays.response, timeoutHandler, 'response');
-            once(request, 'response', cancelTimeout);
-        });
-    }
-    return cancelTimeouts;
-};
-
-
-/***/ }),
-
-/***/ 1593:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-// When attaching listeners, it's very easy to forget about them.
-// Especially if you do error handling and set timeouts.
-// So instead of checking if it's proper to throw an error on every timeout ever,
-// use this simple tool which will remove all listeners you have attached.
-exports.default = () => {
-    const handlers = [];
-    return {
-        once(origin, event, fn) {
-            origin.once(event, fn);
-            handlers.push({ origin, event, fn });
-        },
-        unhandleAll() {
-            for (const handler of handlers) {
-                const { origin, event, fn } = handler;
-                origin.removeListener(event, fn);
-            }
-            handlers.length = 0;
-        }
-    };
-};
-
-
-/***/ }),
-
-/***/ 8026:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const is_1 = __nccwpck_require__(7678);
-exports.default = (url) => {
-    // Cast to URL
-    url = url;
-    const options = {
-        protocol: url.protocol,
-        hostname: is_1.default.string(url.hostname) && url.hostname.startsWith('[') ? url.hostname.slice(1, -1) : url.hostname,
-        host: url.host,
-        hash: url.hash,
-        search: url.search,
-        pathname: url.pathname,
-        href: url.href,
-        path: `${url.pathname || ''}${url.search || ''}`
-    };
-    if (is_1.default.string(url.port) && url.port.length > 0) {
-        options.port = Number(url.port);
-    }
-    if (url.username || url.password) {
-        options.auth = `${url.username || ''}:${url.password || ''}`;
-    }
-    return options;
-};
-
-
-/***/ }),
-
-/***/ 7288:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-class WeakableMap {
-    constructor() {
-        this.weakMap = new WeakMap();
-        this.map = new Map();
-    }
-    set(key, value) {
-        if (typeof key === 'object') {
-            this.weakMap.set(key, value);
-        }
-        else {
-            this.map.set(key, value);
-        }
-    }
-    get(key) {
-        if (typeof key === 'object') {
-            return this.weakMap.get(key);
-        }
-        return this.map.get(key);
-    }
-    has(key) {
-        if (typeof key === 'object') {
-            return this.weakMap.has(key);
-        }
-        return this.map.has(key);
-    }
-}
-exports.default = WeakableMap;
-
-
-/***/ }),
-
-/***/ 4337:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.defaultHandler = void 0;
-const is_1 = __nccwpck_require__(7678);
-const as_promise_1 = __nccwpck_require__(6056);
-const create_rejection_1 = __nccwpck_require__(6457);
-const core_1 = __nccwpck_require__(94);
-const deep_freeze_1 = __nccwpck_require__(285);
-const errors = {
-    RequestError: as_promise_1.RequestError,
-    CacheError: as_promise_1.CacheError,
-    ReadError: as_promise_1.ReadError,
-    HTTPError: as_promise_1.HTTPError,
-    MaxRedirectsError: as_promise_1.MaxRedirectsError,
-    TimeoutError: as_promise_1.TimeoutError,
-    ParseError: as_promise_1.ParseError,
-    CancelError: as_promise_1.CancelError,
-    UnsupportedProtocolError: as_promise_1.UnsupportedProtocolError,
-    UploadError: as_promise_1.UploadError
-};
-// The `delay` package weighs 10KB (!)
-const delay = async (ms) => new Promise(resolve => {
-    setTimeout(resolve, ms);
-});
-const { normalizeArguments } = core_1.default;
-const mergeOptions = (...sources) => {
-    let mergedOptions;
-    for (const source of sources) {
-        mergedOptions = normalizeArguments(undefined, source, mergedOptions);
-    }
-    return mergedOptions;
-};
-const getPromiseOrStream = (options) => options.isStream ? new core_1.default(undefined, options) : as_promise_1.default(options);
-const isGotInstance = (value) => ('defaults' in value && 'options' in value.defaults);
-const aliases = [
-    'get',
-    'post',
-    'put',
-    'patch',
-    'head',
-    'delete'
-];
-exports.defaultHandler = (options, next) => next(options);
-const callInitHooks = (hooks, options) => {
-    if (hooks) {
-        for (const hook of hooks) {
-            hook(options);
-        }
-    }
-};
-const create = (defaults) => {
-    // Proxy properties from next handlers
-    defaults._rawHandlers = defaults.handlers;
-    defaults.handlers = defaults.handlers.map(fn => ((options, next) => {
-        // This will be assigned by assigning result
-        let root;
-        const result = fn(options, newOptions => {
-            root = next(newOptions);
-            return root;
-        });
-        if (result !== root && !options.isStream && root) {
-            const typedResult = result;
-            const { then: promiseThen, catch: promiseCatch, finally: promiseFianlly } = typedResult;
-            Object.setPrototypeOf(typedResult, Object.getPrototypeOf(root));
-            Object.defineProperties(typedResult, Object.getOwnPropertyDescriptors(root));
-            // These should point to the new promise
-            // eslint-disable-next-line promise/prefer-await-to-then
-            typedResult.then = promiseThen;
-            typedResult.catch = promiseCatch;
-            typedResult.finally = promiseFianlly;
-        }
-        return result;
-    }));
-    // Got interface
-    const got = ((url, options = {}, _defaults) => {
-        var _a, _b;
-        let iteration = 0;
-        const iterateHandlers = (newOptions) => {
-            return defaults.handlers[iteration++](newOptions, iteration === defaults.handlers.length ? getPromiseOrStream : iterateHandlers);
-        };
-        // TODO: Remove this in Got 12.
-        if (is_1.default.plainObject(url)) {
-            const mergedOptions = {
-                ...url,
-                ...options
-            };
-            core_1.setNonEnumerableProperties([url, options], mergedOptions);
-            options = mergedOptions;
-            url = undefined;
-        }
-        try {
-            // Call `init` hooks
-            let initHookError;
-            try {
-                callInitHooks(defaults.options.hooks.init, options);
-                callInitHooks((_a = options.hooks) === null || _a === void 0 ? void 0 : _a.init, options);
-            }
-            catch (error) {
-                initHookError = error;
-            }
-            // Normalize options & call handlers
-            const normalizedOptions = normalizeArguments(url, options, _defaults !== null && _defaults !== void 0 ? _defaults : defaults.options);
-            normalizedOptions[core_1.kIsNormalizedAlready] = true;
-            if (initHookError) {
-                throw new as_promise_1.RequestError(initHookError.message, initHookError, normalizedOptions);
-            }
-            return iterateHandlers(normalizedOptions);
-        }
-        catch (error) {
-            if (options.isStream) {
-                throw error;
-            }
-            else {
-                return create_rejection_1.default(error, defaults.options.hooks.beforeError, (_b = options.hooks) === null || _b === void 0 ? void 0 : _b.beforeError);
-            }
-        }
-    });
-    got.extend = (...instancesOrOptions) => {
-        const optionsArray = [defaults.options];
-        let handlers = [...defaults._rawHandlers];
-        let isMutableDefaults;
-        for (const value of instancesOrOptions) {
-            if (isGotInstance(value)) {
-                optionsArray.push(value.defaults.options);
-                handlers.push(...value.defaults._rawHandlers);
-                isMutableDefaults = value.defaults.mutableDefaults;
-            }
-            else {
-                optionsArray.push(value);
-                if ('handlers' in value) {
-                    handlers.push(...value.handlers);
-                }
-                isMutableDefaults = value.mutableDefaults;
-            }
-        }
-        handlers = handlers.filter(handler => handler !== exports.defaultHandler);
-        if (handlers.length === 0) {
-            handlers.push(exports.defaultHandler);
-        }
-        return create({
-            options: mergeOptions(...optionsArray),
-            handlers,
-            mutableDefaults: Boolean(isMutableDefaults)
-        });
-    };
-    // Pagination
-    const paginateEach = (async function* (url, options) {
-        // TODO: Remove this `@ts-expect-error` when upgrading to TypeScript 4.
-        // Error: Argument of type 'Merge<Options, PaginationOptions<T, R>> | undefined' is not assignable to parameter of type 'Options | undefined'.
-        // @ts-expect-error
-        let normalizedOptions = normalizeArguments(url, options, defaults.options);
-        normalizedOptions.resolveBodyOnly = false;
-        const pagination = normalizedOptions.pagination;
-        if (!is_1.default.object(pagination)) {
-            throw new TypeError('`options.pagination` must be implemented');
-        }
-        const all = [];
-        let { countLimit } = pagination;
-        let numberOfRequests = 0;
-        while (numberOfRequests < pagination.requestLimit) {
-            if (numberOfRequests !== 0) {
-                // eslint-disable-next-line no-await-in-loop
-                await delay(pagination.backoff);
-            }
-            // @ts-expect-error FIXME!
-            // TODO: Throw when result is not an instance of Response
-            // eslint-disable-next-line no-await-in-loop
-            const result = (await got(undefined, undefined, normalizedOptions));
-            // eslint-disable-next-line no-await-in-loop
-            const parsed = await pagination.transform(result);
-            const current = [];
-            for (const item of parsed) {
-                if (pagination.filter(item, all, current)) {
-                    if (!pagination.shouldContinue(item, all, current)) {
-                        return;
-                    }
-                    yield item;
-                    if (pagination.stackAllItems) {
-                        all.push(item);
-                    }
-                    current.push(item);
-                    if (--countLimit <= 0) {
-                        return;
-                    }
-                }
-            }
-            const optionsToMerge = pagination.paginate(result, all, current);
-            if (optionsToMerge === false) {
-                return;
-            }
-            if (optionsToMerge === result.request.options) {
-                normalizedOptions = result.request.options;
-            }
-            else if (optionsToMerge !== undefined) {
-                normalizedOptions = normalizeArguments(undefined, optionsToMerge, normalizedOptions);
-            }
-            numberOfRequests++;
-        }
-    });
-    got.paginate = paginateEach;
-    got.paginate.all = (async (url, options) => {
-        const results = [];
-        for await (const item of paginateEach(url, options)) {
-            results.push(item);
-        }
-        return results;
-    });
-    // For those who like very descriptive names
-    got.paginate.each = paginateEach;
-    // Stream API
-    got.stream = ((url, options) => got(url, { ...options, isStream: true }));
-    // Shortcuts
-    for (const method of aliases) {
-        got[method] = ((url, options) => got(url, { ...options, method }));
-        got.stream[method] = ((url, options) => {
-            return got(url, { ...options, method, isStream: true });
-        });
-    }
-    Object.assign(got, errors);
-    Object.defineProperty(got, 'defaults', {
-        value: defaults.mutableDefaults ? defaults : deep_freeze_1.default(defaults),
-        writable: defaults.mutableDefaults,
-        configurable: defaults.mutableDefaults,
-        enumerable: true
-    });
-    got.mergeOptions = mergeOptions;
-    return got;
-};
-exports.default = create;
-__exportStar(__nccwpck_require__(2613), exports);
-
-
-/***/ }),
-
-/***/ 3061:
-/***/ (function(module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const url_1 = __nccwpck_require__(8835);
-const create_1 = __nccwpck_require__(4337);
-const defaults = {
-    options: {
-        method: 'GET',
-        retry: {
-            limit: 2,
-            methods: [
-                'GET',
-                'PUT',
-                'HEAD',
-                'DELETE',
-                'OPTIONS',
-                'TRACE'
-            ],
-            statusCodes: [
-                408,
-                413,
-                429,
-                500,
-                502,
-                503,
-                504,
-                521,
-                522,
-                524
-            ],
-            errorCodes: [
-                'ETIMEDOUT',
-                'ECONNRESET',
-                'EADDRINUSE',
-                'ECONNREFUSED',
-                'EPIPE',
-                'ENOTFOUND',
-                'ENETUNREACH',
-                'EAI_AGAIN'
-            ],
-            maxRetryAfter: undefined,
-            calculateDelay: ({ computedValue }) => computedValue
-        },
-        timeout: {},
-        headers: {
-            'user-agent': 'got (https://github.com/sindresorhus/got)'
-        },
-        hooks: {
-            init: [],
-            beforeRequest: [],
-            beforeRedirect: [],
-            beforeRetry: [],
-            beforeError: [],
-            afterResponse: []
-        },
-        cache: undefined,
-        dnsCache: undefined,
-        decompress: true,
-        throwHttpErrors: true,
-        followRedirect: true,
-        isStream: false,
-        responseType: 'text',
-        resolveBodyOnly: false,
-        maxRedirects: 10,
-        prefixUrl: '',
-        methodRewriting: true,
-        ignoreInvalidCookies: false,
-        context: {},
-        // TODO: Set this to `true` when Got 12 gets released
-        http2: false,
-        allowGetBody: false,
-        https: undefined,
-        pagination: {
-            transform: (response) => {
-                if (response.request.options.responseType === 'json') {
-                    return response.body;
-                }
-                return JSON.parse(response.body);
-            },
-            paginate: response => {
-                if (!Reflect.has(response.headers, 'link')) {
-                    return false;
-                }
-                const items = response.headers.link.split(',');
-                let next;
-                for (const item of items) {
-                    const parsed = item.split(';');
-                    if (parsed[1].includes('next')) {
-                        next = parsed[0].trimStart().trim();
-                        next = next.slice(1, -1);
-                        break;
-                    }
-                }
-                if (next) {
-                    const options = {
-                        url: new url_1.URL(next)
-                    };
-                    return options;
-                }
-                return false;
-            },
-            filter: () => true,
-            shouldContinue: () => true,
-            countLimit: Infinity,
-            backoff: 0,
-            requestLimit: 10000,
-            stackAllItems: true
-        },
-        parseJson: (text) => JSON.parse(text),
-        stringifyJson: (object) => JSON.stringify(object),
-        cacheOptions: {}
-    },
-    handlers: [create_1.defaultHandler],
-    mutableDefaults: false
-};
-const got = create_1.default(defaults);
-exports.default = got;
-// For CommonJS default export support
-module.exports = got;
-module.exports.default = got;
-module.exports.__esModule = true; // Workaround for TS issue: https://github.com/sindresorhus/got/pull/1267
-__exportStar(__nccwpck_require__(4337), exports);
-__exportStar(__nccwpck_require__(6056), exports);
-
-
-/***/ }),
-
-/***/ 2613:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-
-
-/***/ }),
-
-/***/ 285:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const is_1 = __nccwpck_require__(7678);
-function deepFreeze(object) {
-    for (const value of Object.values(object)) {
-        if (is_1.default.plainObject(value) || is_1.default.array(value)) {
-            deepFreeze(value);
-        }
-    }
-    return Object.freeze(object);
-}
-exports.default = deepFreeze;
-
-
-/***/ }),
-
-/***/ 397:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const alreadyWarned = new Set();
-exports.default = (message) => {
-    if (alreadyWarned.has(message)) {
-        return;
-    }
-    alreadyWarned.add(message);
-    // @ts-expect-error Missing types.
-    process.emitWarning(`Got: ${message}`, {
-        type: 'DeprecationWarning'
-    });
-};
-
-
-/***/ }),
-
 /***/ 1621:
 /***/ ((module) => {
 
@@ -25358,2234 +22021,6 @@ module.exports = (flag, argv) => {
 	const pos = argv.indexOf(prefix + flag);
 	const terminatorPos = argv.indexOf('--');
 	return pos !== -1 && (terminatorPos === -1 ? true : pos < terminatorPos);
-};
-
-
-/***/ }),
-
-/***/ 1002:
-/***/ ((module) => {
-
-"use strict";
-
-// rfc7231 6.1
-const statusCodeCacheableByDefault = new Set([
-    200,
-    203,
-    204,
-    206,
-    300,
-    301,
-    404,
-    405,
-    410,
-    414,
-    501,
-]);
-
-// This implementation does not understand partial responses (206)
-const understoodStatuses = new Set([
-    200,
-    203,
-    204,
-    300,
-    301,
-    302,
-    303,
-    307,
-    308,
-    404,
-    405,
-    410,
-    414,
-    501,
-]);
-
-const errorStatusCodes = new Set([
-    500,
-    502,
-    503, 
-    504,
-]);
-
-const hopByHopHeaders = {
-    date: true, // included, because we add Age update Date
-    connection: true,
-    'keep-alive': true,
-    'proxy-authenticate': true,
-    'proxy-authorization': true,
-    te: true,
-    trailer: true,
-    'transfer-encoding': true,
-    upgrade: true,
-};
-
-const excludedFromRevalidationUpdate = {
-    // Since the old body is reused, it doesn't make sense to change properties of the body
-    'content-length': true,
-    'content-encoding': true,
-    'transfer-encoding': true,
-    'content-range': true,
-};
-
-function toNumberOrZero(s) {
-    const n = parseInt(s, 10);
-    return isFinite(n) ? n : 0;
-}
-
-// RFC 5861
-function isErrorResponse(response) {
-    // consider undefined response as faulty
-    if(!response) {
-        return true
-    }
-    return errorStatusCodes.has(response.status);
-}
-
-function parseCacheControl(header) {
-    const cc = {};
-    if (!header) return cc;
-
-    // TODO: When there is more than one value present for a given directive (e.g., two Expires header fields, multiple Cache-Control: max-age directives),
-    // the directive's value is considered invalid. Caches are encouraged to consider responses that have invalid freshness information to be stale
-    const parts = header.trim().split(/\s*,\s*/); // TODO: lame parsing
-    for (const part of parts) {
-        const [k, v] = part.split(/\s*=\s*/, 2);
-        cc[k] = v === undefined ? true : v.replace(/^"|"$/g, ''); // TODO: lame unquoting
-    }
-
-    return cc;
-}
-
-function formatCacheControl(cc) {
-    let parts = [];
-    for (const k in cc) {
-        const v = cc[k];
-        parts.push(v === true ? k : k + '=' + v);
-    }
-    if (!parts.length) {
-        return undefined;
-    }
-    return parts.join(', ');
-}
-
-module.exports = class CachePolicy {
-    constructor(
-        req,
-        res,
-        {
-            shared,
-            cacheHeuristic,
-            immutableMinTimeToLive,
-            ignoreCargoCult,
-            _fromObject,
-        } = {}
-    ) {
-        if (_fromObject) {
-            this._fromObject(_fromObject);
-            return;
-        }
-
-        if (!res || !res.headers) {
-            throw Error('Response headers missing');
-        }
-        this._assertRequestHasHeaders(req);
-
-        this._responseTime = this.now();
-        this._isShared = shared !== false;
-        this._cacheHeuristic =
-            undefined !== cacheHeuristic ? cacheHeuristic : 0.1; // 10% matches IE
-        this._immutableMinTtl =
-            undefined !== immutableMinTimeToLive
-                ? immutableMinTimeToLive
-                : 24 * 3600 * 1000;
-
-        this._status = 'status' in res ? res.status : 200;
-        this._resHeaders = res.headers;
-        this._rescc = parseCacheControl(res.headers['cache-control']);
-        this._method = 'method' in req ? req.method : 'GET';
-        this._url = req.url;
-        this._host = req.headers.host;
-        this._noAuthorization = !req.headers.authorization;
-        this._reqHeaders = res.headers.vary ? req.headers : null; // Don't keep all request headers if they won't be used
-        this._reqcc = parseCacheControl(req.headers['cache-control']);
-
-        // Assume that if someone uses legacy, non-standard uncecessary options they don't understand caching,
-        // so there's no point stricly adhering to the blindly copy&pasted directives.
-        if (
-            ignoreCargoCult &&
-            'pre-check' in this._rescc &&
-            'post-check' in this._rescc
-        ) {
-            delete this._rescc['pre-check'];
-            delete this._rescc['post-check'];
-            delete this._rescc['no-cache'];
-            delete this._rescc['no-store'];
-            delete this._rescc['must-revalidate'];
-            this._resHeaders = Object.assign({}, this._resHeaders, {
-                'cache-control': formatCacheControl(this._rescc),
-            });
-            delete this._resHeaders.expires;
-            delete this._resHeaders.pragma;
-        }
-
-        // When the Cache-Control header field is not present in a request, caches MUST consider the no-cache request pragma-directive
-        // as having the same effect as if "Cache-Control: no-cache" were present (see Section 5.2.1).
-        if (
-            res.headers['cache-control'] == null &&
-            /no-cache/.test(res.headers.pragma)
-        ) {
-            this._rescc['no-cache'] = true;
-        }
-    }
-
-    now() {
-        return Date.now();
-    }
-
-    storable() {
-        // The "no-store" request directive indicates that a cache MUST NOT store any part of either this request or any response to it.
-        return !!(
-            !this._reqcc['no-store'] &&
-            // A cache MUST NOT store a response to any request, unless:
-            // The request method is understood by the cache and defined as being cacheable, and
-            ('GET' === this._method ||
-                'HEAD' === this._method ||
-                ('POST' === this._method && this._hasExplicitExpiration())) &&
-            // the response status code is understood by the cache, and
-            understoodStatuses.has(this._status) &&
-            // the "no-store" cache directive does not appear in request or response header fields, and
-            !this._rescc['no-store'] &&
-            // the "private" response directive does not appear in the response, if the cache is shared, and
-            (!this._isShared || !this._rescc.private) &&
-            // the Authorization header field does not appear in the request, if the cache is shared,
-            (!this._isShared ||
-                this._noAuthorization ||
-                this._allowsStoringAuthenticated()) &&
-            // the response either:
-            // contains an Expires header field, or
-            (this._resHeaders.expires ||
-                // contains a max-age response directive, or
-                // contains a s-maxage response directive and the cache is shared, or
-                // contains a public response directive.
-                this._rescc['max-age'] ||
-                (this._isShared && this._rescc['s-maxage']) ||
-                this._rescc.public ||
-                // has a status code that is defined as cacheable by default
-                statusCodeCacheableByDefault.has(this._status))
-        );
-    }
-
-    _hasExplicitExpiration() {
-        // 4.2.1 Calculating Freshness Lifetime
-        return (
-            (this._isShared && this._rescc['s-maxage']) ||
-            this._rescc['max-age'] ||
-            this._resHeaders.expires
-        );
-    }
-
-    _assertRequestHasHeaders(req) {
-        if (!req || !req.headers) {
-            throw Error('Request headers missing');
-        }
-    }
-
-    satisfiesWithoutRevalidation(req) {
-        this._assertRequestHasHeaders(req);
-
-        // When presented with a request, a cache MUST NOT reuse a stored response, unless:
-        // the presented request does not contain the no-cache pragma (Section 5.4), nor the no-cache cache directive,
-        // unless the stored response is successfully validated (Section 4.3), and
-        const requestCC = parseCacheControl(req.headers['cache-control']);
-        if (requestCC['no-cache'] || /no-cache/.test(req.headers.pragma)) {
-            return false;
-        }
-
-        if (requestCC['max-age'] && this.age() > requestCC['max-age']) {
-            return false;
-        }
-
-        if (
-            requestCC['min-fresh'] &&
-            this.timeToLive() < 1000 * requestCC['min-fresh']
-        ) {
-            return false;
-        }
-
-        // the stored response is either:
-        // fresh, or allowed to be served stale
-        if (this.stale()) {
-            const allowsStale =
-                requestCC['max-stale'] &&
-                !this._rescc['must-revalidate'] &&
-                (true === requestCC['max-stale'] ||
-                    requestCC['max-stale'] > this.age() - this.maxAge());
-            if (!allowsStale) {
-                return false;
-            }
-        }
-
-        return this._requestMatches(req, false);
-    }
-
-    _requestMatches(req, allowHeadMethod) {
-        // The presented effective request URI and that of the stored response match, and
-        return (
-            (!this._url || this._url === req.url) &&
-            this._host === req.headers.host &&
-            // the request method associated with the stored response allows it to be used for the presented request, and
-            (!req.method ||
-                this._method === req.method ||
-                (allowHeadMethod && 'HEAD' === req.method)) &&
-            // selecting header fields nominated by the stored response (if any) match those presented, and
-            this._varyMatches(req)
-        );
-    }
-
-    _allowsStoringAuthenticated() {
-        //  following Cache-Control response directives (Section 5.2.2) have such an effect: must-revalidate, public, and s-maxage.
-        return (
-            this._rescc['must-revalidate'] ||
-            this._rescc.public ||
-            this._rescc['s-maxage']
-        );
-    }
-
-    _varyMatches(req) {
-        if (!this._resHeaders.vary) {
-            return true;
-        }
-
-        // A Vary header field-value of "*" always fails to match
-        if (this._resHeaders.vary === '*') {
-            return false;
-        }
-
-        const fields = this._resHeaders.vary
-            .trim()
-            .toLowerCase()
-            .split(/\s*,\s*/);
-        for (const name of fields) {
-            if (req.headers[name] !== this._reqHeaders[name]) return false;
-        }
-        return true;
-    }
-
-    _copyWithoutHopByHopHeaders(inHeaders) {
-        const headers = {};
-        for (const name in inHeaders) {
-            if (hopByHopHeaders[name]) continue;
-            headers[name] = inHeaders[name];
-        }
-        // 9.1.  Connection
-        if (inHeaders.connection) {
-            const tokens = inHeaders.connection.trim().split(/\s*,\s*/);
-            for (const name of tokens) {
-                delete headers[name];
-            }
-        }
-        if (headers.warning) {
-            const warnings = headers.warning.split(/,/).filter(warning => {
-                return !/^\s*1[0-9][0-9]/.test(warning);
-            });
-            if (!warnings.length) {
-                delete headers.warning;
-            } else {
-                headers.warning = warnings.join(',').trim();
-            }
-        }
-        return headers;
-    }
-
-    responseHeaders() {
-        const headers = this._copyWithoutHopByHopHeaders(this._resHeaders);
-        const age = this.age();
-
-        // A cache SHOULD generate 113 warning if it heuristically chose a freshness
-        // lifetime greater than 24 hours and the response's age is greater than 24 hours.
-        if (
-            age > 3600 * 24 &&
-            !this._hasExplicitExpiration() &&
-            this.maxAge() > 3600 * 24
-        ) {
-            headers.warning =
-                (headers.warning ? `${headers.warning}, ` : '') +
-                '113 - "rfc7234 5.5.4"';
-        }
-        headers.age = `${Math.round(age)}`;
-        headers.date = new Date(this.now()).toUTCString();
-        return headers;
-    }
-
-    /**
-     * Value of the Date response header or current time if Date was invalid
-     * @return timestamp
-     */
-    date() {
-        const serverDate = Date.parse(this._resHeaders.date);
-        if (isFinite(serverDate)) {
-            return serverDate;
-        }
-        return this._responseTime;
-    }
-
-    /**
-     * Value of the Age header, in seconds, updated for the current time.
-     * May be fractional.
-     *
-     * @return Number
-     */
-    age() {
-        let age = this._ageValue();
-
-        const residentTime = (this.now() - this._responseTime) / 1000;
-        return age + residentTime;
-    }
-
-    _ageValue() {
-        return toNumberOrZero(this._resHeaders.age);
-    }
-
-    /**
-     * Value of applicable max-age (or heuristic equivalent) in seconds. This counts since response's `Date`.
-     *
-     * For an up-to-date value, see `timeToLive()`.
-     *
-     * @return Number
-     */
-    maxAge() {
-        if (!this.storable() || this._rescc['no-cache']) {
-            return 0;
-        }
-
-        // Shared responses with cookies are cacheable according to the RFC, but IMHO it'd be unwise to do so by default
-        // so this implementation requires explicit opt-in via public header
-        if (
-            this._isShared &&
-            (this._resHeaders['set-cookie'] &&
-                !this._rescc.public &&
-                !this._rescc.immutable)
-        ) {
-            return 0;
-        }
-
-        if (this._resHeaders.vary === '*') {
-            return 0;
-        }
-
-        if (this._isShared) {
-            if (this._rescc['proxy-revalidate']) {
-                return 0;
-            }
-            // if a response includes the s-maxage directive, a shared cache recipient MUST ignore the Expires field.
-            if (this._rescc['s-maxage']) {
-                return toNumberOrZero(this._rescc['s-maxage']);
-            }
-        }
-
-        // If a response includes a Cache-Control field with the max-age directive, a recipient MUST ignore the Expires field.
-        if (this._rescc['max-age']) {
-            return toNumberOrZero(this._rescc['max-age']);
-        }
-
-        const defaultMinTtl = this._rescc.immutable ? this._immutableMinTtl : 0;
-
-        const serverDate = this.date();
-        if (this._resHeaders.expires) {
-            const expires = Date.parse(this._resHeaders.expires);
-            // A cache recipient MUST interpret invalid date formats, especially the value "0", as representing a time in the past (i.e., "already expired").
-            if (Number.isNaN(expires) || expires < serverDate) {
-                return 0;
-            }
-            return Math.max(defaultMinTtl, (expires - serverDate) / 1000);
-        }
-
-        if (this._resHeaders['last-modified']) {
-            const lastModified = Date.parse(this._resHeaders['last-modified']);
-            if (isFinite(lastModified) && serverDate > lastModified) {
-                return Math.max(
-                    defaultMinTtl,
-                    ((serverDate - lastModified) / 1000) * this._cacheHeuristic
-                );
-            }
-        }
-
-        return defaultMinTtl;
-    }
-
-    timeToLive() {
-        const age = this.maxAge() - this.age();
-        const staleIfErrorAge = age + toNumberOrZero(this._rescc['stale-if-error']);
-        const staleWhileRevalidateAge = age + toNumberOrZero(this._rescc['stale-while-revalidate']);
-        return Math.max(0, age, staleIfErrorAge, staleWhileRevalidateAge) * 1000;
-    }
-
-    stale() {
-        return this.maxAge() <= this.age();
-    }
-
-    _useStaleIfError() {
-        return this.maxAge() + toNumberOrZero(this._rescc['stale-if-error']) > this.age();
-    }
-
-    useStaleWhileRevalidate() {
-        return this.maxAge() + toNumberOrZero(this._rescc['stale-while-revalidate']) > this.age();
-    }
-
-    static fromObject(obj) {
-        return new this(undefined, undefined, { _fromObject: obj });
-    }
-
-    _fromObject(obj) {
-        if (this._responseTime) throw Error('Reinitialized');
-        if (!obj || obj.v !== 1) throw Error('Invalid serialization');
-
-        this._responseTime = obj.t;
-        this._isShared = obj.sh;
-        this._cacheHeuristic = obj.ch;
-        this._immutableMinTtl =
-            obj.imm !== undefined ? obj.imm : 24 * 3600 * 1000;
-        this._status = obj.st;
-        this._resHeaders = obj.resh;
-        this._rescc = obj.rescc;
-        this._method = obj.m;
-        this._url = obj.u;
-        this._host = obj.h;
-        this._noAuthorization = obj.a;
-        this._reqHeaders = obj.reqh;
-        this._reqcc = obj.reqcc;
-    }
-
-    toObject() {
-        return {
-            v: 1,
-            t: this._responseTime,
-            sh: this._isShared,
-            ch: this._cacheHeuristic,
-            imm: this._immutableMinTtl,
-            st: this._status,
-            resh: this._resHeaders,
-            rescc: this._rescc,
-            m: this._method,
-            u: this._url,
-            h: this._host,
-            a: this._noAuthorization,
-            reqh: this._reqHeaders,
-            reqcc: this._reqcc,
-        };
-    }
-
-    /**
-     * Headers for sending to the origin server to revalidate stale response.
-     * Allows server to return 304 to allow reuse of the previous response.
-     *
-     * Hop by hop headers are always stripped.
-     * Revalidation headers may be added or removed, depending on request.
-     */
-    revalidationHeaders(incomingReq) {
-        this._assertRequestHasHeaders(incomingReq);
-        const headers = this._copyWithoutHopByHopHeaders(incomingReq.headers);
-
-        // This implementation does not understand range requests
-        delete headers['if-range'];
-
-        if (!this._requestMatches(incomingReq, true) || !this.storable()) {
-            // revalidation allowed via HEAD
-            // not for the same resource, or wasn't allowed to be cached anyway
-            delete headers['if-none-match'];
-            delete headers['if-modified-since'];
-            return headers;
-        }
-
-        /* MUST send that entity-tag in any cache validation request (using If-Match or If-None-Match) if an entity-tag has been provided by the origin server. */
-        if (this._resHeaders.etag) {
-            headers['if-none-match'] = headers['if-none-match']
-                ? `${headers['if-none-match']}, ${this._resHeaders.etag}`
-                : this._resHeaders.etag;
-        }
-
-        // Clients MAY issue simple (non-subrange) GET requests with either weak validators or strong validators. Clients MUST NOT use weak validators in other forms of request.
-        const forbidsWeakValidators =
-            headers['accept-ranges'] ||
-            headers['if-match'] ||
-            headers['if-unmodified-since'] ||
-            (this._method && this._method != 'GET');
-
-        /* SHOULD send the Last-Modified value in non-subrange cache validation requests (using If-Modified-Since) if only a Last-Modified value has been provided by the origin server.
-        Note: This implementation does not understand partial responses (206) */
-        if (forbidsWeakValidators) {
-            delete headers['if-modified-since'];
-
-            if (headers['if-none-match']) {
-                const etags = headers['if-none-match']
-                    .split(/,/)
-                    .filter(etag => {
-                        return !/^\s*W\//.test(etag);
-                    });
-                if (!etags.length) {
-                    delete headers['if-none-match'];
-                } else {
-                    headers['if-none-match'] = etags.join(',').trim();
-                }
-            }
-        } else if (
-            this._resHeaders['last-modified'] &&
-            !headers['if-modified-since']
-        ) {
-            headers['if-modified-since'] = this._resHeaders['last-modified'];
-        }
-
-        return headers;
-    }
-
-    /**
-     * Creates new CachePolicy with information combined from the previews response,
-     * and the new revalidation response.
-     *
-     * Returns {policy, modified} where modified is a boolean indicating
-     * whether the response body has been modified, and old cached body can't be used.
-     *
-     * @return {Object} {policy: CachePolicy, modified: Boolean}
-     */
-    revalidatedPolicy(request, response) {
-        this._assertRequestHasHeaders(request);
-        if(this._useStaleIfError() && isErrorResponse(response)) {  // I consider the revalidation request unsuccessful
-          return {
-            modified: false,
-            matches: false,
-            policy: this,
-          };
-        }
-        if (!response || !response.headers) {
-            throw Error('Response headers missing');
-        }
-
-        // These aren't going to be supported exactly, since one CachePolicy object
-        // doesn't know about all the other cached objects.
-        let matches = false;
-        if (response.status !== undefined && response.status != 304) {
-            matches = false;
-        } else if (
-            response.headers.etag &&
-            !/^\s*W\//.test(response.headers.etag)
-        ) {
-            // "All of the stored responses with the same strong validator are selected.
-            // If none of the stored responses contain the same strong validator,
-            // then the cache MUST NOT use the new response to update any stored responses."
-            matches =
-                this._resHeaders.etag &&
-                this._resHeaders.etag.replace(/^\s*W\//, '') ===
-                    response.headers.etag;
-        } else if (this._resHeaders.etag && response.headers.etag) {
-            // "If the new response contains a weak validator and that validator corresponds
-            // to one of the cache's stored responses,
-            // then the most recent of those matching stored responses is selected for update."
-            matches =
-                this._resHeaders.etag.replace(/^\s*W\//, '') ===
-                response.headers.etag.replace(/^\s*W\//, '');
-        } else if (this._resHeaders['last-modified']) {
-            matches =
-                this._resHeaders['last-modified'] ===
-                response.headers['last-modified'];
-        } else {
-            // If the new response does not include any form of validator (such as in the case where
-            // a client generates an If-Modified-Since request from a source other than the Last-Modified
-            // response header field), and there is only one stored response, and that stored response also
-            // lacks a validator, then that stored response is selected for update.
-            if (
-                !this._resHeaders.etag &&
-                !this._resHeaders['last-modified'] &&
-                !response.headers.etag &&
-                !response.headers['last-modified']
-            ) {
-                matches = true;
-            }
-        }
-
-        if (!matches) {
-            return {
-                policy: new this.constructor(request, response),
-                // Client receiving 304 without body, even if it's invalid/mismatched has no option
-                // but to reuse a cached body. We don't have a good way to tell clients to do
-                // error recovery in such case.
-                modified: response.status != 304,
-                matches: false,
-            };
-        }
-
-        // use other header fields provided in the 304 (Not Modified) response to replace all instances
-        // of the corresponding header fields in the stored response.
-        const headers = {};
-        for (const k in this._resHeaders) {
-            headers[k] =
-                k in response.headers && !excludedFromRevalidationUpdate[k]
-                    ? response.headers[k]
-                    : this._resHeaders[k];
-        }
-
-        const newResponse = Object.assign({}, response, {
-            status: this._status,
-            method: this._method,
-            headers,
-        });
-        return {
-            policy: new this.constructor(request, newResponse, {
-                shared: this._isShared,
-                cacheHeuristic: this._cacheHeuristic,
-                immutableMinTimeToLive: this._immutableMinTtl,
-            }),
-            modified: false,
-            matches: true,
-        };
-    }
-};
-
-
-/***/ }),
-
-/***/ 9898:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const EventEmitter = __nccwpck_require__(8614);
-const tls = __nccwpck_require__(4016);
-const http2 = __nccwpck_require__(7565);
-const QuickLRU = __nccwpck_require__(9273);
-
-const kCurrentStreamsCount = Symbol('currentStreamsCount');
-const kRequest = Symbol('request');
-const kOriginSet = Symbol('cachedOriginSet');
-const kGracefullyClosing = Symbol('gracefullyClosing');
-
-const nameKeys = [
-	// `http2.connect()` options
-	'maxDeflateDynamicTableSize',
-	'maxSessionMemory',
-	'maxHeaderListPairs',
-	'maxOutstandingPings',
-	'maxReservedRemoteStreams',
-	'maxSendHeaderBlockLength',
-	'paddingStrategy',
-
-	// `tls.connect()` options
-	'localAddress',
-	'path',
-	'rejectUnauthorized',
-	'minDHSize',
-
-	// `tls.createSecureContext()` options
-	'ca',
-	'cert',
-	'clientCertEngine',
-	'ciphers',
-	'key',
-	'pfx',
-	'servername',
-	'minVersion',
-	'maxVersion',
-	'secureProtocol',
-	'crl',
-	'honorCipherOrder',
-	'ecdhCurve',
-	'dhparam',
-	'secureOptions',
-	'sessionIdContext'
-];
-
-const getSortedIndex = (array, value, compare) => {
-	let low = 0;
-	let high = array.length;
-
-	while (low < high) {
-		const mid = (low + high) >>> 1;
-
-		/* istanbul ignore next */
-		if (compare(array[mid], value)) {
-			// This never gets called because we use descending sort. Better to have this anyway.
-			low = mid + 1;
-		} else {
-			high = mid;
-		}
-	}
-
-	return low;
-};
-
-const compareSessions = (a, b) => {
-	return a.remoteSettings.maxConcurrentStreams > b.remoteSettings.maxConcurrentStreams;
-};
-
-// See https://tools.ietf.org/html/rfc8336
-const closeCoveredSessions = (where, session) => {
-	// Clients SHOULD NOT emit new requests on any connection whose Origin
-	// Set is a proper subset of another connection's Origin Set, and they
-	// SHOULD close it once all outstanding requests are satisfied.
-	for (const coveredSession of where) {
-		if (
-			// The set is a proper subset when its length is less than the other set.
-			coveredSession[kOriginSet].length < session[kOriginSet].length &&
-
-			// And the other set includes all elements of the subset.
-			coveredSession[kOriginSet].every(origin => session[kOriginSet].includes(origin)) &&
-
-			// Makes sure that the session can handle all requests from the covered session.
-			coveredSession[kCurrentStreamsCount] + session[kCurrentStreamsCount] <= session.remoteSettings.maxConcurrentStreams
-		) {
-			// This allows pending requests to finish and prevents making new requests.
-			gracefullyClose(coveredSession);
-		}
-	}
-};
-
-// This is basically inverted `closeCoveredSessions(...)`.
-const closeSessionIfCovered = (where, coveredSession) => {
-	for (const session of where) {
-		if (
-			coveredSession[kOriginSet].length < session[kOriginSet].length &&
-			coveredSession[kOriginSet].every(origin => session[kOriginSet].includes(origin)) &&
-			coveredSession[kCurrentStreamsCount] + session[kCurrentStreamsCount] <= session.remoteSettings.maxConcurrentStreams
-		) {
-			gracefullyClose(coveredSession);
-		}
-	}
-};
-
-const getSessions = ({agent, isFree}) => {
-	const result = {};
-
-	// eslint-disable-next-line guard-for-in
-	for (const normalizedOptions in agent.sessions) {
-		const sessions = agent.sessions[normalizedOptions];
-
-		const filtered = sessions.filter(session => {
-			const result = session[Agent.kCurrentStreamsCount] < session.remoteSettings.maxConcurrentStreams;
-
-			return isFree ? result : !result;
-		});
-
-		if (filtered.length !== 0) {
-			result[normalizedOptions] = filtered;
-		}
-	}
-
-	return result;
-};
-
-const gracefullyClose = session => {
-	session[kGracefullyClosing] = true;
-
-	if (session[kCurrentStreamsCount] === 0) {
-		session.close();
-	}
-};
-
-class Agent extends EventEmitter {
-	constructor({timeout = 60000, maxSessions = Infinity, maxFreeSessions = 10, maxCachedTlsSessions = 100} = {}) {
-		super();
-
-		// A session is considered busy when its current streams count
-		// is equal to or greater than the `maxConcurrentStreams` value.
-
-		// A session is considered free when its current streams count
-		// is less than the `maxConcurrentStreams` value.
-
-		// SESSIONS[NORMALIZED_OPTIONS] = [];
-		this.sessions = {};
-
-		// The queue for creating new sessions. It looks like this:
-		// QUEUE[NORMALIZED_OPTIONS][NORMALIZED_ORIGIN] = ENTRY_FUNCTION
-		//
-		// The entry function has `listeners`, `completed` and `destroyed` properties.
-		// `listeners` is an array of objects containing `resolve` and `reject` functions.
-		// `completed` is a boolean. It's set to true after ENTRY_FUNCTION is executed.
-		// `destroyed` is a boolean. If it's set to true, the session will be destroyed if hasn't connected yet.
-		this.queue = {};
-
-		// Each session will use this timeout value.
-		this.timeout = timeout;
-
-		// Max sessions in total
-		this.maxSessions = maxSessions;
-
-		// Max free sessions in total
-		// TODO: decreasing `maxFreeSessions` should close some sessions
-		this.maxFreeSessions = maxFreeSessions;
-
-		this._freeSessionsCount = 0;
-		this._sessionsCount = 0;
-
-		// We don't support push streams by default.
-		this.settings = {
-			enablePush: false
-		};
-
-		// Reusing TLS sessions increases performance.
-		this.tlsSessionCache = new QuickLRU({maxSize: maxCachedTlsSessions});
-	}
-
-	static normalizeOrigin(url, servername) {
-		if (typeof url === 'string') {
-			url = new URL(url);
-		}
-
-		if (servername && url.hostname !== servername) {
-			url.hostname = servername;
-		}
-
-		return url.origin;
-	}
-
-	normalizeOptions(options) {
-		let normalized = '';
-
-		if (options) {
-			for (const key of nameKeys) {
-				if (options[key]) {
-					normalized += `:${options[key]}`;
-				}
-			}
-		}
-
-		return normalized;
-	}
-
-	_tryToCreateNewSession(normalizedOptions, normalizedOrigin) {
-		if (!(normalizedOptions in this.queue) || !(normalizedOrigin in this.queue[normalizedOptions])) {
-			return;
-		}
-
-		const item = this.queue[normalizedOptions][normalizedOrigin];
-
-		// The entry function can be run only once.
-		// BUG: The session may be never created when:
-		// - the first condition is false AND
-		// - this function is never called with the same arguments in the future.
-		if (this._sessionsCount < this.maxSessions && !item.completed) {
-			item.completed = true;
-
-			item();
-		}
-	}
-
-	getSession(origin, options, listeners) {
-		return new Promise((resolve, reject) => {
-			if (Array.isArray(listeners)) {
-				listeners = [...listeners];
-
-				// Resolve the current promise ASAP, we're just moving the listeners.
-				// They will be executed at a different time.
-				resolve();
-			} else {
-				listeners = [{resolve, reject}];
-			}
-
-			const normalizedOptions = this.normalizeOptions(options);
-			const normalizedOrigin = Agent.normalizeOrigin(origin, options && options.servername);
-
-			if (normalizedOrigin === undefined) {
-				for (const {reject} of listeners) {
-					reject(new TypeError('The `origin` argument needs to be a string or an URL object'));
-				}
-
-				return;
-			}
-
-			if (normalizedOptions in this.sessions) {
-				const sessions = this.sessions[normalizedOptions];
-
-				let maxConcurrentStreams = -1;
-				let currentStreamsCount = -1;
-				let optimalSession;
-
-				// We could just do this.sessions[normalizedOptions].find(...) but that isn't optimal.
-				// Additionally, we are looking for session which has biggest current pending streams count.
-				for (const session of sessions) {
-					const sessionMaxConcurrentStreams = session.remoteSettings.maxConcurrentStreams;
-
-					if (sessionMaxConcurrentStreams < maxConcurrentStreams) {
-						break;
-					}
-
-					if (session[kOriginSet].includes(normalizedOrigin)) {
-						const sessionCurrentStreamsCount = session[kCurrentStreamsCount];
-
-						if (
-							sessionCurrentStreamsCount >= sessionMaxConcurrentStreams ||
-							session[kGracefullyClosing] ||
-							// Unfortunately the `close` event isn't called immediately,
-							// so `session.destroyed` is `true`, but `session.closed` is `false`.
-							session.destroyed
-						) {
-							continue;
-						}
-
-						// We only need set this once.
-						if (!optimalSession) {
-							maxConcurrentStreams = sessionMaxConcurrentStreams;
-						}
-
-						// We're looking for the session which has biggest current pending stream count,
-						// in order to minimalize the amount of active sessions.
-						if (sessionCurrentStreamsCount > currentStreamsCount) {
-							optimalSession = session;
-							currentStreamsCount = sessionCurrentStreamsCount;
-						}
-					}
-				}
-
-				if (optimalSession) {
-					/* istanbul ignore next: safety check */
-					if (listeners.length !== 1) {
-						for (const {reject} of listeners) {
-							const error = new Error(
-								`Expected the length of listeners to be 1, got ${listeners.length}.\n` +
-								'Please report this to https://github.com/szmarczak/http2-wrapper/'
-							);
-
-							reject(error);
-						}
-
-						return;
-					}
-
-					listeners[0].resolve(optimalSession);
-					return;
-				}
-			}
-
-			if (normalizedOptions in this.queue) {
-				if (normalizedOrigin in this.queue[normalizedOptions]) {
-					// There's already an item in the queue, just attach ourselves to it.
-					this.queue[normalizedOptions][normalizedOrigin].listeners.push(...listeners);
-
-					// This shouldn't be executed here.
-					// See the comment inside _tryToCreateNewSession.
-					this._tryToCreateNewSession(normalizedOptions, normalizedOrigin);
-					return;
-				}
-			} else {
-				this.queue[normalizedOptions] = {};
-			}
-
-			// The entry must be removed from the queue IMMEDIATELY when:
-			// 1. the session connects successfully,
-			// 2. an error occurs.
-			const removeFromQueue = () => {
-				// Our entry can be replaced. We cannot remove the new one.
-				if (normalizedOptions in this.queue && this.queue[normalizedOptions][normalizedOrigin] === entry) {
-					delete this.queue[normalizedOptions][normalizedOrigin];
-
-					if (Object.keys(this.queue[normalizedOptions]).length === 0) {
-						delete this.queue[normalizedOptions];
-					}
-				}
-			};
-
-			// The main logic is here
-			const entry = () => {
-				const name = `${normalizedOrigin}:${normalizedOptions}`;
-				let receivedSettings = false;
-
-				try {
-					const session = http2.connect(origin, {
-						createConnection: this.createConnection,
-						settings: this.settings,
-						session: this.tlsSessionCache.get(name),
-						...options
-					});
-					session[kCurrentStreamsCount] = 0;
-					session[kGracefullyClosing] = false;
-
-					const isFree = () => session[kCurrentStreamsCount] < session.remoteSettings.maxConcurrentStreams;
-					let wasFree = true;
-
-					session.socket.once('session', tlsSession => {
-						this.tlsSessionCache.set(name, tlsSession);
-					});
-
-					session.once('error', error => {
-						// Listeners are empty when the session successfully connected.
-						for (const {reject} of listeners) {
-							reject(error);
-						}
-
-						// The connection got broken, purge the cache.
-						this.tlsSessionCache.delete(name);
-					});
-
-					session.setTimeout(this.timeout, () => {
-						// Terminates all streams owned by this session.
-						// TODO: Maybe the streams should have a "Session timed out" error?
-						session.destroy();
-					});
-
-					session.once('close', () => {
-						if (receivedSettings) {
-							// 1. If it wasn't free then no need to decrease because
-							//    it has been decreased already in session.request().
-							// 2. `stream.once('close')` won't increment the count
-							//    because the session is already closed.
-							if (wasFree) {
-								this._freeSessionsCount--;
-							}
-
-							this._sessionsCount--;
-
-							// This cannot be moved to the stream logic,
-							// because there may be a session that hadn't made a single request.
-							const where = this.sessions[normalizedOptions];
-							where.splice(where.indexOf(session), 1);
-
-							if (where.length === 0) {
-								delete this.sessions[normalizedOptions];
-							}
-						} else {
-							// Broken connection
-							const error = new Error('Session closed without receiving a SETTINGS frame');
-							error.code = 'HTTP2WRAPPER_NOSETTINGS';
-
-							for (const {reject} of listeners) {
-								reject(error);
-							}
-
-							removeFromQueue();
-						}
-
-						// There may be another session awaiting.
-						this._tryToCreateNewSession(normalizedOptions, normalizedOrigin);
-					});
-
-					// Iterates over the queue and processes listeners.
-					const processListeners = () => {
-						if (!(normalizedOptions in this.queue) || !isFree()) {
-							return;
-						}
-
-						for (const origin of session[kOriginSet]) {
-							if (origin in this.queue[normalizedOptions]) {
-								const {listeners} = this.queue[normalizedOptions][origin];
-
-								// Prevents session overloading.
-								while (listeners.length !== 0 && isFree()) {
-									// We assume `resolve(...)` calls `request(...)` *directly*,
-									// otherwise the session will get overloaded.
-									listeners.shift().resolve(session);
-								}
-
-								const where = this.queue[normalizedOptions];
-								if (where[origin].listeners.length === 0) {
-									delete where[origin];
-
-									if (Object.keys(where).length === 0) {
-										delete this.queue[normalizedOptions];
-										break;
-									}
-								}
-
-								// We're no longer free, no point in continuing.
-								if (!isFree()) {
-									break;
-								}
-							}
-						}
-					};
-
-					// The Origin Set cannot shrink. No need to check if it suddenly became covered by another one.
-					session.on('origin', () => {
-						session[kOriginSet] = session.originSet;
-
-						if (!isFree()) {
-							// The session is full.
-							return;
-						}
-
-						processListeners();
-
-						// Close covered sessions (if possible).
-						closeCoveredSessions(this.sessions[normalizedOptions], session);
-					});
-
-					session.once('remoteSettings', () => {
-						// Fix Node.js bug preventing the process from exiting
-						session.ref();
-						session.unref();
-
-						this._sessionsCount++;
-
-						// The Agent could have been destroyed already.
-						if (entry.destroyed) {
-							const error = new Error('Agent has been destroyed');
-
-							for (const listener of listeners) {
-								listener.reject(error);
-							}
-
-							session.destroy();
-							return;
-						}
-
-						session[kOriginSet] = session.originSet;
-
-						{
-							const where = this.sessions;
-
-							if (normalizedOptions in where) {
-								const sessions = where[normalizedOptions];
-								sessions.splice(getSortedIndex(sessions, session, compareSessions), 0, session);
-							} else {
-								where[normalizedOptions] = [session];
-							}
-						}
-
-						this._freeSessionsCount += 1;
-						receivedSettings = true;
-
-						this.emit('session', session);
-
-						processListeners();
-						removeFromQueue();
-
-						// TODO: Close last recently used (or least used?) session
-						if (session[kCurrentStreamsCount] === 0 && this._freeSessionsCount > this.maxFreeSessions) {
-							session.close();
-						}
-
-						// Check if we haven't managed to execute all listeners.
-						if (listeners.length !== 0) {
-							// Request for a new session with predefined listeners.
-							this.getSession(normalizedOrigin, options, listeners);
-							listeners.length = 0;
-						}
-
-						// `session.remoteSettings.maxConcurrentStreams` might get increased
-						session.on('remoteSettings', () => {
-							processListeners();
-
-							// In case the Origin Set changes
-							closeCoveredSessions(this.sessions[normalizedOptions], session);
-						});
-					});
-
-					// Shim `session.request()` in order to catch all streams
-					session[kRequest] = session.request;
-					session.request = (headers, streamOptions) => {
-						if (session[kGracefullyClosing]) {
-							throw new Error('The session is gracefully closing. No new streams are allowed.');
-						}
-
-						const stream = session[kRequest](headers, streamOptions);
-
-						// The process won't exit until the session is closed or all requests are gone.
-						session.ref();
-
-						++session[kCurrentStreamsCount];
-
-						if (session[kCurrentStreamsCount] === session.remoteSettings.maxConcurrentStreams) {
-							this._freeSessionsCount--;
-						}
-
-						stream.once('close', () => {
-							wasFree = isFree();
-
-							--session[kCurrentStreamsCount];
-
-							if (!session.destroyed && !session.closed) {
-								closeSessionIfCovered(this.sessions[normalizedOptions], session);
-
-								if (isFree() && !session.closed) {
-									if (!wasFree) {
-										this._freeSessionsCount++;
-
-										wasFree = true;
-									}
-
-									const isEmpty = session[kCurrentStreamsCount] === 0;
-
-									if (isEmpty) {
-										session.unref();
-									}
-
-									if (
-										isEmpty &&
-										(
-											this._freeSessionsCount > this.maxFreeSessions ||
-											session[kGracefullyClosing]
-										)
-									) {
-										session.close();
-									} else {
-										closeCoveredSessions(this.sessions[normalizedOptions], session);
-										processListeners();
-									}
-								}
-							}
-						});
-
-						return stream;
-					};
-				} catch (error) {
-					for (const listener of listeners) {
-						listener.reject(error);
-					}
-
-					removeFromQueue();
-				}
-			};
-
-			entry.listeners = listeners;
-			entry.completed = false;
-			entry.destroyed = false;
-
-			this.queue[normalizedOptions][normalizedOrigin] = entry;
-			this._tryToCreateNewSession(normalizedOptions, normalizedOrigin);
-		});
-	}
-
-	request(origin, options, headers, streamOptions) {
-		return new Promise((resolve, reject) => {
-			this.getSession(origin, options, [{
-				reject,
-				resolve: session => {
-					try {
-						resolve(session.request(headers, streamOptions));
-					} catch (error) {
-						reject(error);
-					}
-				}
-			}]);
-		});
-	}
-
-	createConnection(origin, options) {
-		return Agent.connect(origin, options);
-	}
-
-	static connect(origin, options) {
-		options.ALPNProtocols = ['h2'];
-
-		const port = origin.port || 443;
-		const host = origin.hostname || origin.host;
-
-		if (typeof options.servername === 'undefined') {
-			options.servername = host;
-		}
-
-		return tls.connect(port, host, options);
-	}
-
-	closeFreeSessions() {
-		for (const sessions of Object.values(this.sessions)) {
-			for (const session of sessions) {
-				if (session[kCurrentStreamsCount] === 0) {
-					session.close();
-				}
-			}
-		}
-	}
-
-	destroy(reason) {
-		for (const sessions of Object.values(this.sessions)) {
-			for (const session of sessions) {
-				session.destroy(reason);
-			}
-		}
-
-		for (const entriesOfAuthority of Object.values(this.queue)) {
-			for (const entry of Object.values(entriesOfAuthority)) {
-				entry.destroyed = true;
-			}
-		}
-
-		// New requests should NOT attach to destroyed sessions
-		this.queue = {};
-	}
-
-	get freeSessions() {
-		return getSessions({agent: this, isFree: true});
-	}
-
-	get busySessions() {
-		return getSessions({agent: this, isFree: false});
-	}
-}
-
-Agent.kCurrentStreamsCount = kCurrentStreamsCount;
-Agent.kGracefullyClosing = kGracefullyClosing;
-
-module.exports = {
-	Agent,
-	globalAgent: new Agent()
-};
-
-
-/***/ }),
-
-/***/ 7167:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const http = __nccwpck_require__(8605);
-const https = __nccwpck_require__(7211);
-const resolveALPN = __nccwpck_require__(6624);
-const QuickLRU = __nccwpck_require__(9273);
-const Http2ClientRequest = __nccwpck_require__(9632);
-const calculateServerName = __nccwpck_require__(1982);
-const urlToOptions = __nccwpck_require__(2686);
-
-const cache = new QuickLRU({maxSize: 100});
-const queue = new Map();
-
-const installSocket = (agent, socket, options) => {
-	socket._httpMessage = {shouldKeepAlive: true};
-
-	const onFree = () => {
-		agent.emit('free', socket, options);
-	};
-
-	socket.on('free', onFree);
-
-	const onClose = () => {
-		agent.removeSocket(socket, options);
-	};
-
-	socket.on('close', onClose);
-
-	const onRemove = () => {
-		agent.removeSocket(socket, options);
-		socket.off('close', onClose);
-		socket.off('free', onFree);
-		socket.off('agentRemove', onRemove);
-	};
-
-	socket.on('agentRemove', onRemove);
-
-	agent.emit('free', socket, options);
-};
-
-const resolveProtocol = async options => {
-	const name = `${options.host}:${options.port}:${options.ALPNProtocols.sort()}`;
-
-	if (!cache.has(name)) {
-		if (queue.has(name)) {
-			const result = await queue.get(name);
-			return result.alpnProtocol;
-		}
-
-		const {path, agent} = options;
-		options.path = options.socketPath;
-
-		const resultPromise = resolveALPN(options);
-		queue.set(name, resultPromise);
-
-		try {
-			const {socket, alpnProtocol} = await resultPromise;
-			cache.set(name, alpnProtocol);
-
-			options.path = path;
-
-			if (alpnProtocol === 'h2') {
-				// https://github.com/nodejs/node/issues/33343
-				socket.destroy();
-			} else {
-				const {globalAgent} = https;
-				const defaultCreateConnection = https.Agent.prototype.createConnection;
-
-				if (agent) {
-					if (agent.createConnection === defaultCreateConnection) {
-						installSocket(agent, socket, options);
-					} else {
-						socket.destroy();
-					}
-				} else if (globalAgent.createConnection === defaultCreateConnection) {
-					installSocket(globalAgent, socket, options);
-				} else {
-					socket.destroy();
-				}
-			}
-
-			queue.delete(name);
-
-			return alpnProtocol;
-		} catch (error) {
-			queue.delete(name);
-
-			throw error;
-		}
-	}
-
-	return cache.get(name);
-};
-
-module.exports = async (input, options, callback) => {
-	if (typeof input === 'string' || input instanceof URL) {
-		input = urlToOptions(new URL(input));
-	}
-
-	if (typeof options === 'function') {
-		callback = options;
-		options = undefined;
-	}
-
-	options = {
-		ALPNProtocols: ['h2', 'http/1.1'],
-		...input,
-		...options,
-		resolveSocket: true
-	};
-
-	if (!Array.isArray(options.ALPNProtocols) || options.ALPNProtocols.length === 0) {
-		throw new Error('The `ALPNProtocols` option must be an Array with at least one entry');
-	}
-
-	options.protocol = options.protocol || 'https:';
-	const isHttps = options.protocol === 'https:';
-
-	options.host = options.hostname || options.host || 'localhost';
-	options.session = options.tlsSession;
-	options.servername = options.servername || calculateServerName(options);
-	options.port = options.port || (isHttps ? 443 : 80);
-	options._defaultAgent = isHttps ? https.globalAgent : http.globalAgent;
-
-	const agents = options.agent;
-
-	if (agents) {
-		if (agents.addRequest) {
-			throw new Error('The `options.agent` object can contain only `http`, `https` or `http2` properties');
-		}
-
-		options.agent = agents[isHttps ? 'https' : 'http'];
-	}
-
-	if (isHttps) {
-		const protocol = await resolveProtocol(options);
-
-		if (protocol === 'h2') {
-			if (agents) {
-				options.agent = agents.http2;
-			}
-
-			return new Http2ClientRequest(options, callback);
-		}
-	}
-
-	return http.request(options, callback);
-};
-
-module.exports.protocolCache = cache;
-
-
-/***/ }),
-
-/***/ 9632:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const http2 = __nccwpck_require__(7565);
-const {Writable} = __nccwpck_require__(2413);
-const {Agent, globalAgent} = __nccwpck_require__(9898);
-const IncomingMessage = __nccwpck_require__(2575);
-const urlToOptions = __nccwpck_require__(2686);
-const proxyEvents = __nccwpck_require__(1818);
-const isRequestPseudoHeader = __nccwpck_require__(1199);
-const {
-	ERR_INVALID_ARG_TYPE,
-	ERR_INVALID_PROTOCOL,
-	ERR_HTTP_HEADERS_SENT,
-	ERR_INVALID_HTTP_TOKEN,
-	ERR_HTTP_INVALID_HEADER_VALUE,
-	ERR_INVALID_CHAR
-} = __nccwpck_require__(7087);
-
-const {
-	HTTP2_HEADER_STATUS,
-	HTTP2_HEADER_METHOD,
-	HTTP2_HEADER_PATH,
-	HTTP2_METHOD_CONNECT
-} = http2.constants;
-
-const kHeaders = Symbol('headers');
-const kOrigin = Symbol('origin');
-const kSession = Symbol('session');
-const kOptions = Symbol('options');
-const kFlushedHeaders = Symbol('flushedHeaders');
-const kJobs = Symbol('jobs');
-
-const isValidHttpToken = /^[\^`\-\w!#$%&*+.|~]+$/;
-const isInvalidHeaderValue = /[^\t\u0020-\u007E\u0080-\u00FF]/;
-
-class ClientRequest extends Writable {
-	constructor(input, options, callback) {
-		super({
-			autoDestroy: false
-		});
-
-		const hasInput = typeof input === 'string' || input instanceof URL;
-		if (hasInput) {
-			input = urlToOptions(input instanceof URL ? input : new URL(input));
-		}
-
-		if (typeof options === 'function' || options === undefined) {
-			// (options, callback)
-			callback = options;
-			options = hasInput ? input : {...input};
-		} else {
-			// (input, options, callback)
-			options = {...input, ...options};
-		}
-
-		if (options.h2session) {
-			this[kSession] = options.h2session;
-		} else if (options.agent === false) {
-			this.agent = new Agent({maxFreeSessions: 0});
-		} else if (typeof options.agent === 'undefined' || options.agent === null) {
-			if (typeof options.createConnection === 'function') {
-				// This is a workaround - we don't have to create the session on our own.
-				this.agent = new Agent({maxFreeSessions: 0});
-				this.agent.createConnection = options.createConnection;
-			} else {
-				this.agent = globalAgent;
-			}
-		} else if (typeof options.agent.request === 'function') {
-			this.agent = options.agent;
-		} else {
-			throw new ERR_INVALID_ARG_TYPE('options.agent', ['Agent-like Object', 'undefined', 'false'], options.agent);
-		}
-
-		if (options.protocol && options.protocol !== 'https:') {
-			throw new ERR_INVALID_PROTOCOL(options.protocol, 'https:');
-		}
-
-		const port = options.port || options.defaultPort || (this.agent && this.agent.defaultPort) || 443;
-		const host = options.hostname || options.host || 'localhost';
-
-		// Don't enforce the origin via options. It may be changed in an Agent.
-		delete options.hostname;
-		delete options.host;
-		delete options.port;
-
-		const {timeout} = options;
-		options.timeout = undefined;
-
-		this[kHeaders] = Object.create(null);
-		this[kJobs] = [];
-
-		this.socket = null;
-		this.connection = null;
-
-		this.method = options.method || 'GET';
-		this.path = options.path;
-
-		this.res = null;
-		this.aborted = false;
-		this.reusedSocket = false;
-
-		if (options.headers) {
-			for (const [header, value] of Object.entries(options.headers)) {
-				this.setHeader(header, value);
-			}
-		}
-
-		if (options.auth && !('authorization' in this[kHeaders])) {
-			this[kHeaders].authorization = 'Basic ' + Buffer.from(options.auth).toString('base64');
-		}
-
-		options.session = options.tlsSession;
-		options.path = options.socketPath;
-
-		this[kOptions] = options;
-
-		// Clients that generate HTTP/2 requests directly SHOULD use the :authority pseudo-header field instead of the Host header field.
-		if (port === 443) {
-			this[kOrigin] = `https://${host}`;
-
-			if (!(':authority' in this[kHeaders])) {
-				this[kHeaders][':authority'] = host;
-			}
-		} else {
-			this[kOrigin] = `https://${host}:${port}`;
-
-			if (!(':authority' in this[kHeaders])) {
-				this[kHeaders][':authority'] = `${host}:${port}`;
-			}
-		}
-
-		if (timeout) {
-			this.setTimeout(timeout);
-		}
-
-		if (callback) {
-			this.once('response', callback);
-		}
-
-		this[kFlushedHeaders] = false;
-	}
-
-	get method() {
-		return this[kHeaders][HTTP2_HEADER_METHOD];
-	}
-
-	set method(value) {
-		if (value) {
-			this[kHeaders][HTTP2_HEADER_METHOD] = value.toUpperCase();
-		}
-	}
-
-	get path() {
-		return this[kHeaders][HTTP2_HEADER_PATH];
-	}
-
-	set path(value) {
-		if (value) {
-			this[kHeaders][HTTP2_HEADER_PATH] = value;
-		}
-	}
-
-	get _mustNotHaveABody() {
-		return this.method === 'GET' || this.method === 'HEAD' || this.method === 'DELETE';
-	}
-
-	_write(chunk, encoding, callback) {
-		// https://github.com/nodejs/node/blob/654df09ae0c5e17d1b52a900a545f0664d8c7627/lib/internal/http2/util.js#L148-L156
-		if (this._mustNotHaveABody) {
-			callback(new Error('The GET, HEAD and DELETE methods must NOT have a body'));
-			/* istanbul ignore next: Node.js 12 throws directly */
-			return;
-		}
-
-		this.flushHeaders();
-
-		const callWrite = () => this._request.write(chunk, encoding, callback);
-		if (this._request) {
-			callWrite();
-		} else {
-			this[kJobs].push(callWrite);
-		}
-	}
-
-	_final(callback) {
-		if (this.destroyed) {
-			return;
-		}
-
-		this.flushHeaders();
-
-		const callEnd = () => {
-			// For GET, HEAD and DELETE
-			if (this._mustNotHaveABody) {
-				callback();
-				return;
-			}
-
-			this._request.end(callback);
-		};
-
-		if (this._request) {
-			callEnd();
-		} else {
-			this[kJobs].push(callEnd);
-		}
-	}
-
-	abort() {
-		if (this.res && this.res.complete) {
-			return;
-		}
-
-		if (!this.aborted) {
-			process.nextTick(() => this.emit('abort'));
-		}
-
-		this.aborted = true;
-
-		this.destroy();
-	}
-
-	_destroy(error, callback) {
-		if (this.res) {
-			this.res._dump();
-		}
-
-		if (this._request) {
-			this._request.destroy();
-		}
-
-		callback(error);
-	}
-
-	async flushHeaders() {
-		if (this[kFlushedHeaders] || this.destroyed) {
-			return;
-		}
-
-		this[kFlushedHeaders] = true;
-
-		const isConnectMethod = this.method === HTTP2_METHOD_CONNECT;
-
-		// The real magic is here
-		const onStream = stream => {
-			this._request = stream;
-
-			if (this.destroyed) {
-				stream.destroy();
-				return;
-			}
-
-			// Forwards `timeout`, `continue`, `close` and `error` events to this instance.
-			if (!isConnectMethod) {
-				proxyEvents(stream, this, ['timeout', 'continue', 'close', 'error']);
-			}
-
-			// Wait for the `finish` event. We don't want to emit the `response` event
-			// before `request.end()` is called.
-			const waitForEnd = fn => {
-				return (...args) => {
-					if (!this.writable && !this.destroyed) {
-						fn(...args);
-					} else {
-						this.once('finish', () => {
-							fn(...args);
-						});
-					}
-				};
-			};
-
-			// This event tells we are ready to listen for the data.
-			stream.once('response', waitForEnd((headers, flags, rawHeaders) => {
-				// If we were to emit raw request stream, it would be as fast as the native approach.
-				// Note that wrapping the raw stream in a Proxy instance won't improve the performance (already tested it).
-				const response = new IncomingMessage(this.socket, stream.readableHighWaterMark);
-				this.res = response;
-
-				response.req = this;
-				response.statusCode = headers[HTTP2_HEADER_STATUS];
-				response.headers = headers;
-				response.rawHeaders = rawHeaders;
-
-				response.once('end', () => {
-					if (this.aborted) {
-						response.aborted = true;
-						response.emit('aborted');
-					} else {
-						response.complete = true;
-
-						// Has no effect, just be consistent with the Node.js behavior
-						response.socket = null;
-						response.connection = null;
-					}
-				});
-
-				if (isConnectMethod) {
-					response.upgrade = true;
-
-					// The HTTP1 API says the socket is detached here,
-					// but we can't do that so we pass the original HTTP2 request.
-					if (this.emit('connect', response, stream, Buffer.alloc(0))) {
-						this.emit('close');
-					} else {
-						// No listeners attached, destroy the original request.
-						stream.destroy();
-					}
-				} else {
-					// Forwards data
-					stream.on('data', chunk => {
-						if (!response._dumped && !response.push(chunk)) {
-							stream.pause();
-						}
-					});
-
-					stream.once('end', () => {
-						response.push(null);
-					});
-
-					if (!this.emit('response', response)) {
-						// No listeners attached, dump the response.
-						response._dump();
-					}
-				}
-			}));
-
-			// Emits `information` event
-			stream.once('headers', waitForEnd(
-				headers => this.emit('information', {statusCode: headers[HTTP2_HEADER_STATUS]})
-			));
-
-			stream.once('trailers', waitForEnd((trailers, flags, rawTrailers) => {
-				const {res} = this;
-
-				// Assigns trailers to the response object.
-				res.trailers = trailers;
-				res.rawTrailers = rawTrailers;
-			}));
-
-			const {socket} = stream.session;
-			this.socket = socket;
-			this.connection = socket;
-
-			for (const job of this[kJobs]) {
-				job();
-			}
-
-			this.emit('socket', this.socket);
-		};
-
-		// Makes a HTTP2 request
-		if (this[kSession]) {
-			try {
-				onStream(this[kSession].request(this[kHeaders]));
-			} catch (error) {
-				this.emit('error', error);
-			}
-		} else {
-			this.reusedSocket = true;
-
-			try {
-				onStream(await this.agent.request(this[kOrigin], this[kOptions], this[kHeaders]));
-			} catch (error) {
-				this.emit('error', error);
-			}
-		}
-	}
-
-	getHeader(name) {
-		if (typeof name !== 'string') {
-			throw new ERR_INVALID_ARG_TYPE('name', 'string', name);
-		}
-
-		return this[kHeaders][name.toLowerCase()];
-	}
-
-	get headersSent() {
-		return this[kFlushedHeaders];
-	}
-
-	removeHeader(name) {
-		if (typeof name !== 'string') {
-			throw new ERR_INVALID_ARG_TYPE('name', 'string', name);
-		}
-
-		if (this.headersSent) {
-			throw new ERR_HTTP_HEADERS_SENT('remove');
-		}
-
-		delete this[kHeaders][name.toLowerCase()];
-	}
-
-	setHeader(name, value) {
-		if (this.headersSent) {
-			throw new ERR_HTTP_HEADERS_SENT('set');
-		}
-
-		if (typeof name !== 'string' || (!isValidHttpToken.test(name) && !isRequestPseudoHeader(name))) {
-			throw new ERR_INVALID_HTTP_TOKEN('Header name', name);
-		}
-
-		if (typeof value === 'undefined') {
-			throw new ERR_HTTP_INVALID_HEADER_VALUE(value, name);
-		}
-
-		if (isInvalidHeaderValue.test(value)) {
-			throw new ERR_INVALID_CHAR('header content', name);
-		}
-
-		this[kHeaders][name.toLowerCase()] = value;
-	}
-
-	setNoDelay() {
-		// HTTP2 sockets cannot be malformed, do nothing.
-	}
-
-	setSocketKeepAlive() {
-		// HTTP2 sockets cannot be malformed, do nothing.
-	}
-
-	setTimeout(ms, callback) {
-		const applyTimeout = () => this._request.setTimeout(ms, callback);
-
-		if (this._request) {
-			applyTimeout();
-		} else {
-			this[kJobs].push(applyTimeout);
-		}
-
-		return this;
-	}
-
-	get maxHeadersCount() {
-		if (!this.destroyed && this._request) {
-			return this._request.session.localSettings.maxHeaderListSize;
-		}
-
-		return undefined;
-	}
-
-	set maxHeadersCount(_value) {
-		// Updating HTTP2 settings would affect all requests, do nothing.
-	}
-}
-
-module.exports = ClientRequest;
-
-
-/***/ }),
-
-/***/ 2575:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const {Readable} = __nccwpck_require__(2413);
-
-class IncomingMessage extends Readable {
-	constructor(socket, highWaterMark) {
-		super({
-			highWaterMark,
-			autoDestroy: false
-		});
-
-		this.statusCode = null;
-		this.statusMessage = '';
-		this.httpVersion = '2.0';
-		this.httpVersionMajor = 2;
-		this.httpVersionMinor = 0;
-		this.headers = {};
-		this.trailers = {};
-		this.req = null;
-
-		this.aborted = false;
-		this.complete = false;
-		this.upgrade = null;
-
-		this.rawHeaders = [];
-		this.rawTrailers = [];
-
-		this.socket = socket;
-		this.connection = socket;
-
-		this._dumped = false;
-	}
-
-	_destroy(error) {
-		this.req._request.destroy(error);
-	}
-
-	setTimeout(ms, callback) {
-		this.req.setTimeout(ms, callback);
-		return this;
-	}
-
-	_dump() {
-		if (!this._dumped) {
-			this._dumped = true;
-
-			this.removeAllListeners('data');
-			this.resume();
-		}
-	}
-
-	_read() {
-		if (this.req) {
-			this.req._request.resume();
-		}
-	}
-}
-
-module.exports = IncomingMessage;
-
-
-/***/ }),
-
-/***/ 4645:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const http2 = __nccwpck_require__(7565);
-const agent = __nccwpck_require__(9898);
-const ClientRequest = __nccwpck_require__(9632);
-const IncomingMessage = __nccwpck_require__(2575);
-const auto = __nccwpck_require__(7167);
-
-const request = (url, options, callback) => {
-	return new ClientRequest(url, options, callback);
-};
-
-const get = (url, options, callback) => {
-	// eslint-disable-next-line unicorn/prevent-abbreviations
-	const req = new ClientRequest(url, options, callback);
-	req.end();
-
-	return req;
-};
-
-module.exports = {
-	...http2,
-	ClientRequest,
-	IncomingMessage,
-	...agent,
-	request,
-	get,
-	auto
-};
-
-
-/***/ }),
-
-/***/ 1982:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const net = __nccwpck_require__(1631);
-/* istanbul ignore file: https://github.com/nodejs/node/blob/v13.0.1/lib/_http_agent.js */
-
-module.exports = options => {
-	let servername = options.host;
-	const hostHeader = options.headers && options.headers.host;
-
-	if (hostHeader) {
-		if (hostHeader.startsWith('[')) {
-			const index = hostHeader.indexOf(']');
-			if (index === -1) {
-				servername = hostHeader;
-			} else {
-				servername = hostHeader.slice(1, -1);
-			}
-		} else {
-			servername = hostHeader.split(':', 1)[0];
-		}
-	}
-
-	if (net.isIP(servername)) {
-		return '';
-	}
-
-	return servername;
-};
-
-
-/***/ }),
-
-/***/ 7087:
-/***/ ((module) => {
-
-"use strict";
-
-/* istanbul ignore file: https://github.com/nodejs/node/blob/master/lib/internal/errors.js */
-
-const makeError = (Base, key, getMessage) => {
-	module.exports[key] = class NodeError extends Base {
-		constructor(...args) {
-			super(typeof getMessage === 'string' ? getMessage : getMessage(args));
-			this.name = `${super.name} [${key}]`;
-			this.code = key;
-		}
-	};
-};
-
-makeError(TypeError, 'ERR_INVALID_ARG_TYPE', args => {
-	const type = args[0].includes('.') ? 'property' : 'argument';
-
-	let valid = args[1];
-	const isManyTypes = Array.isArray(valid);
-
-	if (isManyTypes) {
-		valid = `${valid.slice(0, -1).join(', ')} or ${valid.slice(-1)}`;
-	}
-
-	return `The "${args[0]}" ${type} must be ${isManyTypes ? 'one of' : 'of'} type ${valid}. Received ${typeof args[2]}`;
-});
-
-makeError(TypeError, 'ERR_INVALID_PROTOCOL', args => {
-	return `Protocol "${args[0]}" not supported. Expected "${args[1]}"`;
-});
-
-makeError(Error, 'ERR_HTTP_HEADERS_SENT', args => {
-	return `Cannot ${args[0]} headers after they are sent to the client`;
-});
-
-makeError(TypeError, 'ERR_INVALID_HTTP_TOKEN', args => {
-	return `${args[0]} must be a valid HTTP token [${args[1]}]`;
-});
-
-makeError(TypeError, 'ERR_HTTP_INVALID_HEADER_VALUE', args => {
-	return `Invalid value "${args[0]} for header "${args[1]}"`;
-});
-
-makeError(TypeError, 'ERR_INVALID_CHAR', args => {
-	return `Invalid character in ${args[0]} [${args[1]}]`;
-});
-
-
-/***/ }),
-
-/***/ 1199:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = header => {
-	switch (header) {
-		case ':method':
-		case ':scheme':
-		case ':authority':
-		case ':path':
-			return true;
-		default:
-			return false;
-	}
-};
-
-
-/***/ }),
-
-/***/ 1818:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = (from, to, events) => {
-	for (const event of events) {
-		from.on(event, (...args) => to.emit(event, ...args));
-	}
-};
-
-
-/***/ }),
-
-/***/ 2686:
-/***/ ((module) => {
-
-"use strict";
-
-/* istanbul ignore file: https://github.com/nodejs/node/blob/a91293d4d9ab403046ab5eb022332e4e3d249bd3/lib/internal/url.js#L1257 */
-
-module.exports = url => {
-	const options = {
-		protocol: url.protocol,
-		hostname: typeof url.hostname === 'string' && url.hostname.startsWith('[') ? url.hostname.slice(1, -1) : url.hostname,
-		host: url.host,
-		hash: url.hash,
-		search: url.search,
-		pathname: url.pathname,
-		href: url.href,
-		path: `${url.pathname || ''}${url.search || ''}`
-	};
-
-	if (typeof url.port === 'string' && url.port.length !== 0) {
-		options.port = Number(url.port);
-	}
-
-	if (url.username || url.password) {
-		options.auth = `${url.username || ''}:${url.password || ''}`;
-	}
-
-	return options;
 };
 
 
@@ -30979,6 +25414,36 @@ function isPlainObject(o) {
 
 exports.isPlainObject = isPlainObject;
 
+
+/***/ }),
+
+/***/ 3794:
+/***/ ((module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var _interopRequireDefault = __nccwpck_require__(3298);
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.default = void 0;
+
+var _custom = _interopRequireDefault(__nccwpck_require__(9472));
+
+var _types = _interopRequireDefault(__nccwpck_require__(770));
+
+var _plugins = _interopRequireDefault(__nccwpck_require__(4976));
+
+var _default = (0, _custom["default"])({
+  types: [_types["default"]],
+  plugins: [_plugins["default"]]
+});
+
+exports.default = _default;
+module.exports = exports.default;
+//# sourceMappingURL=index.js.map
 
 /***/ }),
 
@@ -37018,71 +31483,6 @@ module.exports = new Type('tag:yaml.org,2002:timestamp', {
 
 /***/ }),
 
-/***/ 2820:
-/***/ ((__unused_webpack_module, exports) => {
-
-//TODO: handle reviver/dehydrate function like normal
-//and handle indentation, like normal.
-//if anyone needs this... please send pull request.
-
-exports.stringify = function stringify (o) {
-  if('undefined' == typeof o) return o
-
-  if(o && Buffer.isBuffer(o))
-    return JSON.stringify(':base64:' + o.toString('base64'))
-
-  if(o && o.toJSON)
-    o =  o.toJSON()
-
-  if(o && 'object' === typeof o) {
-    var s = ''
-    var array = Array.isArray(o)
-    s = array ? '[' : '{'
-    var first = true
-
-    for(var k in o) {
-      var ignore = 'function' == typeof o[k] || (!array && 'undefined' === typeof o[k])
-      if(Object.hasOwnProperty.call(o, k) && !ignore) {
-        if(!first)
-          s += ','
-        first = false
-        if (array) {
-          if(o[k] == undefined)
-            s += 'null'
-          else
-            s += stringify(o[k])
-        } else if (o[k] !== void(0)) {
-          s += stringify(k) + ':' + stringify(o[k])
-        }
-      }
-    }
-
-    s += array ? ']' : '}'
-
-    return s
-  } else if ('string' === typeof o) {
-    return JSON.stringify(/^:/.test(o) ? ':' + o : o)
-  } else if ('undefined' === typeof o) {
-    return 'null';
-  } else
-    return JSON.stringify(o)
-}
-
-exports.parse = function (s) {
-  return JSON.parse(s, function (key, value) {
-    if('string' === typeof value) {
-      if(/^:base64:/.test(value))
-        return Buffer.from(value.substring(8), 'base64')
-      else
-        return /^:/.test(value) ? value.substring(1) : value 
-    }
-    return value
-  })
-}
-
-
-/***/ }),
-
 /***/ 6677:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -37831,521 +32231,191 @@ function pushError(state) {
 
 /***/ }),
 
-/***/ 1531:
+/***/ 9919:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
+var fs = __nccwpck_require__(5747)
+var url = __nccwpck_require__(8835)
+var path = __nccwpck_require__(5622)
+var request = __nccwpck_require__(6130)
+var parseASCII = __nccwpck_require__(5807)
+var parseXML = __nccwpck_require__(1199)
+var readBinary = __nccwpck_require__(4563)
+var mime = __nccwpck_require__(5018)
+var noop = function() {}
+var isBinary = __nccwpck_require__(9597)
 
+function parseFont(file, data, cb) {
+  var result, binary
 
-const EventEmitter = __nccwpck_require__(8614);
-const JSONB = __nccwpck_require__(2820);
+  if (isBinary(data)) {
+    if (typeof data === 'string') data = Buffer.from(data, 'binary')
+    binary = true
+  } else data = data.toString().trim()
 
-const loadStore = opts => {
-	const adapters = {
-		redis: '@keyv/redis',
-		mongodb: '@keyv/mongo',
-		mongo: '@keyv/mongo',
-		sqlite: '@keyv/sqlite',
-		postgresql: '@keyv/postgres',
-		postgres: '@keyv/postgres',
-		mysql: '@keyv/mysql'
-	};
-	if (opts.adapter || opts.uri) {
-		const adapter = opts.adapter || /^[^:]*/.exec(opts.uri)[0];
-		return new (require(adapters[adapter]))(opts);
-	}
+  try {
+    if (binary) result = readBinary(data)
+    else if (/json/.test(mime.lookup(file)) || data.charAt(0) === '{')
+      result = JSON.parse(data)
+    else if (/xml/.test(mime.lookup(file)) || data.charAt(0) === '<')
+      result = parseXML(data)
+    else result = parseASCII(data)
+  } catch (e) {
+    cb(e)
+    cb = noop
+  }
 
-	return new Map();
-};
-
-class Keyv extends EventEmitter {
-	constructor(uri, opts) {
-		super();
-		this.opts = Object.assign(
-			{
-				namespace: 'keyv',
-				serialize: JSONB.stringify,
-				deserialize: JSONB.parse
-			},
-			(typeof uri === 'string') ? { uri } : uri,
-			opts
-		);
-
-		if (!this.opts.store) {
-			const adapterOpts = Object.assign({}, this.opts);
-			this.opts.store = loadStore(adapterOpts);
-		}
-
-		if (typeof this.opts.store.on === 'function') {
-			this.opts.store.on('error', err => this.emit('error', err));
-		}
-
-		this.opts.store.namespace = this.opts.namespace;
-	}
-
-	_getKeyPrefix(key) {
-		return `${this.opts.namespace}:${key}`;
-	}
-
-	get(key, opts) {
-		const keyPrefixed = this._getKeyPrefix(key);
-		const { store } = this.opts;
-		return Promise.resolve()
-			.then(() => store.get(keyPrefixed))
-			.then(data => {
-				return (typeof data === 'string') ? this.opts.deserialize(data) : data;
-			})
-			.then(data => {
-				if (data === undefined) {
-					return undefined;
-				}
-
-				if (typeof data.expires === 'number' && Date.now() > data.expires) {
-					this.delete(key);
-					return undefined;
-				}
-
-				return (opts && opts.raw) ? data : data.value;
-			});
-	}
-
-	set(key, value, ttl) {
-		const keyPrefixed = this._getKeyPrefix(key);
-		if (typeof ttl === 'undefined') {
-			ttl = this.opts.ttl;
-		}
-
-		if (ttl === 0) {
-			ttl = undefined;
-		}
-
-		const { store } = this.opts;
-
-		return Promise.resolve()
-			.then(() => {
-				const expires = (typeof ttl === 'number') ? (Date.now() + ttl) : null;
-				value = { value, expires };
-				return this.opts.serialize(value);
-			})
-			.then(value => store.set(keyPrefixed, value, ttl))
-			.then(() => true);
-	}
-
-	delete(key) {
-		const keyPrefixed = this._getKeyPrefix(key);
-		const { store } = this.opts;
-		return Promise.resolve()
-			.then(() => store.delete(keyPrefixed));
-	}
-
-	clear() {
-		const { store } = this.opts;
-		return Promise.resolve()
-			.then(() => store.clear());
-	}
+  cb(null, result)
 }
 
-module.exports = Keyv;
+module.exports = function loadFont(opt, cb) {
+  cb = typeof cb === 'function' ? cb : noop
+
+  if (typeof opt === 'string') opt = { uri: opt, url: opt }
+  else if (!opt) opt = {}
+
+  var file = opt.uri || opt.url
+  
+  function handleData(err, data) {
+    if (err) return cb(err)
+    parseFont(file, data.body || data, cb)
+  }
+
+  if (url.parse(file).host) {
+    request(opt, handleData)
+  } else {
+    fs.readFile(file, opt, handleData)
+  }
+}
 
 
 /***/ }),
 
-/***/ 9662:
-/***/ ((module) => {
-
-"use strict";
-
-module.exports = object => {
-	const result = {};
-
-	for (const [key, value] of Object.entries(object)) {
-		result[key.toLowerCase()] = value;
-	}
-
-	return result;
-};
-
-
-/***/ }),
-
-/***/ 7129:
+/***/ 9597:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
+var equal = __nccwpck_require__(4664)
+var HEADER = Buffer.from([66, 77, 70, 3])
 
+module.exports = function(buf) {
+  if (typeof buf === 'string')
+    return buf.substring(0, 3) === 'BMF'
+  return buf.length > 4 && equal(buf.slice(0, 4), HEADER)
+}
 
-// A linked list to keep track of recently-used-ness
-const Yallist = __nccwpck_require__(665)
+/***/ }),
 
-const MAX = Symbol('max')
-const LENGTH = Symbol('length')
-const LENGTH_CALCULATOR = Symbol('lengthCalculator')
-const ALLOW_STALE = Symbol('allowStale')
-const MAX_AGE = Symbol('maxAge')
-const DISPOSE = Symbol('dispose')
-const NO_DISPOSE_ON_SET = Symbol('noDisposeOnSet')
-const LRU_LIST = Symbol('lruList')
-const CACHE = Symbol('cache')
-const UPDATE_AGE_ON_GET = Symbol('updateAgeOnGet')
+/***/ 5018:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-const naiveLength = () => 1
+var path = __nccwpck_require__(5622);
+var fs = __nccwpck_require__(5747);
 
-// lruList is a yallist where the head is the youngest
-// item, and the tail is the oldest.  the list contains the Hit
-// objects as the entries.
-// Each Hit object has a reference to its Yallist.Node.  This
-// never changes.
+function Mime() {
+  // Map of extension -> mime type
+  this.types = Object.create(null);
+
+  // Map of mime type -> extension
+  this.extensions = Object.create(null);
+}
+
+/**
+ * Define mimetype -> extension mappings.  Each key is a mime-type that maps
+ * to an array of extensions associated with the type.  The first extension is
+ * used as the default extension for the type.
+ *
+ * e.g. mime.define({'audio/ogg', ['oga', 'ogg', 'spx']});
+ *
+ * @param map (Object) type definitions
+ */
+Mime.prototype.define = function (map) {
+  for (var type in map) {
+    var exts = map[type];
+    for (var i = 0; i < exts.length; i++) {
+      if (process.env.DEBUG_MIME && this.types[exts[i]]) {
+        console.warn((this._loading || "define()").replace(/.*\//, ''), 'changes "' + exts[i] + '" extension type from ' +
+          this.types[exts[i]] + ' to ' + type);
+      }
+
+      this.types[exts[i]] = type;
+    }
+
+    // Default extension is the first one we encounter
+    if (!this.extensions[type]) {
+      this.extensions[type] = exts[0];
+    }
+  }
+};
+
+/**
+ * Load an Apache2-style ".types" file
+ *
+ * This may be called multiple times (it's expected).  Where files declare
+ * overlapping types/extensions, the last file wins.
+ *
+ * @param file (String) path of file to load.
+ */
+Mime.prototype.load = function(file) {
+  this._loading = file;
+  // Read file and split into lines
+  var map = {},
+      content = fs.readFileSync(file, 'ascii'),
+      lines = content.split(/[\r\n]+/);
+
+  lines.forEach(function(line) {
+    // Clean up whitespace/comments, and split into fields
+    var fields = line.replace(/\s*#.*|^\s*|\s*$/g, '').split(/\s+/);
+    map[fields.shift()] = fields;
+  });
+
+  this.define(map);
+
+  this._loading = null;
+};
+
+/**
+ * Lookup a mime type based on extension
+ */
+Mime.prototype.lookup = function(path, fallback) {
+  var ext = path.replace(/^.*[\.\/\\]/, '').toLowerCase();
+
+  return this.types[ext] || fallback || this.default_type;
+};
+
+/**
+ * Return file extension associated with a mime type
+ */
+Mime.prototype.extension = function(mimeType) {
+  var type = mimeType.match(/^\s*([^;\s]*)(?:;|\s|$)/)[1].toLowerCase();
+  return this.extensions[type];
+};
+
+// Default instance
+var mime = new Mime();
+
+// Define built-in types
+mime.define(__nccwpck_require__(2274));
+
+// Default type
+mime.default_type = mime.lookup('bin');
+
 //
-// cache is a Map (or PseudoMap) that matches the keys to
-// the Yallist.Node object.
-class LRUCache {
-  constructor (options) {
-    if (typeof options === 'number')
-      options = { max: options }
+// Additional API specific to the default instance
+//
 
-    if (!options)
-      options = {}
+mime.Mime = Mime;
 
-    if (options.max && (typeof options.max !== 'number' || options.max < 0))
-      throw new TypeError('max must be a non-negative number')
-    // Kind of weird to have a default max of Infinity, but oh well.
-    const max = this[MAX] = options.max || Infinity
-
-    const lc = options.length || naiveLength
-    this[LENGTH_CALCULATOR] = (typeof lc !== 'function') ? naiveLength : lc
-    this[ALLOW_STALE] = options.stale || false
-    if (options.maxAge && typeof options.maxAge !== 'number')
-      throw new TypeError('maxAge must be a number')
-    this[MAX_AGE] = options.maxAge || 0
-    this[DISPOSE] = options.dispose
-    this[NO_DISPOSE_ON_SET] = options.noDisposeOnSet || false
-    this[UPDATE_AGE_ON_GET] = options.updateAgeOnGet || false
-    this.reset()
+/**
+ * Lookup a charset based on mime type.
+ */
+mime.charsets = {
+  lookup: function(mimeType, fallback) {
+    // Assume text types are utf8
+    return (/^text\/|^application\/(javascript|json)/).test(mimeType) ? 'UTF-8' : fallback;
   }
-
-  // resize the cache when the max changes.
-  set max (mL) {
-    if (typeof mL !== 'number' || mL < 0)
-      throw new TypeError('max must be a non-negative number')
-
-    this[MAX] = mL || Infinity
-    trim(this)
-  }
-  get max () {
-    return this[MAX]
-  }
-
-  set allowStale (allowStale) {
-    this[ALLOW_STALE] = !!allowStale
-  }
-  get allowStale () {
-    return this[ALLOW_STALE]
-  }
-
-  set maxAge (mA) {
-    if (typeof mA !== 'number')
-      throw new TypeError('maxAge must be a non-negative number')
-
-    this[MAX_AGE] = mA
-    trim(this)
-  }
-  get maxAge () {
-    return this[MAX_AGE]
-  }
-
-  // resize the cache when the lengthCalculator changes.
-  set lengthCalculator (lC) {
-    if (typeof lC !== 'function')
-      lC = naiveLength
-
-    if (lC !== this[LENGTH_CALCULATOR]) {
-      this[LENGTH_CALCULATOR] = lC
-      this[LENGTH] = 0
-      this[LRU_LIST].forEach(hit => {
-        hit.length = this[LENGTH_CALCULATOR](hit.value, hit.key)
-        this[LENGTH] += hit.length
-      })
-    }
-    trim(this)
-  }
-  get lengthCalculator () { return this[LENGTH_CALCULATOR] }
-
-  get length () { return this[LENGTH] }
-  get itemCount () { return this[LRU_LIST].length }
-
-  rforEach (fn, thisp) {
-    thisp = thisp || this
-    for (let walker = this[LRU_LIST].tail; walker !== null;) {
-      const prev = walker.prev
-      forEachStep(this, fn, walker, thisp)
-      walker = prev
-    }
-  }
-
-  forEach (fn, thisp) {
-    thisp = thisp || this
-    for (let walker = this[LRU_LIST].head; walker !== null;) {
-      const next = walker.next
-      forEachStep(this, fn, walker, thisp)
-      walker = next
-    }
-  }
-
-  keys () {
-    return this[LRU_LIST].toArray().map(k => k.key)
-  }
-
-  values () {
-    return this[LRU_LIST].toArray().map(k => k.value)
-  }
-
-  reset () {
-    if (this[DISPOSE] &&
-        this[LRU_LIST] &&
-        this[LRU_LIST].length) {
-      this[LRU_LIST].forEach(hit => this[DISPOSE](hit.key, hit.value))
-    }
-
-    this[CACHE] = new Map() // hash of items by key
-    this[LRU_LIST] = new Yallist() // list of items in order of use recency
-    this[LENGTH] = 0 // length of items in the list
-  }
-
-  dump () {
-    return this[LRU_LIST].map(hit =>
-      isStale(this, hit) ? false : {
-        k: hit.key,
-        v: hit.value,
-        e: hit.now + (hit.maxAge || 0)
-      }).toArray().filter(h => h)
-  }
-
-  dumpLru () {
-    return this[LRU_LIST]
-  }
-
-  set (key, value, maxAge) {
-    maxAge = maxAge || this[MAX_AGE]
-
-    if (maxAge && typeof maxAge !== 'number')
-      throw new TypeError('maxAge must be a number')
-
-    const now = maxAge ? Date.now() : 0
-    const len = this[LENGTH_CALCULATOR](value, key)
-
-    if (this[CACHE].has(key)) {
-      if (len > this[MAX]) {
-        del(this, this[CACHE].get(key))
-        return false
-      }
-
-      const node = this[CACHE].get(key)
-      const item = node.value
-
-      // dispose of the old one before overwriting
-      // split out into 2 ifs for better coverage tracking
-      if (this[DISPOSE]) {
-        if (!this[NO_DISPOSE_ON_SET])
-          this[DISPOSE](key, item.value)
-      }
-
-      item.now = now
-      item.maxAge = maxAge
-      item.value = value
-      this[LENGTH] += len - item.length
-      item.length = len
-      this.get(key)
-      trim(this)
-      return true
-    }
-
-    const hit = new Entry(key, value, len, now, maxAge)
-
-    // oversized objects fall out of cache automatically.
-    if (hit.length > this[MAX]) {
-      if (this[DISPOSE])
-        this[DISPOSE](key, value)
-
-      return false
-    }
-
-    this[LENGTH] += hit.length
-    this[LRU_LIST].unshift(hit)
-    this[CACHE].set(key, this[LRU_LIST].head)
-    trim(this)
-    return true
-  }
-
-  has (key) {
-    if (!this[CACHE].has(key)) return false
-    const hit = this[CACHE].get(key).value
-    return !isStale(this, hit)
-  }
-
-  get (key) {
-    return get(this, key, true)
-  }
-
-  peek (key) {
-    return get(this, key, false)
-  }
-
-  pop () {
-    const node = this[LRU_LIST].tail
-    if (!node)
-      return null
-
-    del(this, node)
-    return node.value
-  }
-
-  del (key) {
-    del(this, this[CACHE].get(key))
-  }
-
-  load (arr) {
-    // reset the cache
-    this.reset()
-
-    const now = Date.now()
-    // A previous serialized cache has the most recent items first
-    for (let l = arr.length - 1; l >= 0; l--) {
-      const hit = arr[l]
-      const expiresAt = hit.e || 0
-      if (expiresAt === 0)
-        // the item was created without expiration in a non aged cache
-        this.set(hit.k, hit.v)
-      else {
-        const maxAge = expiresAt - now
-        // dont add already expired items
-        if (maxAge > 0) {
-          this.set(hit.k, hit.v, maxAge)
-        }
-      }
-    }
-  }
-
-  prune () {
-    this[CACHE].forEach((value, key) => get(this, key, false))
-  }
-}
-
-const get = (self, key, doUse) => {
-  const node = self[CACHE].get(key)
-  if (node) {
-    const hit = node.value
-    if (isStale(self, hit)) {
-      del(self, node)
-      if (!self[ALLOW_STALE])
-        return undefined
-    } else {
-      if (doUse) {
-        if (self[UPDATE_AGE_ON_GET])
-          node.value.now = Date.now()
-        self[LRU_LIST].unshiftNode(node)
-      }
-    }
-    return hit.value
-  }
-}
-
-const isStale = (self, hit) => {
-  if (!hit || (!hit.maxAge && !self[MAX_AGE]))
-    return false
-
-  const diff = Date.now() - hit.now
-  return hit.maxAge ? diff > hit.maxAge
-    : self[MAX_AGE] && (diff > self[MAX_AGE])
-}
-
-const trim = self => {
-  if (self[LENGTH] > self[MAX]) {
-    for (let walker = self[LRU_LIST].tail;
-      self[LENGTH] > self[MAX] && walker !== null;) {
-      // We know that we're about to delete this one, and also
-      // what the next least recently used key will be, so just
-      // go ahead and set it now.
-      const prev = walker.prev
-      del(self, walker)
-      walker = prev
-    }
-  }
-}
-
-const del = (self, node) => {
-  if (node) {
-    const hit = node.value
-    if (self[DISPOSE])
-      self[DISPOSE](hit.key, hit.value)
-
-    self[LENGTH] -= hit.length
-    self[CACHE].delete(hit.key)
-    self[LRU_LIST].removeNode(node)
-  }
-}
-
-class Entry {
-  constructor (key, value, length, now, maxAge) {
-    this.key = key
-    this.value = value
-    this.length = length
-    this.now = now
-    this.maxAge = maxAge || 0
-  }
-}
-
-const forEachStep = (self, fn, node, thisp) => {
-  let hit = node.value
-  if (isStale(self, hit)) {
-    del(self, node)
-    if (!self[ALLOW_STALE])
-      hit = undefined
-  }
-  if (hit)
-    fn.call(thisp, hit.value, hit.key, self)
-}
-
-module.exports = LRUCache
-
-
-/***/ }),
-
-/***/ 2610:
-/***/ ((module) => {
-
-"use strict";
-
-
-// We define these manually to ensure they're always copied
-// even if they would move up the prototype chain
-// https://nodejs.org/api/http.html#http_class_http_incomingmessage
-const knownProps = [
-	'destroy',
-	'setTimeout',
-	'socket',
-	'headers',
-	'trailers',
-	'rawHeaders',
-	'statusCode',
-	'httpVersion',
-	'httpVersionMinor',
-	'httpVersionMajor',
-	'rawTrailers',
-	'statusMessage'
-];
-
-module.exports = (fromStream, toStream) => {
-	const fromProps = new Set(Object.keys(fromStream).concat(knownProps));
-
-	for (const prop of fromProps) {
-		// Don't overwrite existing properties
-		if (prop in toStream) {
-			continue;
-		}
-
-		toStream[prop] = typeof fromStream[prop] === 'function' ? fromStream[prop].bind(fromStream) : fromStream[prop];
-	}
 };
+
+module.exports = mime;
 
 
 /***/ }),
@@ -45913,235 +39983,6 @@ exports.default = pipeline;
 
 /***/ }),
 
-/***/ 7952:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-// TODO: Use the `URL` global when targeting Node.js 10
-const URLParser = typeof URL === 'undefined' ? __nccwpck_require__(8835).URL : URL;
-
-// https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URIs
-const DATA_URL_DEFAULT_MIME_TYPE = 'text/plain';
-const DATA_URL_DEFAULT_CHARSET = 'us-ascii';
-
-const testParameter = (name, filters) => {
-	return filters.some(filter => filter instanceof RegExp ? filter.test(name) : filter === name);
-};
-
-const normalizeDataURL = (urlString, {stripHash}) => {
-	const parts = urlString.match(/^data:(.*?),(.*?)(?:#(.*))?$/);
-
-	if (!parts) {
-		throw new Error(`Invalid URL: ${urlString}`);
-	}
-
-	const mediaType = parts[1].split(';');
-	const body = parts[2];
-	const hash = stripHash ? '' : parts[3];
-
-	let base64 = false;
-
-	if (mediaType[mediaType.length - 1] === 'base64') {
-		mediaType.pop();
-		base64 = true;
-	}
-
-	// Lowercase MIME type
-	const mimeType = (mediaType.shift() || '').toLowerCase();
-	const attributes = mediaType
-		.map(attribute => {
-			let [key, value = ''] = attribute.split('=').map(string => string.trim());
-
-			// Lowercase `charset`
-			if (key === 'charset') {
-				value = value.toLowerCase();
-
-				if (value === DATA_URL_DEFAULT_CHARSET) {
-					return '';
-				}
-			}
-
-			return `${key}${value ? `=${value}` : ''}`;
-		})
-		.filter(Boolean);
-
-	const normalizedMediaType = [
-		...attributes
-	];
-
-	if (base64) {
-		normalizedMediaType.push('base64');
-	}
-
-	if (normalizedMediaType.length !== 0 || (mimeType && mimeType !== DATA_URL_DEFAULT_MIME_TYPE)) {
-		normalizedMediaType.unshift(mimeType);
-	}
-
-	return `data:${normalizedMediaType.join(';')},${base64 ? body.trim() : body}${hash ? `#${hash}` : ''}`;
-};
-
-const normalizeUrl = (urlString, options) => {
-	options = {
-		defaultProtocol: 'http:',
-		normalizeProtocol: true,
-		forceHttp: false,
-		forceHttps: false,
-		stripAuthentication: true,
-		stripHash: false,
-		stripWWW: true,
-		removeQueryParameters: [/^utm_\w+/i],
-		removeTrailingSlash: true,
-		removeDirectoryIndex: false,
-		sortQueryParameters: true,
-		...options
-	};
-
-	// TODO: Remove this at some point in the future
-	if (Reflect.has(options, 'normalizeHttps')) {
-		throw new Error('options.normalizeHttps is renamed to options.forceHttp');
-	}
-
-	if (Reflect.has(options, 'normalizeHttp')) {
-		throw new Error('options.normalizeHttp is renamed to options.forceHttps');
-	}
-
-	if (Reflect.has(options, 'stripFragment')) {
-		throw new Error('options.stripFragment is renamed to options.stripHash');
-	}
-
-	urlString = urlString.trim();
-
-	// Data URL
-	if (/^data:/i.test(urlString)) {
-		return normalizeDataURL(urlString, options);
-	}
-
-	const hasRelativeProtocol = urlString.startsWith('//');
-	const isRelativeUrl = !hasRelativeProtocol && /^\.*\//.test(urlString);
-
-	// Prepend protocol
-	if (!isRelativeUrl) {
-		urlString = urlString.replace(/^(?!(?:\w+:)?\/\/)|^\/\//, options.defaultProtocol);
-	}
-
-	const urlObj = new URLParser(urlString);
-
-	if (options.forceHttp && options.forceHttps) {
-		throw new Error('The `forceHttp` and `forceHttps` options cannot be used together');
-	}
-
-	if (options.forceHttp && urlObj.protocol === 'https:') {
-		urlObj.protocol = 'http:';
-	}
-
-	if (options.forceHttps && urlObj.protocol === 'http:') {
-		urlObj.protocol = 'https:';
-	}
-
-	// Remove auth
-	if (options.stripAuthentication) {
-		urlObj.username = '';
-		urlObj.password = '';
-	}
-
-	// Remove hash
-	if (options.stripHash) {
-		urlObj.hash = '';
-	}
-
-	// Remove duplicate slashes if not preceded by a protocol
-	if (urlObj.pathname) {
-		// TODO: Use the following instead when targeting Node.js 10
-		// `urlObj.pathname = urlObj.pathname.replace(/(?<!https?:)\/{2,}/g, '/');`
-		urlObj.pathname = urlObj.pathname.replace(/((?!:).|^)\/{2,}/g, (_, p1) => {
-			if (/^(?!\/)/g.test(p1)) {
-				return `${p1}/`;
-			}
-
-			return '/';
-		});
-	}
-
-	// Decode URI octets
-	if (urlObj.pathname) {
-		urlObj.pathname = decodeURI(urlObj.pathname);
-	}
-
-	// Remove directory index
-	if (options.removeDirectoryIndex === true) {
-		options.removeDirectoryIndex = [/^index\.[a-z]+$/];
-	}
-
-	if (Array.isArray(options.removeDirectoryIndex) && options.removeDirectoryIndex.length > 0) {
-		let pathComponents = urlObj.pathname.split('/');
-		const lastComponent = pathComponents[pathComponents.length - 1];
-
-		if (testParameter(lastComponent, options.removeDirectoryIndex)) {
-			pathComponents = pathComponents.slice(0, pathComponents.length - 1);
-			urlObj.pathname = pathComponents.slice(1).join('/') + '/';
-		}
-	}
-
-	if (urlObj.hostname) {
-		// Remove trailing dot
-		urlObj.hostname = urlObj.hostname.replace(/\.$/, '');
-
-		// Remove `www.`
-		if (options.stripWWW && /^www\.([a-z\-\d]{2,63})\.([a-z.]{2,5})$/.test(urlObj.hostname)) {
-			// Each label should be max 63 at length (min: 2).
-			// The extension should be max 5 at length (min: 2).
-			// Source: https://en.wikipedia.org/wiki/Hostname#Restrictions_on_valid_host_names
-			urlObj.hostname = urlObj.hostname.replace(/^www\./, '');
-		}
-	}
-
-	// Remove query unwanted parameters
-	if (Array.isArray(options.removeQueryParameters)) {
-		for (const key of [...urlObj.searchParams.keys()]) {
-			if (testParameter(key, options.removeQueryParameters)) {
-				urlObj.searchParams.delete(key);
-			}
-		}
-	}
-
-	// Sort query parameters
-	if (options.sortQueryParameters) {
-		urlObj.searchParams.sort();
-	}
-
-	if (options.removeTrailingSlash) {
-		urlObj.pathname = urlObj.pathname.replace(/\/$/, '');
-	}
-
-	// Take advantage of many of the Node `url` normalizations
-	urlString = urlObj.toString();
-
-	// Remove ending `/`
-	if ((options.removeTrailingSlash || urlObj.pathname === '/') && urlObj.hash === '') {
-		urlString = urlString.replace(/\/$/, '');
-	}
-
-	// Restore relative protocol, if applicable
-	if (hasRelativeProtocol && !options.normalizeProtocol) {
-		urlString = urlString.replace(/^http:\/\//, '//');
-	}
-
-	// Remove http/https
-	if (options.stripProtocol) {
-		urlString = urlString.replace(/^(?:https?:)?\/\//, '');
-	}
-
-	return urlString;
-};
-
-module.exports = normalizeUrl;
-// TODO: Remove this for the next major release
-module.exports.default = normalizeUrl;
-
-
-/***/ }),
-
 /***/ 9717:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -47002,121 +40843,6 @@ function onceStrict (fn) {
   f.called = false
   return f
 }
-
-
-/***/ }),
-
-/***/ 9072:
-/***/ ((module) => {
-
-"use strict";
-
-
-class CancelError extends Error {
-	constructor(reason) {
-		super(reason || 'Promise was canceled');
-		this.name = 'CancelError';
-	}
-
-	get isCanceled() {
-		return true;
-	}
-}
-
-class PCancelable {
-	static fn(userFn) {
-		return (...arguments_) => {
-			return new PCancelable((resolve, reject, onCancel) => {
-				arguments_.push(onCancel);
-				// eslint-disable-next-line promise/prefer-await-to-then
-				userFn(...arguments_).then(resolve, reject);
-			});
-		};
-	}
-
-	constructor(executor) {
-		this._cancelHandlers = [];
-		this._isPending = true;
-		this._isCanceled = false;
-		this._rejectOnCancel = true;
-
-		this._promise = new Promise((resolve, reject) => {
-			this._reject = reject;
-
-			const onResolve = value => {
-				this._isPending = false;
-				resolve(value);
-			};
-
-			const onReject = error => {
-				this._isPending = false;
-				reject(error);
-			};
-
-			const onCancel = handler => {
-				if (!this._isPending) {
-					throw new Error('The `onCancel` handler was attached after the promise settled.');
-				}
-
-				this._cancelHandlers.push(handler);
-			};
-
-			Object.defineProperties(onCancel, {
-				shouldReject: {
-					get: () => this._rejectOnCancel,
-					set: boolean => {
-						this._rejectOnCancel = boolean;
-					}
-				}
-			});
-
-			return executor(onResolve, onReject, onCancel);
-		});
-	}
-
-	then(onFulfilled, onRejected) {
-		// eslint-disable-next-line promise/prefer-await-to-then
-		return this._promise.then(onFulfilled, onRejected);
-	}
-
-	catch(onRejected) {
-		return this._promise.catch(onRejected);
-	}
-
-	finally(onFinally) {
-		return this._promise.finally(onFinally);
-	}
-
-	cancel(reason) {
-		if (!this._isPending || this._isCanceled) {
-			return;
-		}
-
-		if (this._cancelHandlers.length > 0) {
-			try {
-				for (const handler of this._cancelHandlers) {
-					handler();
-				}
-			} catch (error) {
-				this._reject(error);
-			}
-		}
-
-		this._isCanceled = true;
-		if (this._rejectOnCancel) {
-			this._reject(new CancelError(reason));
-		}
-	}
-
-	get isCanceled() {
-		return this._isCanceled;
-	}
-}
-
-Object.setPrototypeOf(PCancelable.prototype, Promise.prototype);
-
-module.exports = PCancelable;
-module.exports.CancelError = CancelError;
 
 
 /***/ }),
@@ -54033,6 +47759,376 @@ module.exports = ZStream;
 
 /***/ }),
 
+/***/ 5807:
+/***/ ((module) => {
+
+module.exports = function parseBMFontAscii(data) {
+  if (!data)
+    throw new Error('no data provided')
+  data = data.toString().trim()
+
+  var output = {
+    pages: [],
+    chars: [],
+    kernings: []
+  }
+
+  var lines = data.split(/\r\n?|\n/g)
+
+  if (lines.length === 0)
+    throw new Error('no data in BMFont file')
+
+  for (var i = 0; i < lines.length; i++) {
+    var lineData = splitLine(lines[i], i)
+    if (!lineData) //skip empty lines
+      continue
+
+    if (lineData.key === 'page') {
+      if (typeof lineData.data.id !== 'number')
+        throw new Error('malformed file at line ' + i + ' -- needs page id=N')
+      if (typeof lineData.data.file !== 'string')
+        throw new Error('malformed file at line ' + i + ' -- needs page file="path"')
+      output.pages[lineData.data.id] = lineData.data.file
+    } else if (lineData.key === 'chars' || lineData.key === 'kernings') {
+      //... do nothing for these two ...
+    } else if (lineData.key === 'char') {
+      output.chars.push(lineData.data)
+    } else if (lineData.key === 'kerning') {
+      output.kernings.push(lineData.data)
+    } else {
+      output[lineData.key] = lineData.data
+    }
+  }
+
+  return output
+}
+
+function splitLine(line, idx) {
+  line = line.replace(/\t+/g, ' ').trim()
+  if (!line)
+    return null
+
+  var space = line.indexOf(' ')
+  if (space === -1) 
+    throw new Error("no named row at line " + idx)
+
+  var key = line.substring(0, space)
+
+  line = line.substring(space + 1)
+  //clear "letter" field as it is non-standard and
+  //requires additional complexity to parse " / = symbols
+  line = line.replace(/letter=[\'\"]\S+[\'\"]/gi, '')  
+  line = line.split("=")
+  line = line.map(function(str) {
+    return str.trim().match((/(".*?"|[^"\s]+)+(?=\s*|\s*$)/g))
+  })
+
+  var data = []
+  for (var i = 0; i < line.length; i++) {
+    var dt = line[i]
+    if (i === 0) {
+      data.push({
+        key: dt[0],
+        data: ""
+      })
+    } else if (i === line.length - 1) {
+      data[data.length - 1].data = parseData(dt[0])
+    } else {
+      data[data.length - 1].data = parseData(dt[0])
+      data.push({
+        key: dt[1],
+        data: ""
+      })
+    }
+  }
+
+  var out = {
+    key: key,
+    data: {}
+  }
+
+  data.forEach(function(v) {
+    out.data[v.key] = v.data;
+  })
+
+  return out
+}
+
+function parseData(data) {
+  if (!data || data.length === 0)
+    return ""
+
+  if (data.indexOf('"') === 0 || data.indexOf("'") === 0)
+    return data.substring(1, data.length - 1)
+  if (data.indexOf(',') !== -1)
+    return parseIntList(data)
+  return parseInt(data, 10)
+}
+
+function parseIntList(data) {
+  return data.split(',').map(function(val) {
+    return parseInt(val, 10)
+  })
+}
+
+/***/ }),
+
+/***/ 4563:
+/***/ ((module) => {
+
+var HEADER = [66, 77, 70]
+
+module.exports = function readBMFontBinary(buf) {
+  if (buf.length < 6)
+    throw new Error('invalid buffer length for BMFont')
+
+  var header = HEADER.every(function(byte, i) {
+    return buf.readUInt8(i) === byte
+  })
+
+  if (!header)
+    throw new Error('BMFont missing BMF byte header')
+
+  var i = 3
+  var vers = buf.readUInt8(i++)
+  if (vers > 3)
+    throw new Error('Only supports BMFont Binary v3 (BMFont App v1.10)')
+  
+  var target = { kernings: [], chars: [] }
+  for (var b=0; b<5; b++)
+    i += readBlock(target, buf, i)
+  return target
+}
+
+function readBlock(target, buf, i) {
+  if (i > buf.length-1)
+    return 0
+
+  var blockID = buf.readUInt8(i++)
+  var blockSize = buf.readInt32LE(i)
+  i += 4
+
+  switch(blockID) {
+    case 1: 
+      target.info = readInfo(buf, i)
+      break
+    case 2:
+      target.common = readCommon(buf, i)
+      break
+    case 3:
+      target.pages = readPages(buf, i, blockSize)
+      break
+    case 4:
+      target.chars = readChars(buf, i, blockSize)
+      break
+    case 5:
+      target.kernings = readKernings(buf, i, blockSize)
+      break
+  }
+  return 5 + blockSize
+}
+
+function readInfo(buf, i) {
+  var info = {}
+  info.size = buf.readInt16LE(i)
+
+  var bitField = buf.readUInt8(i+2)
+  info.smooth = (bitField >> 7) & 1
+  info.unicode = (bitField >> 6) & 1
+  info.italic = (bitField >> 5) & 1
+  info.bold = (bitField >> 4) & 1
+  
+  //fixedHeight is only mentioned in binary spec 
+  if ((bitField >> 3) & 1)
+    info.fixedHeight = 1
+  
+  info.charset = buf.readUInt8(i+3) || ''
+  info.stretchH = buf.readUInt16LE(i+4)
+  info.aa = buf.readUInt8(i+6)
+  info.padding = [
+    buf.readInt8(i+7),
+    buf.readInt8(i+8),
+    buf.readInt8(i+9),
+    buf.readInt8(i+10)
+  ]
+  info.spacing = [
+    buf.readInt8(i+11),
+    buf.readInt8(i+12)
+  ]
+  info.outline = buf.readUInt8(i+13)
+  info.face = readStringNT(buf, i+14)
+  return info
+}
+
+function readCommon(buf, i) {
+  var common = {}
+  common.lineHeight = buf.readUInt16LE(i)
+  common.base = buf.readUInt16LE(i+2)
+  common.scaleW = buf.readUInt16LE(i+4)
+  common.scaleH = buf.readUInt16LE(i+6)
+  common.pages = buf.readUInt16LE(i+8)
+  var bitField = buf.readUInt8(i+10)
+  common.packed = 0
+  common.alphaChnl = buf.readUInt8(i+11)
+  common.redChnl = buf.readUInt8(i+12)
+  common.greenChnl = buf.readUInt8(i+13)
+  common.blueChnl = buf.readUInt8(i+14)
+  return common
+}
+
+function readPages(buf, i, size) {
+  var pages = []
+  var text = readNameNT(buf, i)
+  var len = text.length+1
+  var count = size / len
+  for (var c=0; c<count; c++) {
+    pages[c] = buf.slice(i, i+text.length).toString('utf8')
+    i += len
+  }
+  return pages
+}
+
+function readChars(buf, i, blockSize) {
+  var chars = []
+
+  var count = blockSize / 20
+  for (var c=0; c<count; c++) {
+    var char = {}
+    var off = c*20
+    char.id = buf.readUInt32LE(i + 0 + off)
+    char.x = buf.readUInt16LE(i + 4 + off)
+    char.y = buf.readUInt16LE(i + 6 + off)
+    char.width = buf.readUInt16LE(i + 8 + off)
+    char.height = buf.readUInt16LE(i + 10 + off)
+    char.xoffset = buf.readInt16LE(i + 12 + off)
+    char.yoffset = buf.readInt16LE(i + 14 + off)
+    char.xadvance = buf.readInt16LE(i + 16 + off)
+    char.page = buf.readUInt8(i + 18 + off)
+    char.chnl = buf.readUInt8(i + 19 + off)
+    chars[c] = char
+  }
+  return chars
+}
+
+function readKernings(buf, i, blockSize) {
+  var kernings = []
+  var count = blockSize / 10
+  for (var c=0; c<count; c++) {
+    var kern = {}
+    var off = c*10
+    kern.first = buf.readUInt32LE(i + 0 + off)
+    kern.second = buf.readUInt32LE(i + 4 + off)
+    kern.amount = buf.readInt16LE(i + 8 + off)
+    kernings[c] = kern
+  }
+  return kernings
+}
+
+function readNameNT(buf, offset) {
+  var pos=offset
+  for (; pos<buf.length; pos++) {
+    if (buf[pos] === 0x00) 
+      break
+  }
+  return buf.slice(offset, pos)
+}
+
+function readStringNT(buf, offset) {
+  return readNameNT(buf, offset).toString('utf8')
+}
+
+/***/ }),
+
+/***/ 1199:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var xml2js = __nccwpck_require__(6189)
+var parseAttributes = __nccwpck_require__(820)
+
+module.exports = function parseBMFontXML(data) {
+  data = data.toString().trim()
+
+  var output = {
+    pages: [],
+    chars: [],
+    kernings: []
+  }
+
+  xml2js.parseString(data, function(err, result) {
+    if (err)
+      throw err
+    if (!result.font)
+      throw "XML bitmap font doesn't have <font> root"
+    result = result.font
+
+    output.common = parseAttributes(result.common[0].$)
+    output.info = parseAttributes(result.info[0].$)
+
+    for (var i = 0; i < result.pages.length; i++) {
+      var p = result.pages[i].page[0].$
+
+      if (typeof p.id === "undefined")
+        throw new Error("malformed file -- needs page id=N")
+      if (typeof p.file !== "string")
+        throw new Error("malformed file -- needs page file=\"path\"")
+
+      output.pages[parseInt(p.id, 10)] = p.file
+    }
+
+    if (result.chars) {
+      var chrArray = result.chars[0]['char'] || []
+      for (var i = 0; i < chrArray.length; i++) {
+        output.chars.push(parseAttributes(chrArray[i].$))
+      }
+    }
+
+    if (result.kernings) {
+      var kernArray = result.kernings[0]['kerning'] || []
+      for (var i = 0; i < kernArray.length; i++) {
+        output.kernings.push(parseAttributes(kernArray[i].$))
+      }
+    }
+  })
+  return output
+}
+
+
+/***/ }),
+
+/***/ 820:
+/***/ ((module) => {
+
+//Some versions of GlyphDesigner have a typo
+//that causes some bugs with parsing. 
+//Need to confirm with recent version of the software
+//to see whether this is still an issue or not.
+var GLYPH_DESIGNER_ERROR = 'chasrset'
+
+module.exports = function parseAttributes(obj) {
+  if (GLYPH_DESIGNER_ERROR in obj) {
+    obj['charset'] = obj[GLYPH_DESIGNER_ERROR]
+    delete obj[GLYPH_DESIGNER_ERROR]
+  }
+
+  for (var k in obj) {
+    if (k === 'face' || k === 'charset') 
+      continue
+    else if (k === 'padding' || k === 'spacing')
+      obj[k] = parseIntList(obj[k])
+    else
+      obj[k] = parseInt(obj[k], 10) 
+  }
+  return obj
+}
+
+function parseIntList(data) {
+  return data.split(',').map(function(val) {
+    return parseInt(val, 10)
+  })
+}
+
+/***/ }),
+
 /***/ 6130:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -56837,226 +50933,6 @@ SyncReader.prototype.process = function() {
 
 /***/ }),
 
-/***/ 8341:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-var once = __nccwpck_require__(1223)
-var eos = __nccwpck_require__(1205)
-var fs = __nccwpck_require__(5747) // we only need fs to get the ReadStream and WriteStream prototypes
-
-var noop = function () {}
-var ancient = /^v?\.0/.test(process.version)
-
-var isFn = function (fn) {
-  return typeof fn === 'function'
-}
-
-var isFS = function (stream) {
-  if (!ancient) return false // newer node version do not need to care about fs is a special way
-  if (!fs) return false // browser
-  return (stream instanceof (fs.ReadStream || noop) || stream instanceof (fs.WriteStream || noop)) && isFn(stream.close)
-}
-
-var isRequest = function (stream) {
-  return stream.setHeader && isFn(stream.abort)
-}
-
-var destroyer = function (stream, reading, writing, callback) {
-  callback = once(callback)
-
-  var closed = false
-  stream.on('close', function () {
-    closed = true
-  })
-
-  eos(stream, {readable: reading, writable: writing}, function (err) {
-    if (err) return callback(err)
-    closed = true
-    callback()
-  })
-
-  var destroyed = false
-  return function (err) {
-    if (closed) return
-    if (destroyed) return
-    destroyed = true
-
-    if (isFS(stream)) return stream.close(noop) // use close for fs streams to avoid fd leaks
-    if (isRequest(stream)) return stream.abort() // request.destroy just do .end - .abort is what we want
-
-    if (isFn(stream.destroy)) return stream.destroy()
-
-    callback(err || new Error('stream was destroyed'))
-  }
-}
-
-var call = function (fn) {
-  fn()
-}
-
-var pipe = function (from, to) {
-  return from.pipe(to)
-}
-
-var pump = function () {
-  var streams = Array.prototype.slice.call(arguments)
-  var callback = isFn(streams[streams.length - 1] || noop) && streams.pop() || noop
-
-  if (Array.isArray(streams[0])) streams = streams[0]
-  if (streams.length < 2) throw new Error('pump requires two streams per minimum')
-
-  var error
-  var destroys = streams.map(function (stream, i) {
-    var reading = i < streams.length - 1
-    var writing = i > 0
-    return destroyer(stream, reading, writing, function (err) {
-      if (!error) error = err
-      if (err) destroys.forEach(call)
-      if (reading) return
-      destroys.forEach(call)
-      callback(error)
-    })
-  })
-
-  return streams.reduce(pipe)
-}
-
-module.exports = pump
-
-
-/***/ }),
-
-/***/ 9273:
-/***/ ((module) => {
-
-"use strict";
-
-
-class QuickLRU {
-	constructor(options = {}) {
-		if (!(options.maxSize && options.maxSize > 0)) {
-			throw new TypeError('`maxSize` must be a number greater than 0');
-		}
-
-		this.maxSize = options.maxSize;
-		this.onEviction = options.onEviction;
-		this.cache = new Map();
-		this.oldCache = new Map();
-		this._size = 0;
-	}
-
-	_set(key, value) {
-		this.cache.set(key, value);
-		this._size++;
-
-		if (this._size >= this.maxSize) {
-			this._size = 0;
-
-			if (typeof this.onEviction === 'function') {
-				for (const [key, value] of this.oldCache.entries()) {
-					this.onEviction(key, value);
-				}
-			}
-
-			this.oldCache = this.cache;
-			this.cache = new Map();
-		}
-	}
-
-	get(key) {
-		if (this.cache.has(key)) {
-			return this.cache.get(key);
-		}
-
-		if (this.oldCache.has(key)) {
-			const value = this.oldCache.get(key);
-			this.oldCache.delete(key);
-			this._set(key, value);
-			return value;
-		}
-	}
-
-	set(key, value) {
-		if (this.cache.has(key)) {
-			this.cache.set(key, value);
-		} else {
-			this._set(key, value);
-		}
-
-		return this;
-	}
-
-	has(key) {
-		return this.cache.has(key) || this.oldCache.has(key);
-	}
-
-	peek(key) {
-		if (this.cache.has(key)) {
-			return this.cache.get(key);
-		}
-
-		if (this.oldCache.has(key)) {
-			return this.oldCache.get(key);
-		}
-	}
-
-	delete(key) {
-		const deleted = this.cache.delete(key);
-		if (deleted) {
-			this._size--;
-		}
-
-		return this.oldCache.delete(key) || deleted;
-	}
-
-	clear() {
-		this.cache.clear();
-		this.oldCache.clear();
-		this._size = 0;
-	}
-
-	* keys() {
-		for (const [key] of this) {
-			yield key;
-		}
-	}
-
-	* values() {
-		for (const [, value] of this) {
-			yield value;
-		}
-	}
-
-	* [Symbol.iterator]() {
-		for (const item of this.cache) {
-			yield item;
-		}
-
-		for (const item of this.oldCache) {
-			const [key] = item;
-			if (!this.cache.has(key)) {
-				yield item;
-			}
-		}
-	}
-
-	get size() {
-		let oldCacheSize = 0;
-		for (const key of this.oldCache.keys()) {
-			if (!this.cache.has(key)) {
-				oldCacheSize++;
-			}
-		}
-
-		return Math.min(this._size + oldCacheSize, this.maxSize);
-	}
-}
-
-module.exports = QuickLRU;
-
-
-/***/ }),
-
 /***/ 4307:
 /***/ ((module) => {
 
@@ -57808,72 +51684,6 @@ try {
   // problems, please detail your unique predicament in a GitHub issue.
   Function("r", "regeneratorRuntime = r")(runtime);
 }
-
-
-/***/ }),
-
-/***/ 6624:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-const tls = __nccwpck_require__(4016);
-
-module.exports = (options = {}) => new Promise((resolve, reject) => {
-	const socket = tls.connect(options, () => {
-		if (options.resolveSocket) {
-			socket.off('error', reject);
-			resolve({alpnProtocol: socket.alpnProtocol, socket});
-		} else {
-			socket.destroy();
-			resolve({alpnProtocol: socket.alpnProtocol});
-		}
-	});
-
-	socket.on('error', reject);
-});
-
-
-/***/ }),
-
-/***/ 9004:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const Readable = __nccwpck_require__(2413).Readable;
-const lowercaseKeys = __nccwpck_require__(9662);
-
-class Response extends Readable {
-	constructor(statusCode, headers, body, url) {
-		if (typeof statusCode !== 'number') {
-			throw new TypeError('Argument `statusCode` should be a number');
-		}
-		if (typeof headers !== 'object') {
-			throw new TypeError('Argument `headers` should be an object');
-		}
-		if (!(body instanceof Buffer)) {
-			throw new TypeError('Argument `body` should be a buffer');
-		}
-		if (typeof url !== 'string') {
-			throw new TypeError('Argument `url` should be a string');
-		}
-
-		super();
-		this.statusCode = statusCode;
-		this.headers = lowercaseKeys(headers);
-		this.body = body;
-		this.url = url;
-	}
-
-	_read() {
-		this.push(this.body);
-		this.push(null);
-	}
-}
-
-module.exports = Response;
 
 
 /***/ }),
@@ -59950,6561 +53760,6 @@ utils.getEncodingFromContentType = function(contentType) {
     }())
   }
 })( false ? 0 : exports)
-
-
-/***/ }),
-
-/***/ 1532:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const ANY = Symbol('SemVer ANY')
-// hoisted class for cyclic dependency
-class Comparator {
-  static get ANY () {
-    return ANY
-  }
-  constructor (comp, options) {
-    options = parseOptions(options)
-
-    if (comp instanceof Comparator) {
-      if (comp.loose === !!options.loose) {
-        return comp
-      } else {
-        comp = comp.value
-      }
-    }
-
-    debug('comparator', comp, options)
-    this.options = options
-    this.loose = !!options.loose
-    this.parse(comp)
-
-    if (this.semver === ANY) {
-      this.value = ''
-    } else {
-      this.value = this.operator + this.semver.version
-    }
-
-    debug('comp', this)
-  }
-
-  parse (comp) {
-    const r = this.options.loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR]
-    const m = comp.match(r)
-
-    if (!m) {
-      throw new TypeError(`Invalid comparator: ${comp}`)
-    }
-
-    this.operator = m[1] !== undefined ? m[1] : ''
-    if (this.operator === '=') {
-      this.operator = ''
-    }
-
-    // if it literally is just '>' or '' then allow anything.
-    if (!m[2]) {
-      this.semver = ANY
-    } else {
-      this.semver = new SemVer(m[2], this.options.loose)
-    }
-  }
-
-  toString () {
-    return this.value
-  }
-
-  test (version) {
-    debug('Comparator.test', version, this.options.loose)
-
-    if (this.semver === ANY || version === ANY) {
-      return true
-    }
-
-    if (typeof version === 'string') {
-      try {
-        version = new SemVer(version, this.options)
-      } catch (er) {
-        return false
-      }
-    }
-
-    return cmp(version, this.operator, this.semver, this.options)
-  }
-
-  intersects (comp, options) {
-    if (!(comp instanceof Comparator)) {
-      throw new TypeError('a Comparator is required')
-    }
-
-    if (!options || typeof options !== 'object') {
-      options = {
-        loose: !!options,
-        includePrerelease: false
-      }
-    }
-
-    if (this.operator === '') {
-      if (this.value === '') {
-        return true
-      }
-      return new Range(comp.value, options).test(this.value)
-    } else if (comp.operator === '') {
-      if (comp.value === '') {
-        return true
-      }
-      return new Range(this.value, options).test(comp.semver)
-    }
-
-    const sameDirectionIncreasing =
-      (this.operator === '>=' || this.operator === '>') &&
-      (comp.operator === '>=' || comp.operator === '>')
-    const sameDirectionDecreasing =
-      (this.operator === '<=' || this.operator === '<') &&
-      (comp.operator === '<=' || comp.operator === '<')
-    const sameSemVer = this.semver.version === comp.semver.version
-    const differentDirectionsInclusive =
-      (this.operator === '>=' || this.operator === '<=') &&
-      (comp.operator === '>=' || comp.operator === '<=')
-    const oppositeDirectionsLessThan =
-      cmp(this.semver, '<', comp.semver, options) &&
-      (this.operator === '>=' || this.operator === '>') &&
-        (comp.operator === '<=' || comp.operator === '<')
-    const oppositeDirectionsGreaterThan =
-      cmp(this.semver, '>', comp.semver, options) &&
-      (this.operator === '<=' || this.operator === '<') &&
-        (comp.operator === '>=' || comp.operator === '>')
-
-    return (
-      sameDirectionIncreasing ||
-      sameDirectionDecreasing ||
-      (sameSemVer && differentDirectionsInclusive) ||
-      oppositeDirectionsLessThan ||
-      oppositeDirectionsGreaterThan
-    )
-  }
-}
-
-module.exports = Comparator
-
-const parseOptions = __nccwpck_require__(785)
-const {re, t} = __nccwpck_require__(9523)
-const cmp = __nccwpck_require__(5098)
-const debug = __nccwpck_require__(427)
-const SemVer = __nccwpck_require__(8088)
-const Range = __nccwpck_require__(9828)
-
-
-/***/ }),
-
-/***/ 9828:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-// hoisted class for cyclic dependency
-class Range {
-  constructor (range, options) {
-    options = parseOptions(options)
-
-    if (range instanceof Range) {
-      if (
-        range.loose === !!options.loose &&
-        range.includePrerelease === !!options.includePrerelease
-      ) {
-        return range
-      } else {
-        return new Range(range.raw, options)
-      }
-    }
-
-    if (range instanceof Comparator) {
-      // just put it in the set and return
-      this.raw = range.value
-      this.set = [[range]]
-      this.format()
-      return this
-    }
-
-    this.options = options
-    this.loose = !!options.loose
-    this.includePrerelease = !!options.includePrerelease
-
-    // First, split based on boolean or ||
-    this.raw = range
-    this.set = range
-      .split(/\s*\|\|\s*/)
-      // map the range to a 2d array of comparators
-      .map(range => this.parseRange(range.trim()))
-      // throw out any comparator lists that are empty
-      // this generally means that it was not a valid range, which is allowed
-      // in loose mode, but will still throw if the WHOLE range is invalid.
-      .filter(c => c.length)
-
-    if (!this.set.length) {
-      throw new TypeError(`Invalid SemVer Range: ${range}`)
-    }
-
-    // if we have any that are not the null set, throw out null sets.
-    if (this.set.length > 1) {
-      // keep the first one, in case they're all null sets
-      const first = this.set[0]
-      this.set = this.set.filter(c => !isNullSet(c[0]))
-      if (this.set.length === 0)
-        this.set = [first]
-      else if (this.set.length > 1) {
-        // if we have any that are *, then the range is just *
-        for (const c of this.set) {
-          if (c.length === 1 && isAny(c[0])) {
-            this.set = [c]
-            break
-          }
-        }
-      }
-    }
-
-    this.format()
-  }
-
-  format () {
-    this.range = this.set
-      .map((comps) => {
-        return comps.join(' ').trim()
-      })
-      .join('||')
-      .trim()
-    return this.range
-  }
-
-  toString () {
-    return this.range
-  }
-
-  parseRange (range) {
-    range = range.trim()
-
-    // memoize range parsing for performance.
-    // this is a very hot path, and fully deterministic.
-    const memoOpts = Object.keys(this.options).join(',')
-    const memoKey = `parseRange:${memoOpts}:${range}`
-    const cached = cache.get(memoKey)
-    if (cached)
-      return cached
-
-    const loose = this.options.loose
-    // `1.2.3 - 1.2.4` => `>=1.2.3 <=1.2.4`
-    const hr = loose ? re[t.HYPHENRANGELOOSE] : re[t.HYPHENRANGE]
-    range = range.replace(hr, hyphenReplace(this.options.includePrerelease))
-    debug('hyphen replace', range)
-    // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
-    range = range.replace(re[t.COMPARATORTRIM], comparatorTrimReplace)
-    debug('comparator trim', range, re[t.COMPARATORTRIM])
-
-    // `~ 1.2.3` => `~1.2.3`
-    range = range.replace(re[t.TILDETRIM], tildeTrimReplace)
-
-    // `^ 1.2.3` => `^1.2.3`
-    range = range.replace(re[t.CARETTRIM], caretTrimReplace)
-
-    // normalize spaces
-    range = range.split(/\s+/).join(' ')
-
-    // At this point, the range is completely trimmed and
-    // ready to be split into comparators.
-
-    const compRe = loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR]
-    const rangeList = range
-      .split(' ')
-      .map(comp => parseComparator(comp, this.options))
-      .join(' ')
-      .split(/\s+/)
-      // >=0.0.0 is equivalent to *
-      .map(comp => replaceGTE0(comp, this.options))
-      // in loose mode, throw out any that are not valid comparators
-      .filter(this.options.loose ? comp => !!comp.match(compRe) : () => true)
-      .map(comp => new Comparator(comp, this.options))
-
-    // if any comparators are the null set, then replace with JUST null set
-    // if more than one comparator, remove any * comparators
-    // also, don't include the same comparator more than once
-    const l = rangeList.length
-    const rangeMap = new Map()
-    for (const comp of rangeList) {
-      if (isNullSet(comp))
-        return [comp]
-      rangeMap.set(comp.value, comp)
-    }
-    if (rangeMap.size > 1 && rangeMap.has(''))
-      rangeMap.delete('')
-
-    const result = [...rangeMap.values()]
-    cache.set(memoKey, result)
-    return result
-  }
-
-  intersects (range, options) {
-    if (!(range instanceof Range)) {
-      throw new TypeError('a Range is required')
-    }
-
-    return this.set.some((thisComparators) => {
-      return (
-        isSatisfiable(thisComparators, options) &&
-        range.set.some((rangeComparators) => {
-          return (
-            isSatisfiable(rangeComparators, options) &&
-            thisComparators.every((thisComparator) => {
-              return rangeComparators.every((rangeComparator) => {
-                return thisComparator.intersects(rangeComparator, options)
-              })
-            })
-          )
-        })
-      )
-    })
-  }
-
-  // if ANY of the sets match ALL of its comparators, then pass
-  test (version) {
-    if (!version) {
-      return false
-    }
-
-    if (typeof version === 'string') {
-      try {
-        version = new SemVer(version, this.options)
-      } catch (er) {
-        return false
-      }
-    }
-
-    for (let i = 0; i < this.set.length; i++) {
-      if (testSet(this.set[i], version, this.options)) {
-        return true
-      }
-    }
-    return false
-  }
-}
-module.exports = Range
-
-const LRU = __nccwpck_require__(7129)
-const cache = new LRU({ max: 1000 })
-
-const parseOptions = __nccwpck_require__(785)
-const Comparator = __nccwpck_require__(1532)
-const debug = __nccwpck_require__(427)
-const SemVer = __nccwpck_require__(8088)
-const {
-  re,
-  t,
-  comparatorTrimReplace,
-  tildeTrimReplace,
-  caretTrimReplace
-} = __nccwpck_require__(9523)
-
-const isNullSet = c => c.value === '<0.0.0-0'
-const isAny = c => c.value === ''
-
-// take a set of comparators and determine whether there
-// exists a version which can satisfy it
-const isSatisfiable = (comparators, options) => {
-  let result = true
-  const remainingComparators = comparators.slice()
-  let testComparator = remainingComparators.pop()
-
-  while (result && remainingComparators.length) {
-    result = remainingComparators.every((otherComparator) => {
-      return testComparator.intersects(otherComparator, options)
-    })
-
-    testComparator = remainingComparators.pop()
-  }
-
-  return result
-}
-
-// comprised of xranges, tildes, stars, and gtlt's at this point.
-// already replaced the hyphen ranges
-// turn into a set of JUST comparators.
-const parseComparator = (comp, options) => {
-  debug('comp', comp, options)
-  comp = replaceCarets(comp, options)
-  debug('caret', comp)
-  comp = replaceTildes(comp, options)
-  debug('tildes', comp)
-  comp = replaceXRanges(comp, options)
-  debug('xrange', comp)
-  comp = replaceStars(comp, options)
-  debug('stars', comp)
-  return comp
-}
-
-const isX = id => !id || id.toLowerCase() === 'x' || id === '*'
-
-// ~, ~> --> * (any, kinda silly)
-// ~2, ~2.x, ~2.x.x, ~>2, ~>2.x ~>2.x.x --> >=2.0.0 <3.0.0-0
-// ~2.0, ~2.0.x, ~>2.0, ~>2.0.x --> >=2.0.0 <2.1.0-0
-// ~1.2, ~1.2.x, ~>1.2, ~>1.2.x --> >=1.2.0 <1.3.0-0
-// ~1.2.3, ~>1.2.3 --> >=1.2.3 <1.3.0-0
-// ~1.2.0, ~>1.2.0 --> >=1.2.0 <1.3.0-0
-const replaceTildes = (comp, options) =>
-  comp.trim().split(/\s+/).map((comp) => {
-    return replaceTilde(comp, options)
-  }).join(' ')
-
-const replaceTilde = (comp, options) => {
-  const r = options.loose ? re[t.TILDELOOSE] : re[t.TILDE]
-  return comp.replace(r, (_, M, m, p, pr) => {
-    debug('tilde', comp, _, M, m, p, pr)
-    let ret
-
-    if (isX(M)) {
-      ret = ''
-    } else if (isX(m)) {
-      ret = `>=${M}.0.0 <${+M + 1}.0.0-0`
-    } else if (isX(p)) {
-      // ~1.2 == >=1.2.0 <1.3.0-0
-      ret = `>=${M}.${m}.0 <${M}.${+m + 1}.0-0`
-    } else if (pr) {
-      debug('replaceTilde pr', pr)
-      ret = `>=${M}.${m}.${p}-${pr
-      } <${M}.${+m + 1}.0-0`
-    } else {
-      // ~1.2.3 == >=1.2.3 <1.3.0-0
-      ret = `>=${M}.${m}.${p
-      } <${M}.${+m + 1}.0-0`
-    }
-
-    debug('tilde return', ret)
-    return ret
-  })
-}
-
-// ^ --> * (any, kinda silly)
-// ^2, ^2.x, ^2.x.x --> >=2.0.0 <3.0.0-0
-// ^2.0, ^2.0.x --> >=2.0.0 <3.0.0-0
-// ^1.2, ^1.2.x --> >=1.2.0 <2.0.0-0
-// ^1.2.3 --> >=1.2.3 <2.0.0-0
-// ^1.2.0 --> >=1.2.0 <2.0.0-0
-const replaceCarets = (comp, options) =>
-  comp.trim().split(/\s+/).map((comp) => {
-    return replaceCaret(comp, options)
-  }).join(' ')
-
-const replaceCaret = (comp, options) => {
-  debug('caret', comp, options)
-  const r = options.loose ? re[t.CARETLOOSE] : re[t.CARET]
-  const z = options.includePrerelease ? '-0' : ''
-  return comp.replace(r, (_, M, m, p, pr) => {
-    debug('caret', comp, _, M, m, p, pr)
-    let ret
-
-    if (isX(M)) {
-      ret = ''
-    } else if (isX(m)) {
-      ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`
-    } else if (isX(p)) {
-      if (M === '0') {
-        ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`
-      } else {
-        ret = `>=${M}.${m}.0${z} <${+M + 1}.0.0-0`
-      }
-    } else if (pr) {
-      debug('replaceCaret pr', pr)
-      if (M === '0') {
-        if (m === '0') {
-          ret = `>=${M}.${m}.${p}-${pr
-          } <${M}.${m}.${+p + 1}-0`
-        } else {
-          ret = `>=${M}.${m}.${p}-${pr
-          } <${M}.${+m + 1}.0-0`
-        }
-      } else {
-        ret = `>=${M}.${m}.${p}-${pr
-        } <${+M + 1}.0.0-0`
-      }
-    } else {
-      debug('no pr')
-      if (M === '0') {
-        if (m === '0') {
-          ret = `>=${M}.${m}.${p
-          }${z} <${M}.${m}.${+p + 1}-0`
-        } else {
-          ret = `>=${M}.${m}.${p
-          }${z} <${M}.${+m + 1}.0-0`
-        }
-      } else {
-        ret = `>=${M}.${m}.${p
-        } <${+M + 1}.0.0-0`
-      }
-    }
-
-    debug('caret return', ret)
-    return ret
-  })
-}
-
-const replaceXRanges = (comp, options) => {
-  debug('replaceXRanges', comp, options)
-  return comp.split(/\s+/).map((comp) => {
-    return replaceXRange(comp, options)
-  }).join(' ')
-}
-
-const replaceXRange = (comp, options) => {
-  comp = comp.trim()
-  const r = options.loose ? re[t.XRANGELOOSE] : re[t.XRANGE]
-  return comp.replace(r, (ret, gtlt, M, m, p, pr) => {
-    debug('xRange', comp, ret, gtlt, M, m, p, pr)
-    const xM = isX(M)
-    const xm = xM || isX(m)
-    const xp = xm || isX(p)
-    const anyX = xp
-
-    if (gtlt === '=' && anyX) {
-      gtlt = ''
-    }
-
-    // if we're including prereleases in the match, then we need
-    // to fix this to -0, the lowest possible prerelease value
-    pr = options.includePrerelease ? '-0' : ''
-
-    if (xM) {
-      if (gtlt === '>' || gtlt === '<') {
-        // nothing is allowed
-        ret = '<0.0.0-0'
-      } else {
-        // nothing is forbidden
-        ret = '*'
-      }
-    } else if (gtlt && anyX) {
-      // we know patch is an x, because we have any x at all.
-      // replace X with 0
-      if (xm) {
-        m = 0
-      }
-      p = 0
-
-      if (gtlt === '>') {
-        // >1 => >=2.0.0
-        // >1.2 => >=1.3.0
-        gtlt = '>='
-        if (xm) {
-          M = +M + 1
-          m = 0
-          p = 0
-        } else {
-          m = +m + 1
-          p = 0
-        }
-      } else if (gtlt === '<=') {
-        // <=0.7.x is actually <0.8.0, since any 0.7.x should
-        // pass.  Similarly, <=7.x is actually <8.0.0, etc.
-        gtlt = '<'
-        if (xm) {
-          M = +M + 1
-        } else {
-          m = +m + 1
-        }
-      }
-
-      if (gtlt === '<')
-        pr = '-0'
-
-      ret = `${gtlt + M}.${m}.${p}${pr}`
-    } else if (xm) {
-      ret = `>=${M}.0.0${pr} <${+M + 1}.0.0-0`
-    } else if (xp) {
-      ret = `>=${M}.${m}.0${pr
-      } <${M}.${+m + 1}.0-0`
-    }
-
-    debug('xRange return', ret)
-
-    return ret
-  })
-}
-
-// Because * is AND-ed with everything else in the comparator,
-// and '' means "any version", just remove the *s entirely.
-const replaceStars = (comp, options) => {
-  debug('replaceStars', comp, options)
-  // Looseness is ignored here.  star is always as loose as it gets!
-  return comp.trim().replace(re[t.STAR], '')
-}
-
-const replaceGTE0 = (comp, options) => {
-  debug('replaceGTE0', comp, options)
-  return comp.trim()
-    .replace(re[options.includePrerelease ? t.GTE0PRE : t.GTE0], '')
-}
-
-// This function is passed to string.replace(re[t.HYPHENRANGE])
-// M, m, patch, prerelease, build
-// 1.2 - 3.4.5 => >=1.2.0 <=3.4.5
-// 1.2.3 - 3.4 => >=1.2.0 <3.5.0-0 Any 3.4.x will do
-// 1.2 - 3.4 => >=1.2.0 <3.5.0-0
-const hyphenReplace = incPr => ($0,
-  from, fM, fm, fp, fpr, fb,
-  to, tM, tm, tp, tpr, tb) => {
-  if (isX(fM)) {
-    from = ''
-  } else if (isX(fm)) {
-    from = `>=${fM}.0.0${incPr ? '-0' : ''}`
-  } else if (isX(fp)) {
-    from = `>=${fM}.${fm}.0${incPr ? '-0' : ''}`
-  } else if (fpr) {
-    from = `>=${from}`
-  } else {
-    from = `>=${from}${incPr ? '-0' : ''}`
-  }
-
-  if (isX(tM)) {
-    to = ''
-  } else if (isX(tm)) {
-    to = `<${+tM + 1}.0.0-0`
-  } else if (isX(tp)) {
-    to = `<${tM}.${+tm + 1}.0-0`
-  } else if (tpr) {
-    to = `<=${tM}.${tm}.${tp}-${tpr}`
-  } else if (incPr) {
-    to = `<${tM}.${tm}.${+tp + 1}-0`
-  } else {
-    to = `<=${to}`
-  }
-
-  return (`${from} ${to}`).trim()
-}
-
-const testSet = (set, version, options) => {
-  for (let i = 0; i < set.length; i++) {
-    if (!set[i].test(version)) {
-      return false
-    }
-  }
-
-  if (version.prerelease.length && !options.includePrerelease) {
-    // Find the set of versions that are allowed to have prereleases
-    // For example, ^1.2.3-pr.1 desugars to >=1.2.3-pr.1 <2.0.0
-    // That should allow `1.2.3-pr.2` to pass.
-    // However, `1.2.4-alpha.notready` should NOT be allowed,
-    // even though it's within the range set by the comparators.
-    for (let i = 0; i < set.length; i++) {
-      debug(set[i].semver)
-      if (set[i].semver === Comparator.ANY) {
-        continue
-      }
-
-      if (set[i].semver.prerelease.length > 0) {
-        const allowed = set[i].semver
-        if (allowed.major === version.major &&
-            allowed.minor === version.minor &&
-            allowed.patch === version.patch) {
-          return true
-        }
-      }
-    }
-
-    // Version has a -pre, but it's not one of the ones we like.
-    return false
-  }
-
-  return true
-}
-
-
-/***/ }),
-
-/***/ 8088:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const debug = __nccwpck_require__(427)
-const { MAX_LENGTH, MAX_SAFE_INTEGER } = __nccwpck_require__(2293)
-const { re, t } = __nccwpck_require__(9523)
-
-const parseOptions = __nccwpck_require__(785)
-const { compareIdentifiers } = __nccwpck_require__(2463)
-class SemVer {
-  constructor (version, options) {
-    options = parseOptions(options)
-
-    if (version instanceof SemVer) {
-      if (version.loose === !!options.loose &&
-          version.includePrerelease === !!options.includePrerelease) {
-        return version
-      } else {
-        version = version.version
-      }
-    } else if (typeof version !== 'string') {
-      throw new TypeError(`Invalid Version: ${version}`)
-    }
-
-    if (version.length > MAX_LENGTH) {
-      throw new TypeError(
-        `version is longer than ${MAX_LENGTH} characters`
-      )
-    }
-
-    debug('SemVer', version, options)
-    this.options = options
-    this.loose = !!options.loose
-    // this isn't actually relevant for versions, but keep it so that we
-    // don't run into trouble passing this.options around.
-    this.includePrerelease = !!options.includePrerelease
-
-    const m = version.trim().match(options.loose ? re[t.LOOSE] : re[t.FULL])
-
-    if (!m) {
-      throw new TypeError(`Invalid Version: ${version}`)
-    }
-
-    this.raw = version
-
-    // these are actually numbers
-    this.major = +m[1]
-    this.minor = +m[2]
-    this.patch = +m[3]
-
-    if (this.major > MAX_SAFE_INTEGER || this.major < 0) {
-      throw new TypeError('Invalid major version')
-    }
-
-    if (this.minor > MAX_SAFE_INTEGER || this.minor < 0) {
-      throw new TypeError('Invalid minor version')
-    }
-
-    if (this.patch > MAX_SAFE_INTEGER || this.patch < 0) {
-      throw new TypeError('Invalid patch version')
-    }
-
-    // numberify any prerelease numeric ids
-    if (!m[4]) {
-      this.prerelease = []
-    } else {
-      this.prerelease = m[4].split('.').map((id) => {
-        if (/^[0-9]+$/.test(id)) {
-          const num = +id
-          if (num >= 0 && num < MAX_SAFE_INTEGER) {
-            return num
-          }
-        }
-        return id
-      })
-    }
-
-    this.build = m[5] ? m[5].split('.') : []
-    this.format()
-  }
-
-  format () {
-    this.version = `${this.major}.${this.minor}.${this.patch}`
-    if (this.prerelease.length) {
-      this.version += `-${this.prerelease.join('.')}`
-    }
-    return this.version
-  }
-
-  toString () {
-    return this.version
-  }
-
-  compare (other) {
-    debug('SemVer.compare', this.version, this.options, other)
-    if (!(other instanceof SemVer)) {
-      if (typeof other === 'string' && other === this.version) {
-        return 0
-      }
-      other = new SemVer(other, this.options)
-    }
-
-    if (other.version === this.version) {
-      return 0
-    }
-
-    return this.compareMain(other) || this.comparePre(other)
-  }
-
-  compareMain (other) {
-    if (!(other instanceof SemVer)) {
-      other = new SemVer(other, this.options)
-    }
-
-    return (
-      compareIdentifiers(this.major, other.major) ||
-      compareIdentifiers(this.minor, other.minor) ||
-      compareIdentifiers(this.patch, other.patch)
-    )
-  }
-
-  comparePre (other) {
-    if (!(other instanceof SemVer)) {
-      other = new SemVer(other, this.options)
-    }
-
-    // NOT having a prerelease is > having one
-    if (this.prerelease.length && !other.prerelease.length) {
-      return -1
-    } else if (!this.prerelease.length && other.prerelease.length) {
-      return 1
-    } else if (!this.prerelease.length && !other.prerelease.length) {
-      return 0
-    }
-
-    let i = 0
-    do {
-      const a = this.prerelease[i]
-      const b = other.prerelease[i]
-      debug('prerelease compare', i, a, b)
-      if (a === undefined && b === undefined) {
-        return 0
-      } else if (b === undefined) {
-        return 1
-      } else if (a === undefined) {
-        return -1
-      } else if (a === b) {
-        continue
-      } else {
-        return compareIdentifiers(a, b)
-      }
-    } while (++i)
-  }
-
-  compareBuild (other) {
-    if (!(other instanceof SemVer)) {
-      other = new SemVer(other, this.options)
-    }
-
-    let i = 0
-    do {
-      const a = this.build[i]
-      const b = other.build[i]
-      debug('prerelease compare', i, a, b)
-      if (a === undefined && b === undefined) {
-        return 0
-      } else if (b === undefined) {
-        return 1
-      } else if (a === undefined) {
-        return -1
-      } else if (a === b) {
-        continue
-      } else {
-        return compareIdentifiers(a, b)
-      }
-    } while (++i)
-  }
-
-  // preminor will bump the version up to the next minor release, and immediately
-  // down to pre-release. premajor and prepatch work the same way.
-  inc (release, identifier) {
-    switch (release) {
-      case 'premajor':
-        this.prerelease.length = 0
-        this.patch = 0
-        this.minor = 0
-        this.major++
-        this.inc('pre', identifier)
-        break
-      case 'preminor':
-        this.prerelease.length = 0
-        this.patch = 0
-        this.minor++
-        this.inc('pre', identifier)
-        break
-      case 'prepatch':
-        // If this is already a prerelease, it will bump to the next version
-        // drop any prereleases that might already exist, since they are not
-        // relevant at this point.
-        this.prerelease.length = 0
-        this.inc('patch', identifier)
-        this.inc('pre', identifier)
-        break
-      // If the input is a non-prerelease version, this acts the same as
-      // prepatch.
-      case 'prerelease':
-        if (this.prerelease.length === 0) {
-          this.inc('patch', identifier)
-        }
-        this.inc('pre', identifier)
-        break
-
-      case 'major':
-        // If this is a pre-major version, bump up to the same major version.
-        // Otherwise increment major.
-        // 1.0.0-5 bumps to 1.0.0
-        // 1.1.0 bumps to 2.0.0
-        if (
-          this.minor !== 0 ||
-          this.patch !== 0 ||
-          this.prerelease.length === 0
-        ) {
-          this.major++
-        }
-        this.minor = 0
-        this.patch = 0
-        this.prerelease = []
-        break
-      case 'minor':
-        // If this is a pre-minor version, bump up to the same minor version.
-        // Otherwise increment minor.
-        // 1.2.0-5 bumps to 1.2.0
-        // 1.2.1 bumps to 1.3.0
-        if (this.patch !== 0 || this.prerelease.length === 0) {
-          this.minor++
-        }
-        this.patch = 0
-        this.prerelease = []
-        break
-      case 'patch':
-        // If this is not a pre-release version, it will increment the patch.
-        // If it is a pre-release it will bump up to the same patch version.
-        // 1.2.0-5 patches to 1.2.0
-        // 1.2.0 patches to 1.2.1
-        if (this.prerelease.length === 0) {
-          this.patch++
-        }
-        this.prerelease = []
-        break
-      // This probably shouldn't be used publicly.
-      // 1.0.0 'pre' would become 1.0.0-0 which is the wrong direction.
-      case 'pre':
-        if (this.prerelease.length === 0) {
-          this.prerelease = [0]
-        } else {
-          let i = this.prerelease.length
-          while (--i >= 0) {
-            if (typeof this.prerelease[i] === 'number') {
-              this.prerelease[i]++
-              i = -2
-            }
-          }
-          if (i === -1) {
-            // didn't increment anything
-            this.prerelease.push(0)
-          }
-        }
-        if (identifier) {
-          // 1.2.0-beta.1 bumps to 1.2.0-beta.2,
-          // 1.2.0-beta.fooblz or 1.2.0-beta bumps to 1.2.0-beta.0
-          if (this.prerelease[0] === identifier) {
-            if (isNaN(this.prerelease[1])) {
-              this.prerelease = [identifier, 0]
-            }
-          } else {
-            this.prerelease = [identifier, 0]
-          }
-        }
-        break
-
-      default:
-        throw new Error(`invalid increment argument: ${release}`)
-    }
-    this.format()
-    this.raw = this.version
-    return this
-  }
-}
-
-module.exports = SemVer
-
-
-/***/ }),
-
-/***/ 8848:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const parse = __nccwpck_require__(5925)
-const clean = (version, options) => {
-  const s = parse(version.trim().replace(/^[=v]+/, ''), options)
-  return s ? s.version : null
-}
-module.exports = clean
-
-
-/***/ }),
-
-/***/ 5098:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const eq = __nccwpck_require__(1898)
-const neq = __nccwpck_require__(6017)
-const gt = __nccwpck_require__(4123)
-const gte = __nccwpck_require__(5522)
-const lt = __nccwpck_require__(194)
-const lte = __nccwpck_require__(7520)
-
-const cmp = (a, op, b, loose) => {
-  switch (op) {
-    case '===':
-      if (typeof a === 'object')
-        a = a.version
-      if (typeof b === 'object')
-        b = b.version
-      return a === b
-
-    case '!==':
-      if (typeof a === 'object')
-        a = a.version
-      if (typeof b === 'object')
-        b = b.version
-      return a !== b
-
-    case '':
-    case '=':
-    case '==':
-      return eq(a, b, loose)
-
-    case '!=':
-      return neq(a, b, loose)
-
-    case '>':
-      return gt(a, b, loose)
-
-    case '>=':
-      return gte(a, b, loose)
-
-    case '<':
-      return lt(a, b, loose)
-
-    case '<=':
-      return lte(a, b, loose)
-
-    default:
-      throw new TypeError(`Invalid operator: ${op}`)
-  }
-}
-module.exports = cmp
-
-
-/***/ }),
-
-/***/ 3466:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const SemVer = __nccwpck_require__(8088)
-const parse = __nccwpck_require__(5925)
-const {re, t} = __nccwpck_require__(9523)
-
-const coerce = (version, options) => {
-  if (version instanceof SemVer) {
-    return version
-  }
-
-  if (typeof version === 'number') {
-    version = String(version)
-  }
-
-  if (typeof version !== 'string') {
-    return null
-  }
-
-  options = options || {}
-
-  let match = null
-  if (!options.rtl) {
-    match = version.match(re[t.COERCE])
-  } else {
-    // Find the right-most coercible string that does not share
-    // a terminus with a more left-ward coercible string.
-    // Eg, '1.2.3.4' wants to coerce '2.3.4', not '3.4' or '4'
-    //
-    // Walk through the string checking with a /g regexp
-    // Manually set the index so as to pick up overlapping matches.
-    // Stop when we get a match that ends at the string end, since no
-    // coercible string can be more right-ward without the same terminus.
-    let next
-    while ((next = re[t.COERCERTL].exec(version)) &&
-        (!match || match.index + match[0].length !== version.length)
-    ) {
-      if (!match ||
-            next.index + next[0].length !== match.index + match[0].length) {
-        match = next
-      }
-      re[t.COERCERTL].lastIndex = next.index + next[1].length + next[2].length
-    }
-    // leave it in a clean state
-    re[t.COERCERTL].lastIndex = -1
-  }
-
-  if (match === null)
-    return null
-
-  return parse(`${match[2]}.${match[3] || '0'}.${match[4] || '0'}`, options)
-}
-module.exports = coerce
-
-
-/***/ }),
-
-/***/ 2156:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const SemVer = __nccwpck_require__(8088)
-const compareBuild = (a, b, loose) => {
-  const versionA = new SemVer(a, loose)
-  const versionB = new SemVer(b, loose)
-  return versionA.compare(versionB) || versionA.compareBuild(versionB)
-}
-module.exports = compareBuild
-
-
-/***/ }),
-
-/***/ 2804:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const compare = __nccwpck_require__(4309)
-const compareLoose = (a, b) => compare(a, b, true)
-module.exports = compareLoose
-
-
-/***/ }),
-
-/***/ 4309:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const SemVer = __nccwpck_require__(8088)
-const compare = (a, b, loose) =>
-  new SemVer(a, loose).compare(new SemVer(b, loose))
-
-module.exports = compare
-
-
-/***/ }),
-
-/***/ 4297:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const parse = __nccwpck_require__(5925)
-const eq = __nccwpck_require__(1898)
-
-const diff = (version1, version2) => {
-  if (eq(version1, version2)) {
-    return null
-  } else {
-    const v1 = parse(version1)
-    const v2 = parse(version2)
-    const hasPre = v1.prerelease.length || v2.prerelease.length
-    const prefix = hasPre ? 'pre' : ''
-    const defaultResult = hasPre ? 'prerelease' : ''
-    for (const key in v1) {
-      if (key === 'major' || key === 'minor' || key === 'patch') {
-        if (v1[key] !== v2[key]) {
-          return prefix + key
-        }
-      }
-    }
-    return defaultResult // may be undefined
-  }
-}
-module.exports = diff
-
-
-/***/ }),
-
-/***/ 1898:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const compare = __nccwpck_require__(4309)
-const eq = (a, b, loose) => compare(a, b, loose) === 0
-module.exports = eq
-
-
-/***/ }),
-
-/***/ 4123:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const compare = __nccwpck_require__(4309)
-const gt = (a, b, loose) => compare(a, b, loose) > 0
-module.exports = gt
-
-
-/***/ }),
-
-/***/ 5522:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const compare = __nccwpck_require__(4309)
-const gte = (a, b, loose) => compare(a, b, loose) >= 0
-module.exports = gte
-
-
-/***/ }),
-
-/***/ 929:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const SemVer = __nccwpck_require__(8088)
-
-const inc = (version, release, options, identifier) => {
-  if (typeof (options) === 'string') {
-    identifier = options
-    options = undefined
-  }
-
-  try {
-    return new SemVer(version, options).inc(release, identifier).version
-  } catch (er) {
-    return null
-  }
-}
-module.exports = inc
-
-
-/***/ }),
-
-/***/ 194:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const compare = __nccwpck_require__(4309)
-const lt = (a, b, loose) => compare(a, b, loose) < 0
-module.exports = lt
-
-
-/***/ }),
-
-/***/ 7520:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const compare = __nccwpck_require__(4309)
-const lte = (a, b, loose) => compare(a, b, loose) <= 0
-module.exports = lte
-
-
-/***/ }),
-
-/***/ 6688:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const SemVer = __nccwpck_require__(8088)
-const major = (a, loose) => new SemVer(a, loose).major
-module.exports = major
-
-
-/***/ }),
-
-/***/ 8447:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const SemVer = __nccwpck_require__(8088)
-const minor = (a, loose) => new SemVer(a, loose).minor
-module.exports = minor
-
-
-/***/ }),
-
-/***/ 6017:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const compare = __nccwpck_require__(4309)
-const neq = (a, b, loose) => compare(a, b, loose) !== 0
-module.exports = neq
-
-
-/***/ }),
-
-/***/ 5925:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const {MAX_LENGTH} = __nccwpck_require__(2293)
-const { re, t } = __nccwpck_require__(9523)
-const SemVer = __nccwpck_require__(8088)
-
-const parseOptions = __nccwpck_require__(785)
-const parse = (version, options) => {
-  options = parseOptions(options)
-
-  if (version instanceof SemVer) {
-    return version
-  }
-
-  if (typeof version !== 'string') {
-    return null
-  }
-
-  if (version.length > MAX_LENGTH) {
-    return null
-  }
-
-  const r = options.loose ? re[t.LOOSE] : re[t.FULL]
-  if (!r.test(version)) {
-    return null
-  }
-
-  try {
-    return new SemVer(version, options)
-  } catch (er) {
-    return null
-  }
-}
-
-module.exports = parse
-
-
-/***/ }),
-
-/***/ 2866:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const SemVer = __nccwpck_require__(8088)
-const patch = (a, loose) => new SemVer(a, loose).patch
-module.exports = patch
-
-
-/***/ }),
-
-/***/ 6014:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const parse = __nccwpck_require__(5925)
-const prerelease = (version, options) => {
-  const parsed = parse(version, options)
-  return (parsed && parsed.prerelease.length) ? parsed.prerelease : null
-}
-module.exports = prerelease
-
-
-/***/ }),
-
-/***/ 6417:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const compare = __nccwpck_require__(4309)
-const rcompare = (a, b, loose) => compare(b, a, loose)
-module.exports = rcompare
-
-
-/***/ }),
-
-/***/ 8701:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const compareBuild = __nccwpck_require__(2156)
-const rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose))
-module.exports = rsort
-
-
-/***/ }),
-
-/***/ 6055:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const Range = __nccwpck_require__(9828)
-const satisfies = (version, range, options) => {
-  try {
-    range = new Range(range, options)
-  } catch (er) {
-    return false
-  }
-  return range.test(version)
-}
-module.exports = satisfies
-
-
-/***/ }),
-
-/***/ 1426:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const compareBuild = __nccwpck_require__(2156)
-const sort = (list, loose) => list.sort((a, b) => compareBuild(a, b, loose))
-module.exports = sort
-
-
-/***/ }),
-
-/***/ 9601:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const parse = __nccwpck_require__(5925)
-const valid = (version, options) => {
-  const v = parse(version, options)
-  return v ? v.version : null
-}
-module.exports = valid
-
-
-/***/ }),
-
-/***/ 1383:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-// just pre-load all the stuff that index.js lazily exports
-const internalRe = __nccwpck_require__(9523)
-module.exports = {
-  re: internalRe.re,
-  src: internalRe.src,
-  tokens: internalRe.t,
-  SEMVER_SPEC_VERSION: __nccwpck_require__(2293).SEMVER_SPEC_VERSION,
-  SemVer: __nccwpck_require__(8088),
-  compareIdentifiers: __nccwpck_require__(2463).compareIdentifiers,
-  rcompareIdentifiers: __nccwpck_require__(2463).rcompareIdentifiers,
-  parse: __nccwpck_require__(5925),
-  valid: __nccwpck_require__(9601),
-  clean: __nccwpck_require__(8848),
-  inc: __nccwpck_require__(929),
-  diff: __nccwpck_require__(4297),
-  major: __nccwpck_require__(6688),
-  minor: __nccwpck_require__(8447),
-  patch: __nccwpck_require__(2866),
-  prerelease: __nccwpck_require__(6014),
-  compare: __nccwpck_require__(4309),
-  rcompare: __nccwpck_require__(6417),
-  compareLoose: __nccwpck_require__(2804),
-  compareBuild: __nccwpck_require__(2156),
-  sort: __nccwpck_require__(1426),
-  rsort: __nccwpck_require__(8701),
-  gt: __nccwpck_require__(4123),
-  lt: __nccwpck_require__(194),
-  eq: __nccwpck_require__(1898),
-  neq: __nccwpck_require__(6017),
-  gte: __nccwpck_require__(5522),
-  lte: __nccwpck_require__(7520),
-  cmp: __nccwpck_require__(5098),
-  coerce: __nccwpck_require__(3466),
-  Comparator: __nccwpck_require__(1532),
-  Range: __nccwpck_require__(9828),
-  satisfies: __nccwpck_require__(6055),
-  toComparators: __nccwpck_require__(2706),
-  maxSatisfying: __nccwpck_require__(579),
-  minSatisfying: __nccwpck_require__(832),
-  minVersion: __nccwpck_require__(4179),
-  validRange: __nccwpck_require__(2098),
-  outside: __nccwpck_require__(420),
-  gtr: __nccwpck_require__(9380),
-  ltr: __nccwpck_require__(3323),
-  intersects: __nccwpck_require__(7008),
-  simplifyRange: __nccwpck_require__(5297),
-  subset: __nccwpck_require__(7863),
-}
-
-
-/***/ }),
-
-/***/ 2293:
-/***/ ((module) => {
-
-// Note: this is the semver.org version of the spec that it implements
-// Not necessarily the package version of this code.
-const SEMVER_SPEC_VERSION = '2.0.0'
-
-const MAX_LENGTH = 256
-const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER ||
-  /* istanbul ignore next */ 9007199254740991
-
-// Max safe segment length for coercion.
-const MAX_SAFE_COMPONENT_LENGTH = 16
-
-module.exports = {
-  SEMVER_SPEC_VERSION,
-  MAX_LENGTH,
-  MAX_SAFE_INTEGER,
-  MAX_SAFE_COMPONENT_LENGTH
-}
-
-
-/***/ }),
-
-/***/ 427:
-/***/ ((module) => {
-
-const debug = (
-  typeof process === 'object' &&
-  process.env &&
-  process.env.NODE_DEBUG &&
-  /\bsemver\b/i.test(process.env.NODE_DEBUG)
-) ? (...args) => console.error('SEMVER', ...args)
-  : () => {}
-
-module.exports = debug
-
-
-/***/ }),
-
-/***/ 2463:
-/***/ ((module) => {
-
-const numeric = /^[0-9]+$/
-const compareIdentifiers = (a, b) => {
-  const anum = numeric.test(a)
-  const bnum = numeric.test(b)
-
-  if (anum && bnum) {
-    a = +a
-    b = +b
-  }
-
-  return a === b ? 0
-    : (anum && !bnum) ? -1
-    : (bnum && !anum) ? 1
-    : a < b ? -1
-    : 1
-}
-
-const rcompareIdentifiers = (a, b) => compareIdentifiers(b, a)
-
-module.exports = {
-  compareIdentifiers,
-  rcompareIdentifiers
-}
-
-
-/***/ }),
-
-/***/ 785:
-/***/ ((module) => {
-
-// parse out just the options we care about so we always get a consistent
-// obj with keys in a consistent order.
-const opts = ['includePrerelease', 'loose', 'rtl']
-const parseOptions = options =>
-  !options ? {}
-  : typeof options !== 'object' ? { loose: true }
-  : opts.filter(k => options[k]).reduce((options, k) => {
-    options[k] = true
-    return options
-  }, {})
-module.exports = parseOptions
-
-
-/***/ }),
-
-/***/ 9523:
-/***/ ((module, exports, __nccwpck_require__) => {
-
-const { MAX_SAFE_COMPONENT_LENGTH } = __nccwpck_require__(2293)
-const debug = __nccwpck_require__(427)
-exports = module.exports = {}
-
-// The actual regexps go on exports.re
-const re = exports.re = []
-const src = exports.src = []
-const t = exports.t = {}
-let R = 0
-
-const createToken = (name, value, isGlobal) => {
-  const index = R++
-  debug(index, value)
-  t[name] = index
-  src[index] = value
-  re[index] = new RegExp(value, isGlobal ? 'g' : undefined)
-}
-
-// The following Regular Expressions can be used for tokenizing,
-// validating, and parsing SemVer version strings.
-
-// ## Numeric Identifier
-// A single `0`, or a non-zero digit followed by zero or more digits.
-
-createToken('NUMERICIDENTIFIER', '0|[1-9]\\d*')
-createToken('NUMERICIDENTIFIERLOOSE', '[0-9]+')
-
-// ## Non-numeric Identifier
-// Zero or more digits, followed by a letter or hyphen, and then zero or
-// more letters, digits, or hyphens.
-
-createToken('NONNUMERICIDENTIFIER', '\\d*[a-zA-Z-][a-zA-Z0-9-]*')
-
-// ## Main Version
-// Three dot-separated numeric identifiers.
-
-createToken('MAINVERSION', `(${src[t.NUMERICIDENTIFIER]})\\.` +
-                   `(${src[t.NUMERICIDENTIFIER]})\\.` +
-                   `(${src[t.NUMERICIDENTIFIER]})`)
-
-createToken('MAINVERSIONLOOSE', `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
-                        `(${src[t.NUMERICIDENTIFIERLOOSE]})\\.` +
-                        `(${src[t.NUMERICIDENTIFIERLOOSE]})`)
-
-// ## Pre-release Version Identifier
-// A numeric identifier, or a non-numeric identifier.
-
-createToken('PRERELEASEIDENTIFIER', `(?:${src[t.NUMERICIDENTIFIER]
-}|${src[t.NONNUMERICIDENTIFIER]})`)
-
-createToken('PRERELEASEIDENTIFIERLOOSE', `(?:${src[t.NUMERICIDENTIFIERLOOSE]
-}|${src[t.NONNUMERICIDENTIFIER]})`)
-
-// ## Pre-release Version
-// Hyphen, followed by one or more dot-separated pre-release version
-// identifiers.
-
-createToken('PRERELEASE', `(?:-(${src[t.PRERELEASEIDENTIFIER]
-}(?:\\.${src[t.PRERELEASEIDENTIFIER]})*))`)
-
-createToken('PRERELEASELOOSE', `(?:-?(${src[t.PRERELEASEIDENTIFIERLOOSE]
-}(?:\\.${src[t.PRERELEASEIDENTIFIERLOOSE]})*))`)
-
-// ## Build Metadata Identifier
-// Any combination of digits, letters, or hyphens.
-
-createToken('BUILDIDENTIFIER', '[0-9A-Za-z-]+')
-
-// ## Build Metadata
-// Plus sign, followed by one or more period-separated build metadata
-// identifiers.
-
-createToken('BUILD', `(?:\\+(${src[t.BUILDIDENTIFIER]
-}(?:\\.${src[t.BUILDIDENTIFIER]})*))`)
-
-// ## Full Version String
-// A main version, followed optionally by a pre-release version and
-// build metadata.
-
-// Note that the only major, minor, patch, and pre-release sections of
-// the version string are capturing groups.  The build metadata is not a
-// capturing group, because it should not ever be used in version
-// comparison.
-
-createToken('FULLPLAIN', `v?${src[t.MAINVERSION]
-}${src[t.PRERELEASE]}?${
-  src[t.BUILD]}?`)
-
-createToken('FULL', `^${src[t.FULLPLAIN]}$`)
-
-// like full, but allows v1.2.3 and =1.2.3, which people do sometimes.
-// also, 1.0.0alpha1 (prerelease without the hyphen) which is pretty
-// common in the npm registry.
-createToken('LOOSEPLAIN', `[v=\\s]*${src[t.MAINVERSIONLOOSE]
-}${src[t.PRERELEASELOOSE]}?${
-  src[t.BUILD]}?`)
-
-createToken('LOOSE', `^${src[t.LOOSEPLAIN]}$`)
-
-createToken('GTLT', '((?:<|>)?=?)')
-
-// Something like "2.*" or "1.2.x".
-// Note that "x.x" is a valid xRange identifer, meaning "any version"
-// Only the first item is strictly required.
-createToken('XRANGEIDENTIFIERLOOSE', `${src[t.NUMERICIDENTIFIERLOOSE]}|x|X|\\*`)
-createToken('XRANGEIDENTIFIER', `${src[t.NUMERICIDENTIFIER]}|x|X|\\*`)
-
-createToken('XRANGEPLAIN', `[v=\\s]*(${src[t.XRANGEIDENTIFIER]})` +
-                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
-                   `(?:\\.(${src[t.XRANGEIDENTIFIER]})` +
-                   `(?:${src[t.PRERELEASE]})?${
-                     src[t.BUILD]}?` +
-                   `)?)?`)
-
-createToken('XRANGEPLAINLOOSE', `[v=\\s]*(${src[t.XRANGEIDENTIFIERLOOSE]})` +
-                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
-                        `(?:\\.(${src[t.XRANGEIDENTIFIERLOOSE]})` +
-                        `(?:${src[t.PRERELEASELOOSE]})?${
-                          src[t.BUILD]}?` +
-                        `)?)?`)
-
-createToken('XRANGE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAIN]}$`)
-createToken('XRANGELOOSE', `^${src[t.GTLT]}\\s*${src[t.XRANGEPLAINLOOSE]}$`)
-
-// Coercion.
-// Extract anything that could conceivably be a part of a valid semver
-createToken('COERCE', `${'(^|[^\\d])' +
-              '(\\d{1,'}${MAX_SAFE_COMPONENT_LENGTH}})` +
-              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
-              `(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH}}))?` +
-              `(?:$|[^\\d])`)
-createToken('COERCERTL', src[t.COERCE], true)
-
-// Tilde ranges.
-// Meaning is "reasonably at or greater than"
-createToken('LONETILDE', '(?:~>?)')
-
-createToken('TILDETRIM', `(\\s*)${src[t.LONETILDE]}\\s+`, true)
-exports.tildeTrimReplace = '$1~'
-
-createToken('TILDE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAIN]}$`)
-createToken('TILDELOOSE', `^${src[t.LONETILDE]}${src[t.XRANGEPLAINLOOSE]}$`)
-
-// Caret ranges.
-// Meaning is "at least and backwards compatible with"
-createToken('LONECARET', '(?:\\^)')
-
-createToken('CARETTRIM', `(\\s*)${src[t.LONECARET]}\\s+`, true)
-exports.caretTrimReplace = '$1^'
-
-createToken('CARET', `^${src[t.LONECARET]}${src[t.XRANGEPLAIN]}$`)
-createToken('CARETLOOSE', `^${src[t.LONECARET]}${src[t.XRANGEPLAINLOOSE]}$`)
-
-// A simple gt/lt/eq thing, or just "" to indicate "any version"
-createToken('COMPARATORLOOSE', `^${src[t.GTLT]}\\s*(${src[t.LOOSEPLAIN]})$|^$`)
-createToken('COMPARATOR', `^${src[t.GTLT]}\\s*(${src[t.FULLPLAIN]})$|^$`)
-
-// An expression to strip any whitespace between the gtlt and the thing
-// it modifies, so that `> 1.2.3` ==> `>1.2.3`
-createToken('COMPARATORTRIM', `(\\s*)${src[t.GTLT]
-}\\s*(${src[t.LOOSEPLAIN]}|${src[t.XRANGEPLAIN]})`, true)
-exports.comparatorTrimReplace = '$1$2$3'
-
-// Something like `1.2.3 - 1.2.4`
-// Note that these all use the loose form, because they'll be
-// checked against either the strict or loose comparator form
-// later.
-createToken('HYPHENRANGE', `^\\s*(${src[t.XRANGEPLAIN]})` +
-                   `\\s+-\\s+` +
-                   `(${src[t.XRANGEPLAIN]})` +
-                   `\\s*$`)
-
-createToken('HYPHENRANGELOOSE', `^\\s*(${src[t.XRANGEPLAINLOOSE]})` +
-                        `\\s+-\\s+` +
-                        `(${src[t.XRANGEPLAINLOOSE]})` +
-                        `\\s*$`)
-
-// Star ranges basically just allow anything at all.
-createToken('STAR', '(<|>)?=?\\s*\\*')
-// >=0.0.0 is like a star
-createToken('GTE0', '^\\s*>=\\s*0\.0\.0\\s*$')
-createToken('GTE0PRE', '^\\s*>=\\s*0\.0\.0-0\\s*$')
-
-
-/***/ }),
-
-/***/ 9380:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-// Determine if version is greater than all the versions possible in the range.
-const outside = __nccwpck_require__(420)
-const gtr = (version, range, options) => outside(version, range, '>', options)
-module.exports = gtr
-
-
-/***/ }),
-
-/***/ 7008:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const Range = __nccwpck_require__(9828)
-const intersects = (r1, r2, options) => {
-  r1 = new Range(r1, options)
-  r2 = new Range(r2, options)
-  return r1.intersects(r2)
-}
-module.exports = intersects
-
-
-/***/ }),
-
-/***/ 3323:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const outside = __nccwpck_require__(420)
-// Determine if version is less than all the versions possible in the range
-const ltr = (version, range, options) => outside(version, range, '<', options)
-module.exports = ltr
-
-
-/***/ }),
-
-/***/ 579:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const SemVer = __nccwpck_require__(8088)
-const Range = __nccwpck_require__(9828)
-
-const maxSatisfying = (versions, range, options) => {
-  let max = null
-  let maxSV = null
-  let rangeObj = null
-  try {
-    rangeObj = new Range(range, options)
-  } catch (er) {
-    return null
-  }
-  versions.forEach((v) => {
-    if (rangeObj.test(v)) {
-      // satisfies(v, range, options)
-      if (!max || maxSV.compare(v) === -1) {
-        // compare(max, v, true)
-        max = v
-        maxSV = new SemVer(max, options)
-      }
-    }
-  })
-  return max
-}
-module.exports = maxSatisfying
-
-
-/***/ }),
-
-/***/ 832:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const SemVer = __nccwpck_require__(8088)
-const Range = __nccwpck_require__(9828)
-const minSatisfying = (versions, range, options) => {
-  let min = null
-  let minSV = null
-  let rangeObj = null
-  try {
-    rangeObj = new Range(range, options)
-  } catch (er) {
-    return null
-  }
-  versions.forEach((v) => {
-    if (rangeObj.test(v)) {
-      // satisfies(v, range, options)
-      if (!min || minSV.compare(v) === 1) {
-        // compare(min, v, true)
-        min = v
-        minSV = new SemVer(min, options)
-      }
-    }
-  })
-  return min
-}
-module.exports = minSatisfying
-
-
-/***/ }),
-
-/***/ 4179:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const SemVer = __nccwpck_require__(8088)
-const Range = __nccwpck_require__(9828)
-const gt = __nccwpck_require__(4123)
-
-const minVersion = (range, loose) => {
-  range = new Range(range, loose)
-
-  let minver = new SemVer('0.0.0')
-  if (range.test(minver)) {
-    return minver
-  }
-
-  minver = new SemVer('0.0.0-0')
-  if (range.test(minver)) {
-    return minver
-  }
-
-  minver = null
-  for (let i = 0; i < range.set.length; ++i) {
-    const comparators = range.set[i]
-
-    let setMin = null
-    comparators.forEach((comparator) => {
-      // Clone to avoid manipulating the comparator's semver object.
-      const compver = new SemVer(comparator.semver.version)
-      switch (comparator.operator) {
-        case '>':
-          if (compver.prerelease.length === 0) {
-            compver.patch++
-          } else {
-            compver.prerelease.push(0)
-          }
-          compver.raw = compver.format()
-          /* fallthrough */
-        case '':
-        case '>=':
-          if (!setMin || gt(compver, setMin)) {
-            setMin = compver
-          }
-          break
-        case '<':
-        case '<=':
-          /* Ignore maximum versions */
-          break
-        /* istanbul ignore next */
-        default:
-          throw new Error(`Unexpected operation: ${comparator.operator}`)
-      }
-    })
-    if (setMin && (!minver || gt(minver, setMin)))
-      minver = setMin
-  }
-
-  if (minver && range.test(minver)) {
-    return minver
-  }
-
-  return null
-}
-module.exports = minVersion
-
-
-/***/ }),
-
-/***/ 420:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const SemVer = __nccwpck_require__(8088)
-const Comparator = __nccwpck_require__(1532)
-const {ANY} = Comparator
-const Range = __nccwpck_require__(9828)
-const satisfies = __nccwpck_require__(6055)
-const gt = __nccwpck_require__(4123)
-const lt = __nccwpck_require__(194)
-const lte = __nccwpck_require__(7520)
-const gte = __nccwpck_require__(5522)
-
-const outside = (version, range, hilo, options) => {
-  version = new SemVer(version, options)
-  range = new Range(range, options)
-
-  let gtfn, ltefn, ltfn, comp, ecomp
-  switch (hilo) {
-    case '>':
-      gtfn = gt
-      ltefn = lte
-      ltfn = lt
-      comp = '>'
-      ecomp = '>='
-      break
-    case '<':
-      gtfn = lt
-      ltefn = gte
-      ltfn = gt
-      comp = '<'
-      ecomp = '<='
-      break
-    default:
-      throw new TypeError('Must provide a hilo val of "<" or ">"')
-  }
-
-  // If it satisfies the range it is not outside
-  if (satisfies(version, range, options)) {
-    return false
-  }
-
-  // From now on, variable terms are as if we're in "gtr" mode.
-  // but note that everything is flipped for the "ltr" function.
-
-  for (let i = 0; i < range.set.length; ++i) {
-    const comparators = range.set[i]
-
-    let high = null
-    let low = null
-
-    comparators.forEach((comparator) => {
-      if (comparator.semver === ANY) {
-        comparator = new Comparator('>=0.0.0')
-      }
-      high = high || comparator
-      low = low || comparator
-      if (gtfn(comparator.semver, high.semver, options)) {
-        high = comparator
-      } else if (ltfn(comparator.semver, low.semver, options)) {
-        low = comparator
-      }
-    })
-
-    // If the edge version comparator has a operator then our version
-    // isn't outside it
-    if (high.operator === comp || high.operator === ecomp) {
-      return false
-    }
-
-    // If the lowest version comparator has an operator and our version
-    // is less than it then it isn't higher than the range
-    if ((!low.operator || low.operator === comp) &&
-        ltefn(version, low.semver)) {
-      return false
-    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
-      return false
-    }
-  }
-  return true
-}
-
-module.exports = outside
-
-
-/***/ }),
-
-/***/ 5297:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-// given a set of versions and a range, create a "simplified" range
-// that includes the same versions that the original range does
-// If the original range is shorter than the simplified one, return that.
-const satisfies = __nccwpck_require__(6055)
-const compare = __nccwpck_require__(4309)
-module.exports = (versions, range, options) => {
-  const set = []
-  let min = null
-  let prev = null
-  const v = versions.sort((a, b) => compare(a, b, options))
-  for (const version of v) {
-    const included = satisfies(version, range, options)
-    if (included) {
-      prev = version
-      if (!min)
-        min = version
-    } else {
-      if (prev) {
-        set.push([min, prev])
-      }
-      prev = null
-      min = null
-    }
-  }
-  if (min)
-    set.push([min, null])
-
-  const ranges = []
-  for (const [min, max] of set) {
-    if (min === max)
-      ranges.push(min)
-    else if (!max && min === v[0])
-      ranges.push('*')
-    else if (!max)
-      ranges.push(`>=${min}`)
-    else if (min === v[0])
-      ranges.push(`<=${max}`)
-    else
-      ranges.push(`${min} - ${max}`)
-  }
-  const simplified = ranges.join(' || ')
-  const original = typeof range.raw === 'string' ? range.raw : String(range)
-  return simplified.length < original.length ? simplified : range
-}
-
-
-/***/ }),
-
-/***/ 7863:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const Range = __nccwpck_require__(9828)
-const { ANY } = __nccwpck_require__(1532)
-const satisfies = __nccwpck_require__(6055)
-const compare = __nccwpck_require__(4309)
-
-// Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
-// - Every simple range `r1, r2, ...` is a subset of some `R1, R2, ...`
-//
-// Simple range `c1 c2 ...` is a subset of simple range `C1 C2 ...` iff:
-// - If c is only the ANY comparator
-//   - If C is only the ANY comparator, return true
-//   - Else return false
-// - Let EQ be the set of = comparators in c
-// - If EQ is more than one, return true (null set)
-// - Let GT be the highest > or >= comparator in c
-// - Let LT be the lowest < or <= comparator in c
-// - If GT and LT, and GT.semver > LT.semver, return true (null set)
-// - If EQ
-//   - If GT, and EQ does not satisfy GT, return true (null set)
-//   - If LT, and EQ does not satisfy LT, return true (null set)
-//   - If EQ satisfies every C, return true
-//   - Else return false
-// - If GT
-//   - If GT.semver is lower than any > or >= comp in C, return false
-//   - If GT is >=, and GT.semver does not satisfy every C, return false
-// - If LT
-//   - If LT.semver is greater than any < or <= comp in C, return false
-//   - If LT is <=, and LT.semver does not satisfy every C, return false
-// - If any C is a = range, and GT or LT are set, return false
-// - Else return true
-
-const subset = (sub, dom, options) => {
-  if (sub === dom)
-    return true
-
-  sub = new Range(sub, options)
-  dom = new Range(dom, options)
-  let sawNonNull = false
-
-  OUTER: for (const simpleSub of sub.set) {
-    for (const simpleDom of dom.set) {
-      const isSub = simpleSubset(simpleSub, simpleDom, options)
-      sawNonNull = sawNonNull || isSub !== null
-      if (isSub)
-        continue OUTER
-    }
-    // the null set is a subset of everything, but null simple ranges in
-    // a complex range should be ignored.  so if we saw a non-null range,
-    // then we know this isn't a subset, but if EVERY simple range was null,
-    // then it is a subset.
-    if (sawNonNull)
-      return false
-  }
-  return true
-}
-
-const simpleSubset = (sub, dom, options) => {
-  if (sub === dom)
-    return true
-
-  if (sub.length === 1 && sub[0].semver === ANY)
-    return dom.length === 1 && dom[0].semver === ANY
-
-  const eqSet = new Set()
-  let gt, lt
-  for (const c of sub) {
-    if (c.operator === '>' || c.operator === '>=')
-      gt = higherGT(gt, c, options)
-    else if (c.operator === '<' || c.operator === '<=')
-      lt = lowerLT(lt, c, options)
-    else
-      eqSet.add(c.semver)
-  }
-
-  if (eqSet.size > 1)
-    return null
-
-  let gtltComp
-  if (gt && lt) {
-    gtltComp = compare(gt.semver, lt.semver, options)
-    if (gtltComp > 0)
-      return null
-    else if (gtltComp === 0 && (gt.operator !== '>=' || lt.operator !== '<='))
-      return null
-  }
-
-  // will iterate one or zero times
-  for (const eq of eqSet) {
-    if (gt && !satisfies(eq, String(gt), options))
-      return null
-
-    if (lt && !satisfies(eq, String(lt), options))
-      return null
-
-    for (const c of dom) {
-      if (!satisfies(eq, String(c), options))
-        return false
-    }
-
-    return true
-  }
-
-  let higher, lower
-  let hasDomLT, hasDomGT
-  for (const c of dom) {
-    hasDomGT = hasDomGT || c.operator === '>' || c.operator === '>='
-    hasDomLT = hasDomLT || c.operator === '<' || c.operator === '<='
-    if (gt) {
-      if (c.operator === '>' || c.operator === '>=') {
-        higher = higherGT(gt, c, options)
-        if (higher === c && higher !== gt)
-          return false
-      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options))
-        return false
-    }
-    if (lt) {
-      if (c.operator === '<' || c.operator === '<=') {
-        lower = lowerLT(lt, c, options)
-        if (lower === c && lower !== lt)
-          return false
-      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options))
-        return false
-    }
-    if (!c.operator && (lt || gt) && gtltComp !== 0)
-      return false
-  }
-
-  // if there was a < or >, and nothing in the dom, then must be false
-  // UNLESS it was limited by another range in the other direction.
-  // Eg, >1.0.0 <1.0.1 is still a subset of <2.0.0
-  if (gt && hasDomLT && !lt && gtltComp !== 0)
-    return false
-
-  if (lt && hasDomGT && !gt && gtltComp !== 0)
-    return false
-
-  return true
-}
-
-// >=1.2.3 is lower than >1.2.3
-const higherGT = (a, b, options) => {
-  if (!a)
-    return b
-  const comp = compare(a.semver, b.semver, options)
-  return comp > 0 ? a
-    : comp < 0 ? b
-    : b.operator === '>' && a.operator === '>=' ? b
-    : a
-}
-
-// <=1.2.3 is higher than <1.2.3
-const lowerLT = (a, b, options) => {
-  if (!a)
-    return b
-  const comp = compare(a.semver, b.semver, options)
-  return comp < 0 ? a
-    : comp > 0 ? b
-    : b.operator === '<' && a.operator === '<=' ? b
-    : a
-}
-
-module.exports = subset
-
-
-/***/ }),
-
-/***/ 2706:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const Range = __nccwpck_require__(9828)
-
-// Mostly just for testing and legacy API reasons
-const toComparators = (range, options) =>
-  new Range(range, options).set
-    .map(comp => comp.map(c => c.value).join(' ').trim().split(' '))
-
-module.exports = toComparators
-
-
-/***/ }),
-
-/***/ 2098:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-const Range = __nccwpck_require__(9828)
-const validRange = (range, options) => {
-  try {
-    // Return '*' instead of '' so that truthiness works.
-    // This will throw if it's invalid anyway
-    return new Range(range, options).range || '*'
-  } catch (er) {
-    return null
-  }
-}
-module.exports = validRange
-
-
-/***/ }),
-
-/***/ 6193:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const is = __nccwpck_require__(768);
-
-/**
- * Boolean operations for bandbool.
- * @private
- */
-const bool = {
-  and: 'and',
-  or: 'or',
-  eor: 'eor'
-};
-
-/**
- * Remove alpha channel, if any. This is a no-op if the image does not have an alpha channel.
- *
- * @example
- * sharp('rgba.png')
- *   .removeAlpha()
- *   .toFile('rgb.png', function(err, info) {
- *     // rgb.png is a 3 channel image without an alpha channel
- *   });
- *
- * @returns {Sharp}
- */
-function removeAlpha () {
-  this.options.removeAlpha = true;
-  return this;
-}
-
-/**
- * Ensure alpha channel, if missing. The added alpha channel will be fully opaque. This is a no-op if the image already has an alpha channel.
- *
- * @since 0.21.2
- *
- * @example
- * sharp('rgb.jpg')
- *   .ensureAlpha()
- *   .toFile('rgba.png', function(err, info) {
- *     // rgba.png is a 4 channel image with a fully opaque alpha channel
- *   });
- *
- * @returns {Sharp}
- */
-function ensureAlpha () {
-  this.options.ensureAlpha = true;
-  return this;
-}
-
-/**
- * Extract a single channel from a multi-channel image.
- *
- * @example
- * sharp(input)
- *   .extractChannel('green')
- *   .toColourspace('b-w')
- *   .toFile('green.jpg', function(err, info) {
- *     // info.channels === 1
- *     // green.jpg is a greyscale image containing the green channel of the input
- *    });
- *
- * @param {number|string} channel - zero-indexed channel/band number to extract, or `red`, `green`, `blue` or `alpha`.
- * @returns {Sharp}
- * @throws {Error} Invalid channel
- */
-function extractChannel (channel) {
-  const channelMap = { red: 0, green: 1, blue: 2, alpha: 3 };
-  if (Object.keys(channelMap).includes(channel)) {
-    channel = channelMap[channel];
-  }
-  if (is.integer(channel) && is.inRange(channel, 0, 4)) {
-    this.options.extractChannel = channel;
-  } else {
-    throw is.invalidParameterError('channel', 'integer or one of: red, green, blue, alpha', channel);
-  }
-  return this;
-}
-
-/**
- * Join one or more channels to the image.
- * The meaning of the added channels depends on the output colourspace, set with `toColourspace()`.
- * By default the output image will be web-friendly sRGB, with additional channels interpreted as alpha channels.
- * Channel ordering follows vips convention:
- * - sRGB: 0: Red, 1: Green, 2: Blue, 3: Alpha.
- * - CMYK: 0: Magenta, 1: Cyan, 2: Yellow, 3: Black, 4: Alpha.
- *
- * Buffers may be any of the image formats supported by sharp.
- * For raw pixel input, the `options` object should contain a `raw` attribute, which follows the format of the attribute of the same name in the `sharp()` constructor.
- *
- * @param {Array<string|Buffer>|string|Buffer} images - one or more images (file paths, Buffers).
- * @param {Object} options - image options, see `sharp()` constructor.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function joinChannel (images, options) {
-  if (Array.isArray(images)) {
-    images.forEach(function (image) {
-      this.options.joinChannelIn.push(this._createInputDescriptor(image, options));
-    }, this);
-  } else {
-    this.options.joinChannelIn.push(this._createInputDescriptor(images, options));
-  }
-  return this;
-}
-
-/**
- * Perform a bitwise boolean operation on all input image channels (bands) to produce a single channel output image.
- *
- * @example
- * sharp('3-channel-rgb-input.png')
- *   .bandbool(sharp.bool.and)
- *   .toFile('1-channel-output.png', function (err, info) {
- *     // The output will be a single channel image where each pixel `P = R & G & B`.
- *     // If `I(1,1) = [247, 170, 14] = [0b11110111, 0b10101010, 0b00001111]`
- *     // then `O(1,1) = 0b11110111 & 0b10101010 & 0b00001111 = 0b00000010 = 2`.
- *   });
- *
- * @param {string} boolOp - one of `and`, `or` or `eor` to perform that bitwise operation, like the C logic operators `&`, `|` and `^` respectively.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function bandbool (boolOp) {
-  if (is.string(boolOp) && is.inArray(boolOp, ['and', 'or', 'eor'])) {
-    this.options.bandBoolOp = boolOp;
-  } else {
-    throw is.invalidParameterError('boolOp', 'one of: and, or, eor', boolOp);
-  }
-  return this;
-}
-
-/**
- * Decorate the Sharp prototype with channel-related functions.
- * @private
- */
-module.exports = function (Sharp) {
-  Object.assign(Sharp.prototype, {
-    // Public instance functions
-    removeAlpha,
-    ensureAlpha,
-    extractChannel,
-    joinChannel,
-    bandbool
-  });
-  // Class attributes
-  Sharp.bool = bool;
-};
-
-
-/***/ }),
-
-/***/ 4144:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const color = __nccwpck_require__(138);
-const is = __nccwpck_require__(768);
-
-/**
- * Colourspaces.
- * @private
- */
-const colourspace = {
-  multiband: 'multiband',
-  'b-w': 'b-w',
-  bw: 'b-w',
-  cmyk: 'cmyk',
-  srgb: 'srgb'
-};
-
-/**
- * Tint the image using the provided chroma while preserving the image luminance.
- * An alpha channel may be present and will be unchanged by the operation.
- *
- * @param {string|Object} rgb - parsed by the [color](https://www.npmjs.org/package/color) module to extract chroma values.
- * @returns {Sharp}
- * @throws {Error} Invalid parameter
- */
-function tint (rgb) {
-  const colour = color(rgb);
-  this.options.tintA = colour.a();
-  this.options.tintB = colour.b();
-  return this;
-}
-
-/**
- * Convert to 8-bit greyscale; 256 shades of grey.
- * This is a linear operation. If the input image is in a non-linear colour space such as sRGB, use `gamma()` with `greyscale()` for the best results.
- * By default the output image will be web-friendly sRGB and contain three (identical) color channels.
- * This may be overridden by other sharp operations such as `toColourspace('b-w')`,
- * which will produce an output image containing one color channel.
- * An alpha channel may be present, and will be unchanged by the operation.
- * @param {Boolean} [greyscale=true]
- * @returns {Sharp}
- */
-function greyscale (greyscale) {
-  this.options.greyscale = is.bool(greyscale) ? greyscale : true;
-  return this;
-}
-
-/**
- * Alternative spelling of `greyscale`.
- * @param {Boolean} [grayscale=true]
- * @returns {Sharp}
- */
-function grayscale (grayscale) {
-  return this.greyscale(grayscale);
-}
-
-/**
- * Set the output colourspace.
- * By default output image will be web-friendly sRGB, with additional channels interpreted as alpha channels.
- *
- * @example
- * // Output 16 bits per pixel RGB
- * await sharp(input)
- *  .toColourspace('rgb16')
- *  .toFile('16-bpp.png')
- *
- * @param {string} [colourspace] - output colourspace e.g. `srgb`, `rgb`, `cmyk`, `lab`, `b-w` [...](https://github.com/libvips/libvips/blob/master/libvips/iofuncs/enumtypes.c#L568)
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function toColourspace (colourspace) {
-  if (!is.string(colourspace)) {
-    throw is.invalidParameterError('colourspace', 'string', colourspace);
-  }
-  this.options.colourspace = colourspace;
-  return this;
-}
-
-/**
- * Alternative spelling of `toColourspace`.
- * @param {string} [colorspace] - output colorspace.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function toColorspace (colorspace) {
-  return this.toColourspace(colorspace);
-}
-
-/**
- * Update a colour attribute of the this.options Object.
- * @private
- * @param {string} key
- * @param {string|Object} value
- * @throws {Error} Invalid value
- */
-function _setBackgroundColourOption (key, value) {
-  if (is.defined(value)) {
-    if (is.object(value) || is.string(value)) {
-      const colour = color(value);
-      this.options[key] = [
-        colour.red(),
-        colour.green(),
-        colour.blue(),
-        Math.round(colour.alpha() * 255)
-      ];
-    } else {
-      throw is.invalidParameterError('background', 'object or string', value);
-    }
-  }
-}
-
-/**
- * Decorate the Sharp prototype with colour-related functions.
- * @private
- */
-module.exports = function (Sharp) {
-  Object.assign(Sharp.prototype, {
-    // Public
-    tint,
-    greyscale,
-    grayscale,
-    toColourspace,
-    toColorspace,
-    // Private
-    _setBackgroundColourOption
-  });
-  // Class attributes
-  Sharp.colourspace = colourspace;
-  Sharp.colorspace = colourspace;
-};
-
-
-/***/ }),
-
-/***/ 7005:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const is = __nccwpck_require__(768);
-
-/**
- * Blend modes.
- * @member
- * @private
- */
-const blend = {
-  clear: 'clear',
-  source: 'source',
-  over: 'over',
-  in: 'in',
-  out: 'out',
-  atop: 'atop',
-  dest: 'dest',
-  'dest-over': 'dest-over',
-  'dest-in': 'dest-in',
-  'dest-out': 'dest-out',
-  'dest-atop': 'dest-atop',
-  xor: 'xor',
-  add: 'add',
-  saturate: 'saturate',
-  multiply: 'multiply',
-  screen: 'screen',
-  overlay: 'overlay',
-  darken: 'darken',
-  lighten: 'lighten',
-  'colour-dodge': 'colour-dodge',
-  'color-dodge': 'colour-dodge',
-  'colour-burn': 'colour-burn',
-  'color-burn': 'colour-burn',
-  'hard-light': 'hard-light',
-  'soft-light': 'soft-light',
-  difference: 'difference',
-  exclusion: 'exclusion'
-};
-
-/**
- * Composite image(s) over the processed (resized, extracted etc.) image.
- *
- * The images to composite must be the same size or smaller than the processed image.
- * If both `top` and `left` options are provided, they take precedence over `gravity`.
- *
- * The `blend` option can be one of `clear`, `source`, `over`, `in`, `out`, `atop`,
- * `dest`, `dest-over`, `dest-in`, `dest-out`, `dest-atop`,
- * `xor`, `add`, `saturate`, `multiply`, `screen`, `overlay`, `darken`, `lighten`,
- * `colour-dodge`, `color-dodge`, `colour-burn`,`color-burn`,
- * `hard-light`, `soft-light`, `difference`, `exclusion`.
- *
- * More information about blend modes can be found at
- * https://libvips.github.io/libvips/API/current/libvips-conversion.html#VipsBlendMode
- * and https://www.cairographics.org/operators/
- *
- * @since 0.22.0
- *
- * @example
- * sharp('input.png')
- *   .rotate(180)
- *   .resize(300)
- *   .flatten( { background: '#ff6600' } )
- *   .composite([{ input: 'overlay.png', gravity: 'southeast' }])
- *   .sharpen()
- *   .withMetadata()
- *   .webp( { quality: 90 } )
- *   .toBuffer()
- *   .then(function(outputBuffer) {
- *     // outputBuffer contains upside down, 300px wide, alpha channel flattened
- *     // onto orange background, composited with overlay.png with SE gravity,
- *     // sharpened, with metadata, 90% quality WebP image data. Phew!
- *   });
- *
- * @param {Object[]} images - Ordered list of images to composite
- * @param {Buffer|String} [images[].input] - Buffer containing image data, String containing the path to an image file, or Create object (see below)
- * @param {Object} [images[].input.create] - describes a blank overlay to be created.
- * @param {Number} [images[].input.create.width]
- * @param {Number} [images[].input.create.height]
- * @param {Number} [images[].input.create.channels] - 3-4
- * @param {String|Object} [images[].input.create.background] - parsed by the [color](https://www.npmjs.org/package/color) module to extract values for red, green, blue and alpha.
- * @param {String} [images[].blend='over'] - how to blend this image with the image below.
- * @param {String} [images[].gravity='centre'] - gravity at which to place the overlay.
- * @param {Number} [images[].top] - the pixel offset from the top edge.
- * @param {Number} [images[].left] - the pixel offset from the left edge.
- * @param {Boolean} [images[].tile=false] - set to true to repeat the overlay image across the entire image with the given `gravity`.
- * @param {Boolean} [images[].premultiplied=false] - set to true to avoid premultipling the image below. Equivalent to the `--premultiplied` vips option.
- * @param {Number} [images[].density=72] - number representing the DPI for vector overlay image.
- * @param {Object} [images[].raw] - describes overlay when using raw pixel data.
- * @param {Number} [images[].raw.width]
- * @param {Number} [images[].raw.height]
- * @param {Number} [images[].raw.channels]
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function composite (images) {
-  if (!Array.isArray(images)) {
-    throw is.invalidParameterError('images to composite', 'array', images);
-  }
-  this.options.composite = images.map(image => {
-    if (!is.object(image)) {
-      throw is.invalidParameterError('image to composite', 'object', image);
-    }
-    const inputOptions = this._inputOptionsFromObject(image);
-    const composite = {
-      input: this._createInputDescriptor(image.input, inputOptions, { allowStream: false }),
-      blend: 'over',
-      tile: false,
-      left: 0,
-      top: 0,
-      hasOffset: false,
-      gravity: 0,
-      premultiplied: false
-    };
-    if (is.defined(image.blend)) {
-      if (is.string(blend[image.blend])) {
-        composite.blend = blend[image.blend];
-      } else {
-        throw is.invalidParameterError('blend', 'valid blend name', image.blend);
-      }
-    }
-    if (is.defined(image.tile)) {
-      if (is.bool(image.tile)) {
-        composite.tile = image.tile;
-      } else {
-        throw is.invalidParameterError('tile', 'boolean', image.tile);
-      }
-    }
-    if (is.defined(image.left)) {
-      if (is.integer(image.left)) {
-        composite.left = image.left;
-      } else {
-        throw is.invalidParameterError('left', 'integer', image.left);
-      }
-    }
-    if (is.defined(image.top)) {
-      if (is.integer(image.top)) {
-        composite.top = image.top;
-      } else {
-        throw is.invalidParameterError('top', 'integer', image.top);
-      }
-    }
-    if (is.defined(image.top) !== is.defined(image.left)) {
-      throw new Error('Expected both left and top to be set');
-    } else {
-      composite.hasOffset = is.integer(image.top) && is.integer(image.left);
-    }
-    if (is.defined(image.gravity)) {
-      if (is.integer(image.gravity) && is.inRange(image.gravity, 0, 8)) {
-        composite.gravity = image.gravity;
-      } else if (is.string(image.gravity) && is.integer(this.constructor.gravity[image.gravity])) {
-        composite.gravity = this.constructor.gravity[image.gravity];
-      } else {
-        throw is.invalidParameterError('gravity', 'valid gravity', image.gravity);
-      }
-    }
-    if (is.defined(image.premultiplied)) {
-      if (is.bool(image.premultiplied)) {
-        composite.premultiplied = image.premultiplied;
-      } else {
-        throw is.invalidParameterError('premultiplied', 'boolean', image.premultiplied);
-      }
-    }
-
-    return composite;
-  });
-  return this;
-}
-
-/**
- * Decorate the Sharp prototype with composite-related functions.
- * @private
- */
-module.exports = function (Sharp) {
-  Sharp.prototype.composite = composite;
-  Sharp.blend = blend;
-};
-
-
-/***/ }),
-
-/***/ 9156:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const util = __nccwpck_require__(1669);
-const stream = __nccwpck_require__(2413);
-const is = __nccwpck_require__(768);
-
-__nccwpck_require__(701).hasVendoredLibvips();
-
-/* istanbul ignore next */
-try {
-  __nccwpck_require__(2626);
-} catch (err) {
-  // Bail early if bindings aren't available
-  const help = ['', 'Something went wrong installing the "sharp" module', '', err.message, ''];
-  if (/NODE_MODULE_VERSION/.test(err.message)) {
-    help.push('- Ensure the version of Node.js used at install time matches that used at runtime');
-  } else if (/invalid ELF header/.test(err.message)) {
-    help.push(`- Ensure "${process.platform}" is used at install time as well as runtime`);
-  } else if (/dylib/.test(err.message) && /Incompatible library version/.test(err.message)) {
-    help.push('- Run "brew update && brew upgrade vips"');
-  } else if (/Cannot find module/.test(err.message)) {
-    help.push('- Run "npm rebuild --verbose sharp" and look for errors');
-  } else {
-    help.push(
-      '- Remove the "node_modules/sharp" directory then run',
-      '  "npm install --ignore-scripts=false --verbose" and look for errors'
-    );
-  }
-  help.push(
-    '- Consult the installation documentation at https://sharp.pixelplumbing.com/install',
-    '- Search for this error at https://github.com/lovell/sharp/issues', ''
-  );
-  const error = help.join('\n');
-  throw new Error(error);
-}
-
-// Use NODE_DEBUG=sharp to enable libvips warnings
-const debuglog = util.debuglog('sharp');
-
-/**
- * Constructor factory to create an instance of `sharp`, to which further methods are chained.
- *
- * JPEG, PNG, WebP, AVIF or TIFF format image data can be streamed out from this object.
- * When using Stream based output, derived attributes are available from the `info` event.
- *
- * Non-critical problems encountered during processing are emitted as `warning` events.
- *
- * Implements the [stream.Duplex](http://nodejs.org/api/stream.html#stream_class_stream_duplex) class.
- *
- * @constructs Sharp
- *
- * @emits Sharp#info
- * @emits Sharp#warning
- *
- * @example
- * sharp('input.jpg')
- *   .resize(300, 200)
- *   .toFile('output.jpg', function(err) {
- *     // output.jpg is a 300 pixels wide and 200 pixels high image
- *     // containing a scaled and cropped version of input.jpg
- *   });
- *
- * @example
- * // Read image data from readableStream,
- * // resize to 300 pixels wide,
- * // emit an 'info' event with calculated dimensions
- * // and finally write image data to writableStream
- * var transformer = sharp()
- *   .resize(300)
- *   .on('info', function(info) {
- *     console.log('Image height is ' + info.height);
- *   });
- * readableStream.pipe(transformer).pipe(writableStream);
- *
- * @example
- * // Create a blank 300x200 PNG image of semi-transluent red pixels
- * sharp({
- *   create: {
- *     width: 300,
- *     height: 200,
- *     channels: 4,
- *     background: { r: 255, g: 0, b: 0, alpha: 0.5 }
- *   }
- * })
- * .png()
- * .toBuffer()
- * .then( ... );
- *
- * @example
- * // Convert an animated GIF to an animated WebP
- * await sharp('in.gif', { animated: true }).toFile('out.webp');
- *
- * @example
- * // Read a raw array of pixels and save it to a png
- * const input = Uint8Array.from([255, 255, 255, 0, 0, 0]); // or Uint8ClampedArray
- * const image = sharp(input, {
- *   // because the input does not contain its dimensions or how many channels it has
- *   // we need to specify it in the constructor options
- *   raw: {
- *     width: 2,
- *     height: 1,
- *     channels: 3
- *   }
- * });
- * await image.toFile('my-two-pixels.png');
- *
- * @example
- * // Generate RGB Gaussian noise
- * await sharp({
- *   create: {
- *     width: 300,
- *     height: 200,
- *     channels: 3,
- *     noise: {
- *       type: 'gaussian',
- *       mean: 128,
- *       sigma: 30
- *     }
- *  }
- * }.toFile('noise.png');
- *
- * @param {(Buffer|Uint8Array|Uint8ClampedArray|string)} [input] - if present, can be
- *  a Buffer / Uint8Array / Uint8ClampedArray containing JPEG, PNG, WebP, AVIF, GIF, SVG, TIFF or raw pixel image data, or
- *  a String containing the filesystem path to an JPEG, PNG, WebP, AVIF, GIF, SVG or TIFF image file.
- *  JPEG, PNG, WebP, AVIF, GIF, SVG, TIFF or raw pixel image data can be streamed into the object when not present.
- * @param {Object} [options] - if present, is an Object with optional attributes.
- * @param {boolean} [options.failOnError=true] - by default halt processing and raise an error when loading invalid images.
- *  Set this flag to `false` if you'd rather apply a "best effort" to decode images, even if the data is corrupt or invalid.
- * @param {number|boolean} [options.limitInputPixels=268402689] - Do not process input images where the number of pixels
- *  (width x height) exceeds this limit. Assumes image dimensions contained in the input metadata can be trusted.
- *  An integral Number of pixels, zero or false to remove limit, true to use default limit of 268402689 (0x3FFF x 0x3FFF).
- * @param {boolean} [options.sequentialRead=false] - Set this to `true` to use sequential rather than random access where possible.
- *  This can reduce memory usage and might improve performance on some systems.
- * @param {number} [options.density=72] - number representing the DPI for vector images in the range 1 to 100000.
- * @param {number} [options.pages=1] - number of pages to extract for multi-page input (GIF, WebP, AVIF, TIFF, PDF), use -1 for all pages.
- * @param {number} [options.page=0] - page number to start extracting from for multi-page input (GIF, WebP, AVIF, TIFF, PDF), zero based.
- * @param {number} [options.level=0] - level to extract from a multi-level input (OpenSlide), zero based.
- * @param {boolean} [options.animated=false] - Set to `true` to read all frames/pages of an animated image (equivalent of setting `pages` to `-1`).
- * @param {Object} [options.raw] - describes raw pixel input image data. See `raw()` for pixel ordering.
- * @param {number} [options.raw.width] - integral number of pixels wide.
- * @param {number} [options.raw.height] - integral number of pixels high.
- * @param {number} [options.raw.channels] - integral number of channels, between 1 and 4.
- * @param {Object} [options.create] - describes a new image to be created.
- * @param {number} [options.create.width] - integral number of pixels wide.
- * @param {number} [options.create.height] - integral number of pixels high.
- * @param {number} [options.create.channels] - integral number of channels, either 3 (RGB) or 4 (RGBA).
- * @param {string|Object} [options.create.background] - parsed by the [color](https://www.npmjs.org/package/color) module to extract values for red, green, blue and alpha.
- * @param {Object} [options.create.noise] - describes a noise to be created.
- * @param {string} [options.create.noise.type] - type of generated noise, currently only `gaussian` is supported.
- * @param {number} [options.create.noise.mean] - mean of pixels in generated noise.
- * @param {number} [options.create.noise.sigma] - standard deviation of pixels in generated noise.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-const Sharp = function (input, options) {
-  if (arguments.length === 1 && !is.defined(input)) {
-    throw new Error('Invalid input');
-  }
-  if (!(this instanceof Sharp)) {
-    return new Sharp(input, options);
-  }
-  stream.Duplex.call(this);
-  this.options = {
-    // resize options
-    topOffsetPre: -1,
-    leftOffsetPre: -1,
-    widthPre: -1,
-    heightPre: -1,
-    topOffsetPost: -1,
-    leftOffsetPost: -1,
-    widthPost: -1,
-    heightPost: -1,
-    width: -1,
-    height: -1,
-    canvas: 'crop',
-    position: 0,
-    resizeBackground: [0, 0, 0, 255],
-    useExifOrientation: false,
-    angle: 0,
-    rotationAngle: 0,
-    rotationBackground: [0, 0, 0, 255],
-    rotateBeforePreExtract: false,
-    flip: false,
-    flop: false,
-    extendTop: 0,
-    extendBottom: 0,
-    extendLeft: 0,
-    extendRight: 0,
-    extendBackground: [0, 0, 0, 255],
-    withoutEnlargement: false,
-    affineMatrix: [],
-    affineBackground: [0, 0, 0, 255],
-    affineIdx: 0,
-    affineIdy: 0,
-    affineOdx: 0,
-    affineOdy: 0,
-    affineInterpolator: this.constructor.interpolators.bilinear,
-    kernel: 'lanczos3',
-    fastShrinkOnLoad: true,
-    // operations
-    tintA: 128,
-    tintB: 128,
-    flatten: false,
-    flattenBackground: [0, 0, 0],
-    negate: false,
-    medianSize: 0,
-    blurSigma: 0,
-    sharpenSigma: 0,
-    sharpenFlat: 1,
-    sharpenJagged: 2,
-    threshold: 0,
-    thresholdGrayscale: true,
-    trimThreshold: 0,
-    gamma: 0,
-    gammaOut: 0,
-    greyscale: false,
-    normalise: false,
-    brightness: 1,
-    saturation: 1,
-    hue: 0,
-    booleanBufferIn: null,
-    booleanFileIn: '',
-    joinChannelIn: [],
-    extractChannel: -1,
-    removeAlpha: false,
-    ensureAlpha: false,
-    colourspace: 'srgb',
-    composite: [],
-    // output
-    fileOut: '',
-    formatOut: 'input',
-    streamOut: false,
-    withMetadata: false,
-    withMetadataOrientation: -1,
-    withMetadataIcc: '',
-    resolveWithObject: false,
-    // output format
-    jpegQuality: 80,
-    jpegProgressive: false,
-    jpegChromaSubsampling: '4:2:0',
-    jpegTrellisQuantisation: false,
-    jpegOvershootDeringing: false,
-    jpegOptimiseScans: false,
-    jpegOptimiseCoding: true,
-    jpegQuantisationTable: 0,
-    pngProgressive: false,
-    pngCompressionLevel: 9,
-    pngAdaptiveFiltering: false,
-    pngPalette: false,
-    pngQuality: 100,
-    pngColours: 256,
-    pngDither: 1,
-    webpQuality: 80,
-    webpAlphaQuality: 100,
-    webpLossless: false,
-    webpNearLossless: false,
-    webpSmartSubsample: false,
-    webpReductionEffort: 4,
-    tiffQuality: 80,
-    tiffCompression: 'jpeg',
-    tiffPredictor: 'horizontal',
-    tiffPyramid: false,
-    tiffBitdepth: 8,
-    tiffTile: false,
-    tiffTileHeight: 256,
-    tiffTileWidth: 256,
-    tiffXres: 1.0,
-    tiffYres: 1.0,
-    heifQuality: 50,
-    heifLossless: false,
-    heifCompression: 'av1',
-    heifSpeed: 5,
-    heifChromaSubsampling: '4:2:0',
-    tileSize: 256,
-    tileOverlap: 0,
-    tileContainer: 'fs',
-    tileLayout: 'dz',
-    tileFormat: 'last',
-    tileDepth: 'last',
-    tileAngle: 0,
-    tileSkipBlanks: -1,
-    tileBackground: [255, 255, 255, 255],
-    tileCentre: false,
-    linearA: 1,
-    linearB: 0,
-    // Function to notify of libvips warnings
-    debuglog: warning => {
-      this.emit('warning', warning);
-      debuglog(warning);
-    },
-    // Function to notify of queue length changes
-    queueListener: function (queueLength) {
-      Sharp.queue.emit('change', queueLength);
-    }
-  };
-  this.options.input = this._createInputDescriptor(input, options, { allowStream: true });
-  return this;
-};
-util.inherits(Sharp, stream.Duplex);
-
-/**
- * Take a "snapshot" of the Sharp instance, returning a new instance.
- * Cloned instances inherit the input of their parent instance.
- * This allows multiple output Streams and therefore multiple processing pipelines to share a single input Stream.
- *
- * @example
- * const pipeline = sharp().rotate();
- * pipeline.clone().resize(800, 600).pipe(firstWritableStream);
- * pipeline.clone().extract({ left: 20, top: 20, width: 100, height: 100 }).pipe(secondWritableStream);
- * readableStream.pipe(pipeline);
- * // firstWritableStream receives auto-rotated, resized readableStream
- * // secondWritableStream receives auto-rotated, extracted region of readableStream
- *
- * @example
- * // Create a pipeline that will download an image, resize it and format it to different files
- * // Using Promises to know when the pipeline is complete
- * const fs = require("fs");
- * const got = require("got");
- * const sharpStream = sharp({
- *   failOnError: false
- * });
- *
- * const promises = [];
- *
- * promises.push(
- *   sharpStream
- *     .clone()
- *     .jpeg({ quality: 100 })
- *     .toFile("originalFile.jpg")
- * );
- *
- * promises.push(
- *   sharpStream
- *     .clone()
- *     .resize({ width: 500 })
- *     .jpeg({ quality: 80 })
- *     .toFile("optimized-500.jpg")
- * );
- *
- * promises.push(
- *   sharpStream
- *     .clone()
- *     .resize({ width: 500 })
- *     .webp({ quality: 80 })
- *     .toFile("optimized-500.webp")
- * );
- *
- * // https://github.com/sindresorhus/got#gotstreamurl-options
- * got.stream("https://www.example.com/some-file.jpg").pipe(sharpStream);
- *
- * Promise.all(promises)
- *   .then(res => { console.log("Done!", res); })
- *   .catch(err => {
- *     console.error("Error processing files, let's clean it up", err);
- *     try {
- *       fs.unlinkSync("originalFile.jpg");
- *       fs.unlinkSync("optimized-500.jpg");
- *       fs.unlinkSync("optimized-500.webp");
- *     } catch (e) {}
- *   });
- *
- * @returns {Sharp}
- */
-function clone () {
-  // Clone existing options
-  const clone = this.constructor.call();
-  clone.options = Object.assign({}, this.options);
-  // Pass 'finish' event to clone for Stream-based input
-  if (this._isStreamInput()) {
-    this.on('finish', () => {
-      // Clone inherits input data
-      this._flattenBufferIn();
-      clone.options.bufferIn = this.options.bufferIn;
-      clone.emit('finish');
-    });
-  }
-  return clone;
-}
-Object.assign(Sharp.prototype, { clone });
-
-/**
- * Export constructor.
- * @private
- */
-module.exports = Sharp;
-
-
-/***/ }),
-
-/***/ 4185:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const Sharp = __nccwpck_require__(9156);
-__nccwpck_require__(2869)(Sharp);
-__nccwpck_require__(2932)(Sharp);
-__nccwpck_require__(7005)(Sharp);
-__nccwpck_require__(1946)(Sharp);
-__nccwpck_require__(4144)(Sharp);
-__nccwpck_require__(6193)(Sharp);
-__nccwpck_require__(7280)(Sharp);
-__nccwpck_require__(9927)(Sharp);
-
-module.exports = Sharp;
-
-
-/***/ }),
-
-/***/ 2869:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const color = __nccwpck_require__(138);
-const is = __nccwpck_require__(768);
-const sharp = __nccwpck_require__(2626);
-
-/**
- * Extract input options, if any, from an object.
- * @private
- */
-function _inputOptionsFromObject (obj) {
-  const { raw, density, limitInputPixels, sequentialRead, failOnError, animated, page, pages } = obj;
-  return [raw, density, limitInputPixels, sequentialRead, failOnError, animated, page, pages].some(is.defined)
-    ? { raw, density, limitInputPixels, sequentialRead, failOnError, animated, page, pages }
-    : undefined;
-}
-
-/**
- * Create Object containing input and input-related options.
- * @private
- */
-function _createInputDescriptor (input, inputOptions, containerOptions) {
-  const inputDescriptor = {
-    failOnError: true,
-    limitInputPixels: Math.pow(0x3FFF, 2),
-    sequentialRead: false
-  };
-  if (is.string(input)) {
-    // filesystem
-    inputDescriptor.file = input;
-  } else if (is.buffer(input)) {
-    // Buffer
-    inputDescriptor.buffer = input;
-  } else if (is.uint8Array(input)) {
-    // Uint8Array or Uint8ClampedArray
-    inputDescriptor.buffer = Buffer.from(input.buffer);
-  } else if (is.plainObject(input) && !is.defined(inputOptions)) {
-    // Plain Object descriptor, e.g. create
-    inputOptions = input;
-    if (_inputOptionsFromObject(inputOptions)) {
-      // Stream with options
-      inputDescriptor.buffer = [];
-    }
-  } else if (!is.defined(input) && !is.defined(inputOptions) && is.object(containerOptions) && containerOptions.allowStream) {
-    // Stream without options
-    inputDescriptor.buffer = [];
-  } else {
-    throw new Error(`Unsupported input '${input}' of type ${typeof input}${
-      is.defined(inputOptions) ? ` when also providing options of type ${typeof inputOptions}` : ''
-    }`);
-  }
-  if (is.object(inputOptions)) {
-    // Fail on error
-    if (is.defined(inputOptions.failOnError)) {
-      if (is.bool(inputOptions.failOnError)) {
-        inputDescriptor.failOnError = inputOptions.failOnError;
-      } else {
-        throw is.invalidParameterError('failOnError', 'boolean', inputOptions.failOnError);
-      }
-    }
-    // Density
-    if (is.defined(inputOptions.density)) {
-      if (is.inRange(inputOptions.density, 1, 100000)) {
-        inputDescriptor.density = inputOptions.density;
-      } else {
-        throw is.invalidParameterError('density', 'number between 1 and 100000', inputOptions.density);
-      }
-    }
-    // limitInputPixels
-    if (is.defined(inputOptions.limitInputPixels)) {
-      if (is.bool(inputOptions.limitInputPixels)) {
-        inputDescriptor.limitInputPixels = inputOptions.limitInputPixels
-          ? Math.pow(0x3FFF, 2)
-          : 0;
-      } else if (is.integer(inputOptions.limitInputPixels) && inputOptions.limitInputPixels >= 0) {
-        inputDescriptor.limitInputPixels = inputOptions.limitInputPixels;
-      } else {
-        throw is.invalidParameterError('limitInputPixels', 'integer >= 0', inputOptions.limitInputPixels);
-      }
-    }
-    // sequentialRead
-    if (is.defined(inputOptions.sequentialRead)) {
-      if (is.bool(inputOptions.sequentialRead)) {
-        inputDescriptor.sequentialRead = inputOptions.sequentialRead;
-      } else {
-        throw is.invalidParameterError('sequentialRead', 'boolean', inputOptions.sequentialRead);
-      }
-    }
-    // Raw pixel input
-    if (is.defined(inputOptions.raw)) {
-      if (
-        is.object(inputOptions.raw) &&
-        is.integer(inputOptions.raw.width) && inputOptions.raw.width > 0 &&
-        is.integer(inputOptions.raw.height) && inputOptions.raw.height > 0 &&
-        is.integer(inputOptions.raw.channels) && is.inRange(inputOptions.raw.channels, 1, 4)
-      ) {
-        inputDescriptor.rawWidth = inputOptions.raw.width;
-        inputDescriptor.rawHeight = inputOptions.raw.height;
-        inputDescriptor.rawChannels = inputOptions.raw.channels;
-      } else {
-        throw new Error('Expected width, height and channels for raw pixel input');
-      }
-    }
-    // Multi-page input (GIF, TIFF, PDF)
-    if (is.defined(inputOptions.animated)) {
-      if (is.bool(inputOptions.animated)) {
-        inputDescriptor.pages = inputOptions.animated ? -1 : 1;
-      } else {
-        throw is.invalidParameterError('animated', 'boolean', inputOptions.animated);
-      }
-    }
-    if (is.defined(inputOptions.pages)) {
-      if (is.integer(inputOptions.pages) && is.inRange(inputOptions.pages, -1, 100000)) {
-        inputDescriptor.pages = inputOptions.pages;
-      } else {
-        throw is.invalidParameterError('pages', 'integer between -1 and 100000', inputOptions.pages);
-      }
-    }
-    if (is.defined(inputOptions.page)) {
-      if (is.integer(inputOptions.page) && is.inRange(inputOptions.page, 0, 100000)) {
-        inputDescriptor.page = inputOptions.page;
-      } else {
-        throw is.invalidParameterError('page', 'integer between 0 and 100000', inputOptions.page);
-      }
-    }
-    // Multi-level input (OpenSlide)
-    if (is.defined(inputOptions.level)) {
-      if (is.integer(inputOptions.level) && is.inRange(inputOptions.level, 0, 256)) {
-        inputDescriptor.level = inputOptions.level;
-      } else {
-        throw is.invalidParameterError('level', 'integer between 0 and 256', inputOptions.level);
-      }
-    }
-    // Create new image
-    if (is.defined(inputOptions.create)) {
-      if (
-        is.object(inputOptions.create) &&
-        is.integer(inputOptions.create.width) && inputOptions.create.width > 0 &&
-        is.integer(inputOptions.create.height) && inputOptions.create.height > 0 &&
-        is.integer(inputOptions.create.channels)
-      ) {
-        inputDescriptor.createWidth = inputOptions.create.width;
-        inputDescriptor.createHeight = inputOptions.create.height;
-        inputDescriptor.createChannels = inputOptions.create.channels;
-        // Noise
-        if (is.defined(inputOptions.create.noise)) {
-          if (!is.object(inputOptions.create.noise)) {
-            throw new Error('Expected noise to be an object');
-          }
-          if (!is.inArray(inputOptions.create.noise.type, ['gaussian'])) {
-            throw new Error('Only gaussian noise is supported at the moment');
-          }
-          if (!is.inRange(inputOptions.create.channels, 1, 4)) {
-            throw is.invalidParameterError('create.channels', 'number between 1 and 4', inputOptions.create.channels);
-          }
-          inputDescriptor.createNoiseType = inputOptions.create.noise.type;
-          if (is.number(inputOptions.create.noise.mean) && is.inRange(inputOptions.create.noise.mean, 0, 10000)) {
-            inputDescriptor.createNoiseMean = inputOptions.create.noise.mean;
-          } else {
-            throw is.invalidParameterError('create.noise.mean', 'number between 0 and 10000', inputOptions.create.noise.mean);
-          }
-          if (is.number(inputOptions.create.noise.sigma) && is.inRange(inputOptions.create.noise.sigma, 0, 10000)) {
-            inputDescriptor.createNoiseSigma = inputOptions.create.noise.sigma;
-          } else {
-            throw is.invalidParameterError('create.noise.sigma', 'number between 0 and 10000', inputOptions.create.noise.sigma);
-          }
-        } else if (is.defined(inputOptions.create.background)) {
-          if (!is.inRange(inputOptions.create.channels, 3, 4)) {
-            throw is.invalidParameterError('create.channels', 'number between 3 and 4', inputOptions.create.channels);
-          }
-          const background = color(inputOptions.create.background);
-          inputDescriptor.createBackground = [
-            background.red(),
-            background.green(),
-            background.blue(),
-            Math.round(background.alpha() * 255)
-          ];
-        } else {
-          throw new Error('Expected valid noise or background to create a new input image');
-        }
-        delete inputDescriptor.buffer;
-      } else {
-        throw new Error('Expected valid width, height and channels to create a new input image');
-      }
-    }
-  } else if (is.defined(inputOptions)) {
-    throw new Error('Invalid input options ' + inputOptions);
-  }
-  return inputDescriptor;
-}
-
-/**
- * Handle incoming Buffer chunk on Writable Stream.
- * @private
- * @param {Buffer} chunk
- * @param {string} encoding - unused
- * @param {Function} callback
- */
-function _write (chunk, encoding, callback) {
-  /* istanbul ignore else */
-  if (Array.isArray(this.options.input.buffer)) {
-    /* istanbul ignore else */
-    if (is.buffer(chunk)) {
-      if (this.options.input.buffer.length === 0) {
-        this.on('finish', () => {
-          this.streamInFinished = true;
-        });
-      }
-      this.options.input.buffer.push(chunk);
-      callback();
-    } else {
-      callback(new Error('Non-Buffer data on Writable Stream'));
-    }
-  } else {
-    callback(new Error('Unexpected data on Writable Stream'));
-  }
-}
-
-/**
- * Flattens the array of chunks accumulated in input.buffer.
- * @private
- */
-function _flattenBufferIn () {
-  if (this._isStreamInput()) {
-    this.options.input.buffer = Buffer.concat(this.options.input.buffer);
-  }
-}
-
-/**
- * Are we expecting Stream-based input?
- * @private
- * @returns {boolean}
- */
-function _isStreamInput () {
-  return Array.isArray(this.options.input.buffer);
-}
-
-/**
- * Fast access to (uncached) image metadata without decoding any compressed image data.
- * A `Promise` is returned when `callback` is not provided.
- *
- * - `format`: Name of decoder used to decompress image data e.g. `jpeg`, `png`, `webp`, `gif`, `svg`
- * - `size`: Total size of image in bytes, for Stream and Buffer input only
- * - `width`: Number of pixels wide (EXIF orientation is not taken into consideration)
- * - `height`: Number of pixels high (EXIF orientation is not taken into consideration)
- * - `space`: Name of colour space interpretation e.g. `srgb`, `rgb`, `cmyk`, `lab`, `b-w` [...](https://libvips.github.io/libvips/API/current/VipsImage.html#VipsInterpretation)
- * - `channels`: Number of bands e.g. `3` for sRGB, `4` for CMYK
- * - `depth`: Name of pixel depth format e.g. `uchar`, `char`, `ushort`, `float` [...](https://libvips.github.io/libvips/API/current/VipsImage.html#VipsBandFormat)
- * - `density`: Number of pixels per inch (DPI), if present
- * - `chromaSubsampling`: String containing JPEG chroma subsampling, `4:2:0` or `4:4:4` for RGB, `4:2:0:4` or `4:4:4:4` for CMYK
- * - `isProgressive`: Boolean indicating whether the image is interlaced using a progressive scan
- * - `pages`: Number of pages/frames contained within the image, with support for TIFF, HEIF, PDF, animated GIF and animated WebP
- * - `pageHeight`: Number of pixels high each page in a multi-page image will be.
- * - `loop`: Number of times to loop an animated image, zero refers to a continuous loop.
- * - `delay`: Delay in ms between each page in an animated image, provided as an array of integers.
- * - `pagePrimary`: Number of the primary page in a HEIF image
- * - `levels`: Details of each level in a multi-level image provided as an array of objects, requires libvips compiled with support for OpenSlide
- * - `hasProfile`: Boolean indicating the presence of an embedded ICC profile
- * - `hasAlpha`: Boolean indicating the presence of an alpha transparency channel
- * - `orientation`: Number value of the EXIF Orientation header, if present
- * - `exif`: Buffer containing raw EXIF data, if present
- * - `icc`: Buffer containing raw [ICC](https://www.npmjs.com/package/icc) profile data, if present
- * - `iptc`: Buffer containing raw IPTC data, if present
- * - `xmp`: Buffer containing raw XMP data, if present
- * - `tifftagPhotoshop`: Buffer containing raw TIFFTAG_PHOTOSHOP data, if present
- *
- * @example
- * const image = sharp(inputJpg);
- * image
- *   .metadata()
- *   .then(function(metadata) {
- *     return image
- *       .resize(Math.round(metadata.width / 2))
- *       .webp()
- *       .toBuffer();
- *   })
- *   .then(function(data) {
- *     // data contains a WebP image half the width and height of the original JPEG
- *   });
- *
- * @param {Function} [callback] - called with the arguments `(err, metadata)`
- * @returns {Promise<Object>|Sharp}
- */
-function metadata (callback) {
-  if (is.fn(callback)) {
-    if (this._isStreamInput()) {
-      this.on('finish', () => {
-        this._flattenBufferIn();
-        sharp.metadata(this.options, callback);
-      });
-    } else {
-      sharp.metadata(this.options, callback);
-    }
-    return this;
-  } else {
-    if (this._isStreamInput()) {
-      return new Promise((resolve, reject) => {
-        this.on('finish', () => {
-          this._flattenBufferIn();
-          sharp.metadata(this.options, (err, metadata) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(metadata);
-            }
-          });
-        });
-      });
-    } else {
-      return new Promise((resolve, reject) => {
-        sharp.metadata(this.options, (err, metadata) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(metadata);
-          }
-        });
-      });
-    }
-  }
-}
-
-/**
- * Access to pixel-derived image statistics for every channel in the image.
- * A `Promise` is returned when `callback` is not provided.
- *
- * - `channels`: Array of channel statistics for each channel in the image. Each channel statistic contains
- *     - `min` (minimum value in the channel)
- *     - `max` (maximum value in the channel)
- *     - `sum` (sum of all values in a channel)
- *     - `squaresSum` (sum of squared values in a channel)
- *     - `mean` (mean of the values in a channel)
- *     - `stdev` (standard deviation for the values in a channel)
- *     - `minX` (x-coordinate of one of the pixel where the minimum lies)
- *     - `minY` (y-coordinate of one of the pixel where the minimum lies)
- *     - `maxX` (x-coordinate of one of the pixel where the maximum lies)
- *     - `maxY` (y-coordinate of one of the pixel where the maximum lies)
- * - `isOpaque`: Is the image fully opaque? Will be `true` if the image has no alpha channel or if every pixel is fully opaque.
- * - `entropy`: Histogram-based estimation of greyscale entropy, discarding alpha channel if any (experimental)
- * - `sharpness`: Estimation of greyscale sharpness based on the standard deviation of a Laplacian convolution, discarding alpha channel if any (experimental)
- * - `dominant`: Object containing most dominant sRGB colour based on a 4096-bin 3D histogram (experimental)
- *
- * @example
- * const image = sharp(inputJpg);
- * image
- *   .stats()
- *   .then(function(stats) {
- *      // stats contains the channel-wise statistics array and the isOpaque value
- *   });
- *
- * @example
- * const { entropy, sharpness, dominant } = await sharp(input).stats();
- * const { r, g, b } = dominant;
- *
- * @param {Function} [callback] - called with the arguments `(err, stats)`
- * @returns {Promise<Object>}
- */
-function stats (callback) {
-  if (is.fn(callback)) {
-    if (this._isStreamInput()) {
-      this.on('finish', () => {
-        this._flattenBufferIn();
-        sharp.stats(this.options, callback);
-      });
-    } else {
-      sharp.stats(this.options, callback);
-    }
-    return this;
-  } else {
-    if (this._isStreamInput()) {
-      return new Promise((resolve, reject) => {
-        this.on('finish', function () {
-          this._flattenBufferIn();
-          sharp.stats(this.options, (err, stats) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(stats);
-            }
-          });
-        });
-      });
-    } else {
-      return new Promise((resolve, reject) => {
-        sharp.stats(this.options, (err, stats) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(stats);
-          }
-        });
-      });
-    }
-  }
-}
-
-/**
- * Decorate the Sharp prototype with input-related functions.
- * @private
- */
-module.exports = function (Sharp) {
-  Object.assign(Sharp.prototype, {
-    // Private
-    _inputOptionsFromObject,
-    _createInputDescriptor,
-    _write,
-    _flattenBufferIn,
-    _isStreamInput,
-    // Public
-    metadata,
-    stats
-  });
-};
-
-
-/***/ }),
-
-/***/ 768:
-/***/ ((module) => {
-
-"use strict";
-
-
-/**
- * Is this value defined and not null?
- * @private
- */
-const defined = function (val) {
-  return typeof val !== 'undefined' && val !== null;
-};
-
-/**
- * Is this value an object?
- * @private
- */
-const object = function (val) {
-  return typeof val === 'object';
-};
-
-/**
- * Is this value a plain object?
- * @private
- */
-const plainObject = function (val) {
-  return Object.prototype.toString.call(val) === '[object Object]';
-};
-
-/**
- * Is this value a function?
- * @private
- */
-const fn = function (val) {
-  return typeof val === 'function';
-};
-
-/**
- * Is this value a boolean?
- * @private
- */
-const bool = function (val) {
-  return typeof val === 'boolean';
-};
-
-/**
- * Is this value a Buffer object?
- * @private
- */
-const buffer = function (val) {
-  return val instanceof Buffer;
-};
-
-/**
- * Is this value a Uint8Array or Uint8ClampedArray object?
- * @private
- */
-const uint8Array = function (val) {
-  // allow both since Uint8ClampedArray simply clamps the values between 0-255
-  return val instanceof Uint8Array || val instanceof Uint8ClampedArray;
-};
-
-/**
- * Is this value a non-empty string?
- * @private
- */
-const string = function (val) {
-  return typeof val === 'string' && val.length > 0;
-};
-
-/**
- * Is this value a real number?
- * @private
- */
-const number = function (val) {
-  return typeof val === 'number' && !Number.isNaN(val);
-};
-
-/**
- * Is this value an integer?
- * @private
- */
-const integer = function (val) {
-  return Number.isInteger(val);
-};
-
-/**
- * Is this value within an inclusive given range?
- * @private
- */
-const inRange = function (val, min, max) {
-  return val >= min && val <= max;
-};
-
-/**
- * Is this value within the elements of an array?
- * @private
- */
-const inArray = function (val, list) {
-  return list.includes(val);
-};
-
-/**
- * Create an Error with a message relating to an invalid parameter.
- *
- * @param {string} name - parameter name.
- * @param {string} expected - description of the type/value/range expected.
- * @param {*} actual - the value received.
- * @returns {Error} Containing the formatted message.
- * @private
- */
-const invalidParameterError = function (name, expected, actual) {
-  return new Error(
-    `Expected ${expected} for ${name} but received ${actual} of type ${typeof actual}`
-  );
-};
-
-module.exports = {
-  defined: defined,
-  object: object,
-  plainObject: plainObject,
-  fn: fn,
-  bool: bool,
-  buffer: buffer,
-  uint8Array: uint8Array,
-  string: string,
-  number: number,
-  integer: integer,
-  inRange: inRange,
-  inArray: inArray,
-  invalidParameterError: invalidParameterError
-};
-
-
-/***/ }),
-
-/***/ 701:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const fs = __nccwpck_require__(5747);
-const os = __nccwpck_require__(2087);
-const path = __nccwpck_require__(5622);
-const spawnSync = __nccwpck_require__(3129).spawnSync;
-const semver = __nccwpck_require__(1383);
-const platform = __nccwpck_require__(1998);
-
-const env = process.env;
-const minimumLibvipsVersionLabelled = env.npm_package_config_libvips || /* istanbul ignore next */
-  __nccwpck_require__(1062)/* .config.libvips */ .vc.W0;
-const minimumLibvipsVersion = semver.coerce(minimumLibvipsVersionLabelled).version;
-
-const spawnSyncOptions = {
-  encoding: 'utf8',
-  shell: true
-};
-
-const mkdirSync = function (dirPath) {
-  try {
-    fs.mkdirSync(dirPath);
-  } catch (err) {
-    /* istanbul ignore if */
-    if (err.code !== 'EEXIST') {
-      throw err;
-    }
-  }
-};
-
-const cachePath = function () {
-  const npmCachePath = env.npm_config_cache || /* istanbul ignore next */
-    (env.APPDATA ? path.join(env.APPDATA, 'npm-cache') : path.join(os.homedir(), '.npm'));
-  mkdirSync(npmCachePath);
-  const libvipsCachePath = path.join(npmCachePath, '_libvips');
-  mkdirSync(libvipsCachePath);
-  return libvipsCachePath;
-};
-
-const globalLibvipsVersion = function () {
-  if (process.platform !== 'win32') {
-    const globalLibvipsVersion = spawnSync(`PKG_CONFIG_PATH="${pkgConfigPath()}" pkg-config --modversion vips-cpp`, spawnSyncOptions).stdout;
-    /* istanbul ignore next */
-    return (globalLibvipsVersion || '').trim();
-  } else {
-    return '';
-  }
-};
-
-const hasVendoredLibvips = function () {
-  const currentPlatformId = platform();
-  const vendorPath = __nccwpck_require__.ab + "vendor/" + minimumLibvipsVersion;
-  let vendorPlatformId;
-  try {
-    vendorPlatformId = require(path.join(vendorPath, 'platform.json'));
-  } catch (err) {}
-  /* istanbul ignore else */
-  if (vendorPlatformId) {
-    /* istanbul ignore else */
-    if (currentPlatformId === vendorPlatformId) {
-      return true;
-    } else {
-      throw new Error(`'${vendorPlatformId}' binaries cannot be used on the '${currentPlatformId}' platform. Please remove the 'node_modules/sharp' directory and run 'npm install' on the '${currentPlatformId}' platform.`);
-    }
-  } else {
-    return false;
-  }
-};
-
-const pkgConfigPath = function () {
-  if (process.platform !== 'win32') {
-    const brewPkgConfigPath = spawnSync('which brew >/dev/null 2>&1 && eval $(brew --env) && echo $PKG_CONFIG_LIBDIR', spawnSyncOptions).stdout || '';
-    return [brewPkgConfigPath.trim(), env.PKG_CONFIG_PATH, '/usr/local/lib/pkgconfig', '/usr/lib/pkgconfig']
-      .filter(function (p) { return !!p; })
-      .join(':');
-  } else {
-    return '';
-  }
-};
-
-const useGlobalLibvips = function () {
-  if (Boolean(env.SHARP_IGNORE_GLOBAL_LIBVIPS) === true) {
-    return false;
-  }
-
-  const globalVipsVersion = globalLibvipsVersion();
-  return !!globalVipsVersion && /* istanbul ignore next */
-    semver.gte(globalVipsVersion, minimumLibvipsVersion);
-};
-
-module.exports = {
-  minimumLibvipsVersion,
-  minimumLibvipsVersionLabelled,
-  cachePath,
-  globalLibvipsVersion,
-  hasVendoredLibvips,
-  pkgConfigPath,
-  useGlobalLibvips,
-  mkdirSync
-};
-
-
-/***/ }),
-
-/***/ 1946:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const { flatten: flattenArray } = __nccwpck_require__(3885);
-const color = __nccwpck_require__(138);
-const is = __nccwpck_require__(768);
-
-/**
- * Rotate the output image by either an explicit angle
- * or auto-orient based on the EXIF `Orientation` tag.
- *
- * If an angle is provided, it is converted to a valid positive degree rotation.
- * For example, `-450` will produce a 270deg rotation.
- *
- * When rotating by an angle other than a multiple of 90,
- * the background colour can be provided with the `background` option.
- *
- * If no angle is provided, it is determined from the EXIF data.
- * Mirroring is supported and may infer the use of a flip operation.
- *
- * The use of `rotate` implies the removal of the EXIF `Orientation` tag, if any.
- *
- * Method order is important when both rotating and extracting regions,
- * for example `rotate(x).extract(y)` will produce a different result to `extract(y).rotate(x)`.
- *
- * @example
- * const pipeline = sharp()
- *   .rotate()
- *   .resize(null, 200)
- *   .toBuffer(function (err, outputBuffer, info) {
- *     // outputBuffer contains 200px high JPEG image data,
- *     // auto-rotated using EXIF Orientation tag
- *     // info.width and info.height contain the dimensions of the resized image
- *   });
- * readableStream.pipe(pipeline);
- *
- * @param {number} [angle=auto] angle of rotation.
- * @param {Object} [options] - if present, is an Object with optional attributes.
- * @param {string|Object} [options.background="#000000"] parsed by the [color](https://www.npmjs.org/package/color) module to extract values for red, green, blue and alpha.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function rotate (angle, options) {
-  if (!is.defined(angle)) {
-    this.options.useExifOrientation = true;
-  } else if (is.integer(angle) && !(angle % 90)) {
-    this.options.angle = angle;
-  } else if (is.number(angle)) {
-    this.options.rotationAngle = angle;
-    if (is.object(options) && options.background) {
-      const backgroundColour = color(options.background);
-      this.options.rotationBackground = [
-        backgroundColour.red(),
-        backgroundColour.green(),
-        backgroundColour.blue(),
-        Math.round(backgroundColour.alpha() * 255)
-      ];
-    }
-  } else {
-    throw is.invalidParameterError('angle', 'numeric', angle);
-  }
-  return this;
-}
-
-/**
- * Flip the image about the vertical Y axis. This always occurs after rotation, if any.
- * The use of `flip` implies the removal of the EXIF `Orientation` tag, if any.
- * @param {Boolean} [flip=true]
- * @returns {Sharp}
- */
-function flip (flip) {
-  this.options.flip = is.bool(flip) ? flip : true;
-  return this;
-}
-
-/**
- * Flop the image about the horizontal X axis. This always occurs after rotation, if any.
- * The use of `flop` implies the removal of the EXIF `Orientation` tag, if any.
- * @param {Boolean} [flop=true]
- * @returns {Sharp}
- */
-function flop (flop) {
-  this.options.flop = is.bool(flop) ? flop : true;
-  return this;
-}
-
-/**
- * Perform an affine transform on an image. This operation will always occur after resizing, extraction and rotation, if any.
- *
- * You must provide an array of length 4 or a 2x2 affine transformation matrix.
- * By default, new pixels are filled with a black background. You can provide a background color with the `background` option.
- * A particular interpolator may also be specified. Set the `interpolator` option to an attribute of the `sharp.interpolator` Object e.g. `sharp.interpolator.nohalo`.
- *
- * In the case of a 2x2 matrix, the transform is:
- * - X = `matrix[0, 0]` \* (x + `idx`) + `matrix[0, 1]` \* (y + `idy`) + `odx`
- * - Y = `matrix[1, 0]` \* (x + `idx`) + `matrix[1, 1]` \* (y + `idy`) + `ody`
- *
- * where:
- * - x and y are the coordinates in input image.
- * - X and Y are the coordinates in output image.
- * - (0,0) is the upper left corner.
- *
- * @since 0.27.0
- *
- * @example
- * const pipeline = sharp()
- *   .affine([[1, 0.3], [0.1, 0.7]], {
- *      background: 'white',
- *      interpolate: sharp.interpolators.nohalo
- *   })
- *   .toBuffer((err, outputBuffer, info) => {
- *      // outputBuffer contains the transformed image
- *      // info.width and info.height contain the new dimensions
- *   });
- *
- * inputStream
- *   .pipe(pipeline);
- *
- * @param {Array<Array<number>>|Array<number>} matrix - affine transformation matrix
- * @param {Object} [options] - if present, is an Object with optional attributes.
- * @param {String|Object} [options.background="#000000"] - parsed by the [color](https://www.npmjs.org/package/color) module to extract values for red, green, blue and alpha.
- * @param {Number} [options.idx=0] - input horizontal offset
- * @param {Number} [options.idy=0] - input vertical offset
- * @param {Number} [options.odx=0] - output horizontal offset
- * @param {Number} [options.ody=0] - output vertical offset
- * @param {String} [options.interpolator=sharp.interpolators.bicubic] - interpolator
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function affine (matrix, options) {
-  const flatMatrix = flattenArray(matrix);
-  if (flatMatrix.length === 4 && flatMatrix.every(is.number)) {
-    this.options.affineMatrix = flatMatrix;
-  } else {
-    throw is.invalidParameterError('matrix', '1x4 or 2x2 array', matrix);
-  }
-
-  if (is.defined(options)) {
-    if (is.object(options)) {
-      this._setBackgroundColourOption('affineBackground', options.background);
-      if (is.defined(options.idx)) {
-        if (is.number(options.idx)) {
-          this.options.affineIdx = options.idx;
-        } else {
-          throw is.invalidParameterError('options.idx', 'number', options.idx);
-        }
-      }
-      if (is.defined(options.idy)) {
-        if (is.number(options.idy)) {
-          this.options.affineIdy = options.idy;
-        } else {
-          throw is.invalidParameterError('options.idy', 'number', options.idy);
-        }
-      }
-      if (is.defined(options.odx)) {
-        if (is.number(options.odx)) {
-          this.options.affineOdx = options.odx;
-        } else {
-          throw is.invalidParameterError('options.odx', 'number', options.odx);
-        }
-      }
-      if (is.defined(options.ody)) {
-        if (is.number(options.ody)) {
-          this.options.affineOdy = options.ody;
-        } else {
-          throw is.invalidParameterError('options.ody', 'number', options.ody);
-        }
-      }
-      if (is.defined(options.interpolator)) {
-        if (is.inArray(options.interpolator, Object.values(this.constructor.interpolators))) {
-          this.options.affineInterpolator = options.interpolator;
-        } else {
-          throw is.invalidParameterError('options.interpolator', 'valid interpolator name', options.interpolator);
-        }
-      }
-    } else {
-      throw is.invalidParameterError('options', 'object', options);
-    }
-  }
-
-  return this;
-}
-
-/**
- * Sharpen the image.
- * When used without parameters, performs a fast, mild sharpen of the output image.
- * When a `sigma` is provided, performs a slower, more accurate sharpen of the L channel in the LAB colour space.
- * Separate control over the level of sharpening in "flat" and "jagged" areas is available.
- *
- * @param {number} [sigma] - the sigma of the Gaussian mask, where `sigma = 1 + radius / 2`.
- * @param {number} [flat=1.0] - the level of sharpening to apply to "flat" areas.
- * @param {number} [jagged=2.0] - the level of sharpening to apply to "jagged" areas.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function sharpen (sigma, flat, jagged) {
-  if (!is.defined(sigma)) {
-    // No arguments: default to mild sharpen
-    this.options.sharpenSigma = -1;
-  } else if (is.bool(sigma)) {
-    // Boolean argument: apply mild sharpen?
-    this.options.sharpenSigma = sigma ? -1 : 0;
-  } else if (is.number(sigma) && is.inRange(sigma, 0.01, 10000)) {
-    // Numeric argument: specific sigma
-    this.options.sharpenSigma = sigma;
-    // Control over flat areas
-    if (is.defined(flat)) {
-      if (is.number(flat) && is.inRange(flat, 0, 10000)) {
-        this.options.sharpenFlat = flat;
-      } else {
-        throw is.invalidParameterError('flat', 'number between 0 and 10000', flat);
-      }
-    }
-    // Control over jagged areas
-    if (is.defined(jagged)) {
-      if (is.number(jagged) && is.inRange(jagged, 0, 10000)) {
-        this.options.sharpenJagged = jagged;
-      } else {
-        throw is.invalidParameterError('jagged', 'number between 0 and 10000', jagged);
-      }
-    }
-  } else {
-    throw is.invalidParameterError('sigma', 'number between 0.01 and 10000', sigma);
-  }
-  return this;
-}
-
-/**
- * Apply median filter.
- * When used without parameters the default window is 3x3.
- * @param {number} [size=3] square mask size: size x size
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function median (size) {
-  if (!is.defined(size)) {
-    // No arguments: default to 3x3
-    this.options.medianSize = 3;
-  } else if (is.integer(size) && is.inRange(size, 1, 1000)) {
-    // Numeric argument: specific sigma
-    this.options.medianSize = size;
-  } else {
-    throw is.invalidParameterError('size', 'integer between 1 and 1000', size);
-  }
-  return this;
-}
-
-/**
- * Blur the image.
- * When used without parameters, performs a fast, mild blur of the output image.
- * When a `sigma` is provided, performs a slower, more accurate Gaussian blur.
- * @param {number} [sigma] a value between 0.3 and 1000 representing the sigma of the Gaussian mask, where `sigma = 1 + radius / 2`.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function blur (sigma) {
-  if (!is.defined(sigma)) {
-    // No arguments: default to mild blur
-    this.options.blurSigma = -1;
-  } else if (is.bool(sigma)) {
-    // Boolean argument: apply mild blur?
-    this.options.blurSigma = sigma ? -1 : 0;
-  } else if (is.number(sigma) && is.inRange(sigma, 0.3, 1000)) {
-    // Numeric argument: specific sigma
-    this.options.blurSigma = sigma;
-  } else {
-    throw is.invalidParameterError('sigma', 'number between 0.3 and 1000', sigma);
-  }
-  return this;
-}
-
-/**
- * Merge alpha transparency channel, if any, with a background.
- * @param {Object} [options]
- * @param {string|Object} [options.background={r: 0, g: 0, b: 0}] - background colour, parsed by the [color](https://www.npmjs.org/package/color) module, defaults to black.
- * @returns {Sharp}
- */
-function flatten (options) {
-  this.options.flatten = is.bool(options) ? options : true;
-  if (is.object(options)) {
-    this._setBackgroundColourOption('flattenBackground', options.background);
-  }
-  return this;
-}
-
-/**
- * Apply a gamma correction by reducing the encoding (darken) pre-resize at a factor of `1/gamma`
- * then increasing the encoding (brighten) post-resize at a factor of `gamma`.
- * This can improve the perceived brightness of a resized image in non-linear colour spaces.
- * JPEG and WebP input images will not take advantage of the shrink-on-load performance optimisation
- * when applying a gamma correction.
- *
- * Supply a second argument to use a different output gamma value, otherwise the first value is used in both cases.
- *
- * @param {number} [gamma=2.2] value between 1.0 and 3.0.
- * @param {number} [gammaOut] value between 1.0 and 3.0. (optional, defaults to same as `gamma`)
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function gamma (gamma, gammaOut) {
-  if (!is.defined(gamma)) {
-    // Default gamma correction of 2.2 (sRGB)
-    this.options.gamma = 2.2;
-  } else if (is.number(gamma) && is.inRange(gamma, 1, 3)) {
-    this.options.gamma = gamma;
-  } else {
-    throw is.invalidParameterError('gamma', 'number between 1.0 and 3.0', gamma);
-  }
-  if (!is.defined(gammaOut)) {
-    // Default gamma correction for output is same as input
-    this.options.gammaOut = this.options.gamma;
-  } else if (is.number(gammaOut) && is.inRange(gammaOut, 1, 3)) {
-    this.options.gammaOut = gammaOut;
-  } else {
-    throw is.invalidParameterError('gammaOut', 'number between 1.0 and 3.0', gammaOut);
-  }
-  return this;
-}
-
-/**
- * Produce the "negative" of the image.
- * @param {Boolean} [negate=true]
- * @returns {Sharp}
- */
-function negate (negate) {
-  this.options.negate = is.bool(negate) ? negate : true;
-  return this;
-}
-
-/**
- * Enhance output image contrast by stretching its luminance to cover the full dynamic range.
- * @param {Boolean} [normalise=true]
- * @returns {Sharp}
- */
-function normalise (normalise) {
-  this.options.normalise = is.bool(normalise) ? normalise : true;
-  return this;
-}
-
-/**
- * Alternative spelling of normalise.
- * @param {Boolean} [normalize=true]
- * @returns {Sharp}
- */
-function normalize (normalize) {
-  return this.normalise(normalize);
-}
-
-/**
- * Convolve the image with the specified kernel.
- *
- * @example
- * sharp(input)
- *   .convolve({
- *     width: 3,
- *     height: 3,
- *     kernel: [-1, 0, 1, -2, 0, 2, -1, 0, 1]
- *   })
- *   .raw()
- *   .toBuffer(function(err, data, info) {
- *     // data contains the raw pixel data representing the convolution
- *     // of the input image with the horizontal Sobel operator
- *   });
- *
- * @param {Object} kernel
- * @param {number} kernel.width - width of the kernel in pixels.
- * @param {number} kernel.height - width of the kernel in pixels.
- * @param {Array<number>} kernel.kernel - Array of length `width*height` containing the kernel values.
- * @param {number} [kernel.scale=sum] - the scale of the kernel in pixels.
- * @param {number} [kernel.offset=0] - the offset of the kernel in pixels.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function convolve (kernel) {
-  if (!is.object(kernel) || !Array.isArray(kernel.kernel) ||
-      !is.integer(kernel.width) || !is.integer(kernel.height) ||
-      !is.inRange(kernel.width, 3, 1001) || !is.inRange(kernel.height, 3, 1001) ||
-      kernel.height * kernel.width !== kernel.kernel.length
-  ) {
-    // must pass in a kernel
-    throw new Error('Invalid convolution kernel');
-  }
-  // Default scale is sum of kernel values
-  if (!is.integer(kernel.scale)) {
-    kernel.scale = kernel.kernel.reduce(function (a, b) {
-      return a + b;
-    }, 0);
-  }
-  // Clip scale to a minimum value of 1
-  if (kernel.scale < 1) {
-    kernel.scale = 1;
-  }
-  if (!is.integer(kernel.offset)) {
-    kernel.offset = 0;
-  }
-  this.options.convKernel = kernel;
-  return this;
-}
-
-/**
- * Any pixel value greather than or equal to the threshold value will be set to 255, otherwise it will be set to 0.
- * @param {number} [threshold=128] - a value in the range 0-255 representing the level at which the threshold will be applied.
- * @param {Object} [options]
- * @param {Boolean} [options.greyscale=true] - convert to single channel greyscale.
- * @param {Boolean} [options.grayscale=true] - alternative spelling for greyscale.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function threshold (threshold, options) {
-  if (!is.defined(threshold)) {
-    this.options.threshold = 128;
-  } else if (is.bool(threshold)) {
-    this.options.threshold = threshold ? 128 : 0;
-  } else if (is.integer(threshold) && is.inRange(threshold, 0, 255)) {
-    this.options.threshold = threshold;
-  } else {
-    throw is.invalidParameterError('threshold', 'integer between 0 and 255', threshold);
-  }
-  if (!is.object(options) || options.greyscale === true || options.grayscale === true) {
-    this.options.thresholdGrayscale = true;
-  } else {
-    this.options.thresholdGrayscale = false;
-  }
-  return this;
-}
-
-/**
- * Perform a bitwise boolean operation with operand image.
- *
- * This operation creates an output image where each pixel is the result of
- * the selected bitwise boolean `operation` between the corresponding pixels of the input images.
- *
- * @param {Buffer|string} operand - Buffer containing image data or string containing the path to an image file.
- * @param {string} operator - one of `and`, `or` or `eor` to perform that bitwise operation, like the C logic operators `&`, `|` and `^` respectively.
- * @param {Object} [options]
- * @param {Object} [options.raw] - describes operand when using raw pixel data.
- * @param {number} [options.raw.width]
- * @param {number} [options.raw.height]
- * @param {number} [options.raw.channels]
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function boolean (operand, operator, options) {
-  this.options.boolean = this._createInputDescriptor(operand, options);
-  if (is.string(operator) && is.inArray(operator, ['and', 'or', 'eor'])) {
-    this.options.booleanOp = operator;
-  } else {
-    throw is.invalidParameterError('operator', 'one of: and, or, eor', operator);
-  }
-  return this;
-}
-
-/**
- * Apply the linear formula a * input + b to the image (levels adjustment)
- * @param {number} [a=1.0] multiplier
- * @param {number} [b=0.0] offset
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function linear (a, b) {
-  if (!is.defined(a)) {
-    this.options.linearA = 1.0;
-  } else if (is.number(a)) {
-    this.options.linearA = a;
-  } else {
-    throw is.invalidParameterError('a', 'numeric', a);
-  }
-  if (!is.defined(b)) {
-    this.options.linearB = 0.0;
-  } else if (is.number(b)) {
-    this.options.linearB = b;
-  } else {
-    throw is.invalidParameterError('b', 'numeric', b);
-  }
-  return this;
-}
-
-/**
- * Recomb the image with the specified matrix.
- *
- * @since 0.21.1
- *
- * @example
- * sharp(input)
- *   .recomb([
- *    [0.3588, 0.7044, 0.1368],
- *    [0.2990, 0.5870, 0.1140],
- *    [0.2392, 0.4696, 0.0912],
- *   ])
- *   .raw()
- *   .toBuffer(function(err, data, info) {
- *     // data contains the raw pixel data after applying the recomb
- *     // With this example input, a sepia filter has been applied
- *   });
- *
- * @param {Array<Array<number>>} inputMatrix - 3x3 Recombination matrix
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function recomb (inputMatrix) {
-  if (!Array.isArray(inputMatrix) || inputMatrix.length !== 3 ||
-      inputMatrix[0].length !== 3 ||
-      inputMatrix[1].length !== 3 ||
-      inputMatrix[2].length !== 3
-  ) {
-    // must pass in a kernel
-    throw new Error('Invalid recombination matrix');
-  }
-  this.options.recombMatrix = [
-    inputMatrix[0][0], inputMatrix[0][1], inputMatrix[0][2],
-    inputMatrix[1][0], inputMatrix[1][1], inputMatrix[1][2],
-    inputMatrix[2][0], inputMatrix[2][1], inputMatrix[2][2]
-  ].map(Number);
-  return this;
-}
-
-/**
- * Transforms the image using brightness, saturation and hue rotation.
- *
- * @since 0.22.1
- *
- * @example
- * sharp(input)
- *   .modulate({
- *     brightness: 2 // increase lightness by a factor of 2
- *   });
- *
- * sharp(input)
- *   .modulate({
- *     hue: 180 // hue-rotate by 180 degrees
- *   });
- *
- * // decreate brightness and saturation while also hue-rotating by 90 degrees
- * sharp(input)
- *   .modulate({
- *     brightness: 0.5,
- *     saturation: 0.5,
- *     hue: 90
- *   });
- *
- * @param {Object} [options]
- * @param {number} [options.brightness] Brightness multiplier
- * @param {number} [options.saturation] Saturation multiplier
- * @param {number} [options.hue] Degrees for hue rotation
- * @returns {Sharp}
- */
-function modulate (options) {
-  if (!is.plainObject(options)) {
-    throw is.invalidParameterError('options', 'plain object', options);
-  }
-  if ('brightness' in options) {
-    if (is.number(options.brightness) && options.brightness >= 0) {
-      this.options.brightness = options.brightness;
-    } else {
-      throw is.invalidParameterError('brightness', 'number above zero', options.brightness);
-    }
-  }
-  if ('saturation' in options) {
-    if (is.number(options.saturation) && options.saturation >= 0) {
-      this.options.saturation = options.saturation;
-    } else {
-      throw is.invalidParameterError('saturation', 'number above zero', options.saturation);
-    }
-  }
-  if ('hue' in options) {
-    if (is.integer(options.hue)) {
-      this.options.hue = options.hue % 360;
-    } else {
-      throw is.invalidParameterError('hue', 'number', options.hue);
-    }
-  }
-  return this;
-}
-
-/**
- * Decorate the Sharp prototype with operation-related functions.
- * @private
- */
-module.exports = function (Sharp) {
-  Object.assign(Sharp.prototype, {
-    rotate,
-    flip,
-    flop,
-    affine,
-    sharpen,
-    median,
-    blur,
-    flatten,
-    gamma,
-    negate,
-    normalise,
-    normalize,
-    convolve,
-    threshold,
-    boolean,
-    linear,
-    recomb,
-    modulate
-  });
-};
-
-
-/***/ }),
-
-/***/ 7280:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const is = __nccwpck_require__(768);
-const sharp = __nccwpck_require__(2626);
-
-const formats = new Map([
-  ['heic', 'heif'],
-  ['heif', 'heif'],
-  ['avif', 'avif'],
-  ['jpeg', 'jpeg'],
-  ['jpg', 'jpeg'],
-  ['png', 'png'],
-  ['raw', 'raw'],
-  ['tiff', 'tiff'],
-  ['webp', 'webp'],
-  ['gif', 'gif']
-]);
-
-/**
- * Write output image data to a file.
- *
- * If an explicit output format is not selected, it will be inferred from the extension,
- * with JPEG, PNG, WebP, AVIF, TIFF, DZI, and libvips' V format supported.
- * Note that raw pixel data is only supported for buffer output.
- *
- * By default all metadata will be removed, which includes EXIF-based orientation.
- * See {@link withMetadata} for control over this.
- *
- * A `Promise` is returned when `callback` is not provided.
- *
- * @example
- * sharp(input)
- *   .toFile('output.png', (err, info) => { ... });
- *
- * @example
- * sharp(input)
- *   .toFile('output.png')
- *   .then(info => { ... })
- *   .catch(err => { ... });
- *
- * @param {string} fileOut - the path to write the image data to.
- * @param {Function} [callback] - called on completion with two arguments `(err, info)`.
- * `info` contains the output image `format`, `size` (bytes), `width`, `height`,
- * `channels` and `premultiplied` (indicating if premultiplication was used).
- * When using a crop strategy also contains `cropOffsetLeft` and `cropOffsetTop`.
- * @returns {Promise<Object>} - when no callback is provided
- * @throws {Error} Invalid parameters
- */
-function toFile (fileOut, callback) {
-  if (!fileOut || fileOut.length === 0) {
-    const errOutputInvalid = new Error('Missing output file path');
-    if (is.fn(callback)) {
-      callback(errOutputInvalid);
-    } else {
-      return Promise.reject(errOutputInvalid);
-    }
-  } else {
-    if (this.options.input.file === fileOut) {
-      const errOutputIsInput = new Error('Cannot use same file for input and output');
-      if (is.fn(callback)) {
-        callback(errOutputIsInput);
-      } else {
-        return Promise.reject(errOutputIsInput);
-      }
-    } else {
-      this.options.fileOut = fileOut;
-      return this._pipeline(callback);
-    }
-  }
-  return this;
-}
-
-/**
- * Write output to a Buffer.
- * JPEG, PNG, WebP, AVIF, TIFF and raw pixel data output are supported.
- *
- * If no explicit format is set, the output format will match the input image, except GIF and SVG input which become PNG output.
- *
- * By default all metadata will be removed, which includes EXIF-based orientation.
- * See {@link withMetadata} for control over this.
- *
- * `callback`, if present, gets three arguments `(err, data, info)` where:
- * - `err` is an error, if any.
- * - `data` is the output image data.
- * - `info` contains the output image `format`, `size` (bytes), `width`, `height`,
- * `channels` and `premultiplied` (indicating if premultiplication was used).
- * When using a crop strategy also contains `cropOffsetLeft` and `cropOffsetTop`.
- *
- * A `Promise` is returned when `callback` is not provided.
- *
- * @example
- * sharp(input)
- *   .toBuffer((err, data, info) => { ... });
- *
- * @example
- * sharp(input)
- *   .toBuffer()
- *   .then(data => { ... })
- *   .catch(err => { ... });
- *
- * @example
- * sharp(input)
- *   .toBuffer({ resolveWithObject: true })
- *   .then(({ data, info }) => { ... })
- *   .catch(err => { ... });
- *
- * @example
- * const data = await sharp('my-image.jpg')
- *   // output the raw pixels
- *   .raw()
- *   .toBuffer();
- *
- * // create a more type safe way to work with the raw pixel data
- * // this will not copy the data, instead it will change `data`s underlying ArrayBuffer
- * // so `data` and `pixelArray` point to the same memory location
- * const pixelArray = new Uint8ClampedArray(data.buffer);
- *
- * // When you are done changing the pixelArray, sharp takes the `pixelArray` as an input
- * await sharp(pixelArray).toFile('my-changed-image.jpg');
- *
- * @param {Object} [options]
- * @param {boolean} [options.resolveWithObject] Resolve the Promise with an Object containing `data` and `info` properties instead of resolving only with `data`.
- * @param {Function} [callback]
- * @returns {Promise<Buffer>} - when no callback is provided
- */
-function toBuffer (options, callback) {
-  if (is.object(options)) {
-    this._setBooleanOption('resolveWithObject', options.resolveWithObject);
-  } else if (this.options.resolveWithObject) {
-    this.options.resolveWithObject = false;
-  }
-  return this._pipeline(is.fn(options) ? options : callback);
-}
-
-/**
- * Include all metadata (EXIF, XMP, IPTC) from the input image in the output image.
- * This will also convert to and add a web-friendly sRGB ICC profile unless a custom
- * output profile is provided.
- *
- * The default behaviour, when `withMetadata` is not used, is to convert to the device-independent
- * sRGB colour space and strip all metadata, including the removal of any ICC profile.
- *
- * @example
- * sharp('input.jpg')
- *   .withMetadata()
- *   .toFile('output-with-metadata.jpg')
- *   .then(info => { ... });
- *
- * @param {Object} [options]
- * @param {number} [options.orientation] value between 1 and 8, used to update the EXIF `Orientation` tag.
- * @param {string} [options.icc] filesystem path to output ICC profile, defaults to sRGB.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function withMetadata (options) {
-  this.options.withMetadata = is.bool(options) ? options : true;
-  if (is.object(options)) {
-    if (is.defined(options.orientation)) {
-      if (is.integer(options.orientation) && is.inRange(options.orientation, 1, 8)) {
-        this.options.withMetadataOrientation = options.orientation;
-      } else {
-        throw is.invalidParameterError('orientation', 'integer between 1 and 8', options.orientation);
-      }
-    }
-    if (is.defined(options.icc)) {
-      if (is.string(options.icc)) {
-        this.options.withMetadataIcc = options.icc;
-      } else {
-        throw is.invalidParameterError('icc', 'string filesystem path to ICC profile', options.icc);
-      }
-    }
-  }
-  return this;
-}
-
-/**
- * Force output to a given format.
- *
- * @example
- * // Convert any input to PNG output
- * const data = await sharp(input)
- *   .toFormat('png')
- *   .toBuffer();
- *
- * @param {(string|Object)} format - as a string or an Object with an 'id' attribute
- * @param {Object} options - output options
- * @returns {Sharp}
- * @throws {Error} unsupported format or options
- */
-function toFormat (format, options) {
-  const actualFormat = formats.get(is.object(format) && is.string(format.id) ? format.id : format);
-  if (!actualFormat) {
-    throw is.invalidParameterError('format', `one of: ${[...formats.keys()].join(', ')}`, format);
-  }
-  return this[actualFormat](options);
-}
-
-/**
- * Use these JPEG options for output image.
- *
- * Some of these options require the use of a globally-installed libvips compiled with support for mozjpeg.
- *
- * @example
- * // Convert any input to very high quality JPEG output
- * const data = await sharp(input)
- *   .jpeg({
- *     quality: 100,
- *     chromaSubsampling: '4:4:4'
- *   })
- *   .toBuffer();
- *
- * @param {Object} [options] - output options
- * @param {number} [options.quality=80] - quality, integer 1-100
- * @param {boolean} [options.progressive=false] - use progressive (interlace) scan
- * @param {string} [options.chromaSubsampling='4:2:0'] - set to '4:4:4' to prevent chroma subsampling otherwise defaults to '4:2:0' chroma subsampling
- * @param {boolean} [options.optimiseCoding=true] - optimise Huffman coding tables
- * @param {boolean} [options.optimizeCoding=true] - alternative spelling of optimiseCoding
- * @param {boolean} [options.trellisQuantisation=false] - apply trellis quantisation, requires libvips compiled with support for mozjpeg
- * @param {boolean} [options.overshootDeringing=false] - apply overshoot deringing, requires libvips compiled with support for mozjpeg
- * @param {boolean} [options.optimiseScans=false] - optimise progressive scans, forces progressive, requires libvips compiled with support for mozjpeg
- * @param {boolean} [options.optimizeScans=false] - alternative spelling of optimiseScans, requires libvips compiled with support for mozjpeg
- * @param {number} [options.quantisationTable=0] - quantization table to use, integer 0-8, requires libvips compiled with support for mozjpeg
- * @param {number} [options.quantizationTable=0] - alternative spelling of quantisationTable, requires libvips compiled with support for mozjpeg
- * @param {boolean} [options.force=true] - force JPEG output, otherwise attempt to use input format
- * @returns {Sharp}
- * @throws {Error} Invalid options
- */
-function jpeg (options) {
-  if (is.object(options)) {
-    if (is.defined(options.quality)) {
-      if (is.integer(options.quality) && is.inRange(options.quality, 1, 100)) {
-        this.options.jpegQuality = options.quality;
-      } else {
-        throw is.invalidParameterError('quality', 'integer between 1 and 100', options.quality);
-      }
-    }
-    if (is.defined(options.progressive)) {
-      this._setBooleanOption('jpegProgressive', options.progressive);
-    }
-    if (is.defined(options.chromaSubsampling)) {
-      if (is.string(options.chromaSubsampling) && is.inArray(options.chromaSubsampling, ['4:2:0', '4:4:4'])) {
-        this.options.jpegChromaSubsampling = options.chromaSubsampling;
-      } else {
-        throw is.invalidParameterError('chromaSubsampling', 'one of: 4:2:0, 4:4:4', options.chromaSubsampling);
-      }
-    }
-    const trellisQuantisation = is.bool(options.trellisQuantization) ? options.trellisQuantization : options.trellisQuantisation;
-    if (is.defined(trellisQuantisation)) {
-      this._setBooleanOption('jpegTrellisQuantisation', trellisQuantisation);
-    }
-    if (is.defined(options.overshootDeringing)) {
-      this._setBooleanOption('jpegOvershootDeringing', options.overshootDeringing);
-    }
-    const optimiseScans = is.bool(options.optimizeScans) ? options.optimizeScans : options.optimiseScans;
-    if (is.defined(optimiseScans)) {
-      this._setBooleanOption('jpegOptimiseScans', optimiseScans);
-      if (optimiseScans) {
-        this.options.jpegProgressive = true;
-      }
-    }
-    const optimiseCoding = is.bool(options.optimizeCoding) ? options.optimizeCoding : options.optimiseCoding;
-    if (is.defined(optimiseCoding)) {
-      this._setBooleanOption('jpegOptimiseCoding', optimiseCoding);
-    }
-    const quantisationTable = is.number(options.quantizationTable) ? options.quantizationTable : options.quantisationTable;
-    if (is.defined(quantisationTable)) {
-      if (is.integer(quantisationTable) && is.inRange(quantisationTable, 0, 8)) {
-        this.options.jpegQuantisationTable = quantisationTable;
-      } else {
-        throw is.invalidParameterError('quantisationTable', 'integer between 0 and 8', quantisationTable);
-      }
-    }
-  }
-  return this._updateFormatOut('jpeg', options);
-}
-
-/**
- * Use these PNG options for output image.
- *
- * PNG output is always full colour at 8 or 16 bits per pixel.
- * Indexed PNG input at 1, 2 or 4 bits per pixel is converted to 8 bits per pixel.
- *
- * Some of these options require the use of a globally-installed libvips compiled with support for libimagequant (GPL).
- *
- * @example
- * // Convert any input to PNG output
- * const data = await sharp(input)
- *   .png()
- *   .toBuffer();
- *
- * @param {Object} [options]
- * @param {boolean} [options.progressive=false] - use progressive (interlace) scan
- * @param {number} [options.compressionLevel=9] - zlib compression level, 0-9
- * @param {boolean} [options.adaptiveFiltering=false] - use adaptive row filtering
- * @param {boolean} [options.palette=false] - quantise to a palette-based image with alpha transparency support, requires libvips compiled with support for libimagequant
- * @param {number} [options.quality=100] - use the lowest number of colours needed to achieve given quality, sets `palette` to `true`, requires libvips compiled with support for libimagequant
- * @param {number} [options.colours=256] - maximum number of palette entries, sets `palette` to `true`, requires libvips compiled with support for libimagequant
- * @param {number} [options.colors=256] - alternative spelling of `options.colours`, sets `palette` to `true`, requires libvips compiled with support for libimagequant
- * @param {number} [options.dither=1.0] - level of Floyd-Steinberg error diffusion, sets `palette` to `true`, requires libvips compiled with support for libimagequant
- * @param {boolean} [options.force=true] - force PNG output, otherwise attempt to use input format
- * @returns {Sharp}
- * @throws {Error} Invalid options
- */
-function png (options) {
-  if (is.object(options)) {
-    if (is.defined(options.progressive)) {
-      this._setBooleanOption('pngProgressive', options.progressive);
-    }
-    if (is.defined(options.compressionLevel)) {
-      if (is.integer(options.compressionLevel) && is.inRange(options.compressionLevel, 0, 9)) {
-        this.options.pngCompressionLevel = options.compressionLevel;
-      } else {
-        throw is.invalidParameterError('compressionLevel', 'integer between 0 and 9', options.compressionLevel);
-      }
-    }
-    if (is.defined(options.adaptiveFiltering)) {
-      this._setBooleanOption('pngAdaptiveFiltering', options.adaptiveFiltering);
-    }
-    if (is.defined(options.palette)) {
-      this._setBooleanOption('pngPalette', options.palette);
-    } else if (is.defined(options.quality) || is.defined(options.colours || options.colors) || is.defined(options.dither)) {
-      this._setBooleanOption('pngPalette', true);
-    }
-    if (this.options.pngPalette) {
-      if (is.defined(options.quality)) {
-        if (is.integer(options.quality) && is.inRange(options.quality, 0, 100)) {
-          this.options.pngQuality = options.quality;
-        } else {
-          throw is.invalidParameterError('quality', 'integer between 0 and 100', options.quality);
-        }
-      }
-      const colours = options.colours || options.colors;
-      if (is.defined(colours)) {
-        if (is.integer(colours) && is.inRange(colours, 2, 256)) {
-          this.options.pngColours = colours;
-        } else {
-          throw is.invalidParameterError('colours', 'integer between 2 and 256', colours);
-        }
-      }
-      if (is.defined(options.dither)) {
-        if (is.number(options.dither) && is.inRange(options.dither, 0, 1)) {
-          this.options.pngDither = options.dither;
-        } else {
-          throw is.invalidParameterError('dither', 'number between 0.0 and 1.0', options.dither);
-        }
-      }
-    }
-  }
-  return this._updateFormatOut('png', options);
-}
-
-/**
- * Use these WebP options for output image.
- *
- * @example
- * // Convert any input to lossless WebP output
- * const data = await sharp(input)
- *   .webp({ lossless: true })
- *   .toBuffer();
- *
- * @param {Object} [options] - output options
- * @param {number} [options.quality=80] - quality, integer 1-100
- * @param {number} [options.alphaQuality=100] - quality of alpha layer, integer 0-100
- * @param {boolean} [options.lossless=false] - use lossless compression mode
- * @param {boolean} [options.nearLossless=false] - use near_lossless compression mode
- * @param {boolean} [options.smartSubsample=false] - use high quality chroma subsampling
- * @param {number} [options.reductionEffort=4] - level of CPU effort to reduce file size, integer 0-6
- * @param {number} [options.pageHeight] - page height for animated output
- * @param {number} [options.loop=0] - number of animation iterations, use 0 for infinite animation
- * @param {number[]} [options.delay] - list of delays between animation frames (in milliseconds)
- * @param {boolean} [options.force=true] - force WebP output, otherwise attempt to use input format
- * @returns {Sharp}
- * @throws {Error} Invalid options
- */
-function webp (options) {
-  if (is.object(options) && is.defined(options.quality)) {
-    if (is.integer(options.quality) && is.inRange(options.quality, 1, 100)) {
-      this.options.webpQuality = options.quality;
-    } else {
-      throw is.invalidParameterError('quality', 'integer between 1 and 100', options.quality);
-    }
-  }
-  if (is.object(options) && is.defined(options.alphaQuality)) {
-    if (is.integer(options.alphaQuality) && is.inRange(options.alphaQuality, 0, 100)) {
-      this.options.webpAlphaQuality = options.alphaQuality;
-    } else {
-      throw is.invalidParameterError('alphaQuality', 'integer between 0 and 100', options.alphaQuality);
-    }
-  }
-  if (is.object(options) && is.defined(options.lossless)) {
-    this._setBooleanOption('webpLossless', options.lossless);
-  }
-  if (is.object(options) && is.defined(options.nearLossless)) {
-    this._setBooleanOption('webpNearLossless', options.nearLossless);
-  }
-  if (is.object(options) && is.defined(options.smartSubsample)) {
-    this._setBooleanOption('webpSmartSubsample', options.smartSubsample);
-  }
-  if (is.object(options) && is.defined(options.reductionEffort)) {
-    if (is.integer(options.reductionEffort) && is.inRange(options.reductionEffort, 0, 6)) {
-      this.options.webpReductionEffort = options.reductionEffort;
-    } else {
-      throw is.invalidParameterError('reductionEffort', 'integer between 0 and 6', options.reductionEffort);
-    }
-  }
-
-  trySetAnimationOptions(options, this.options);
-  return this._updateFormatOut('webp', options);
-}
-
-/**
- * Use these GIF options for output image.
- *
- * Requires libvips compiled with support for ImageMagick or GraphicsMagick.
- * The prebuilt binaries do not include this - see
- * {@link https://sharp.pixelplumbing.com/install#custom-libvips installing a custom libvips}.
- *
- * @param {Object} [options] - output options
- * @param {number} [options.pageHeight] - page height for animated output
- * @param {number} [options.loop=0] - number of animation iterations, use 0 for infinite animation
- * @param {number[]} [options.delay] - list of delays between animation frames (in milliseconds)
- * @param {boolean} [options.force=true] - force GIF output, otherwise attempt to use input format
- * @returns {Sharp}
- * @throws {Error} Invalid options
- */
-/* istanbul ignore next */
-function gif (options) {
-  if (!this.constructor.format.magick.output.buffer) {
-    throw new Error('The gif operation requires libvips to have been installed with support for ImageMagick');
-  }
-  trySetAnimationOptions(options, this.options);
-  return this._updateFormatOut('gif', options);
-}
-
-/**
- * Set animation options if available.
- * @private
- *
- * @param {Object} [source] - output options
- * @param {number} [source.pageHeight] - page height for animated output
- * @param {number} [source.loop=0] - number of animation iterations, use 0 for infinite animation
- * @param {number[]} [source.delay] - list of delays between animation frames (in milliseconds)
- * @param {Object} [target] - target object for valid options
- * @throws {Error} Invalid options
- */
-function trySetAnimationOptions (source, target) {
-  if (is.object(source) && is.defined(source.pageHeight)) {
-    if (is.integer(source.pageHeight) && source.pageHeight > 0) {
-      target.pageHeight = source.pageHeight;
-    } else {
-      throw is.invalidParameterError('pageHeight', 'integer larger than 0', source.pageHeight);
-    }
-  }
-  if (is.object(source) && is.defined(source.loop)) {
-    if (is.integer(source.loop) && is.inRange(source.loop, 0, 65535)) {
-      target.loop = source.loop;
-    } else {
-      throw is.invalidParameterError('loop', 'integer between 0 and 65535', source.loop);
-    }
-  }
-  if (is.object(source) && is.defined(source.delay)) {
-    if (
-      Array.isArray(source.delay) &&
-      source.delay.every(is.integer) &&
-      source.delay.every(v => is.inRange(v, 0, 65535))) {
-      target.delay = source.delay;
-    } else {
-      throw is.invalidParameterError('delay', 'array of integers between 0 and 65535', source.delay);
-    }
-  }
-}
-
-/**
- * Use these TIFF options for output image.
- *
- * @example
- * // Convert SVG input to LZW-compressed, 1 bit per pixel TIFF output
- * sharp('input.svg')
- *   .tiff({
- *     compression: 'lzw',
- *     bitdepth: 1
- *   })
- *   .toFile('1-bpp-output.tiff')
- *   .then(info => { ... });
- *
- * @param {Object} [options] - output options
- * @param {number} [options.quality=80] - quality, integer 1-100
- * @param {boolean} [options.force=true] - force TIFF output, otherwise attempt to use input format
- * @param {string} [options.compression='jpeg'] - compression options: lzw, deflate, jpeg, ccittfax4
- * @param {string} [options.predictor='horizontal'] - compression predictor options: none, horizontal, float
- * @param {boolean} [options.pyramid=false] - write an image pyramid
- * @param {boolean} [options.tile=false] - write a tiled tiff
- * @param {number} [options.tileWidth=256] - horizontal tile size
- * @param {number} [options.tileHeight=256] - vertical tile size
- * @param {number} [options.xres=1.0] - horizontal resolution in pixels/mm
- * @param {number} [options.yres=1.0] - vertical resolution in pixels/mm
- * @param {number} [options.bitdepth=8] - reduce bitdepth to 1, 2 or 4 bit
- * @returns {Sharp}
- * @throws {Error} Invalid options
- */
-function tiff (options) {
-  if (is.object(options)) {
-    if (is.defined(options.quality)) {
-      if (is.integer(options.quality) && is.inRange(options.quality, 1, 100)) {
-        this.options.tiffQuality = options.quality;
-      } else {
-        throw is.invalidParameterError('quality', 'integer between 1 and 100', options.quality);
-      }
-    }
-    if (is.defined(options.bitdepth)) {
-      if (is.integer(options.bitdepth) && is.inArray(options.bitdepth, [1, 2, 4, 8])) {
-        this.options.tiffBitdepth = options.bitdepth;
-      } else {
-        throw is.invalidParameterError('bitdepth', '1, 2, 4 or 8', options.bitdepth);
-      }
-    }
-    // tiling
-    if (is.defined(options.tile)) {
-      this._setBooleanOption('tiffTile', options.tile);
-    }
-    if (is.defined(options.tileWidth)) {
-      if (is.integer(options.tileWidth) && options.tileWidth > 0) {
-        this.options.tiffTileWidth = options.tileWidth;
-      } else {
-        throw is.invalidParameterError('tileWidth', 'integer greater than zero', options.tileWidth);
-      }
-    }
-    if (is.defined(options.tileHeight)) {
-      if (is.integer(options.tileHeight) && options.tileHeight > 0) {
-        this.options.tiffTileHeight = options.tileHeight;
-      } else {
-        throw is.invalidParameterError('tileHeight', 'integer greater than zero', options.tileHeight);
-      }
-    }
-    // pyramid
-    if (is.defined(options.pyramid)) {
-      this._setBooleanOption('tiffPyramid', options.pyramid);
-    }
-    // resolution
-    if (is.defined(options.xres)) {
-      if (is.number(options.xres) && options.xres > 0) {
-        this.options.tiffXres = options.xres;
-      } else {
-        throw is.invalidParameterError('xres', 'number greater than zero', options.xres);
-      }
-    }
-    if (is.defined(options.yres)) {
-      if (is.number(options.yres) && options.yres > 0) {
-        this.options.tiffYres = options.yres;
-      } else {
-        throw is.invalidParameterError('yres', 'number greater than zero', options.yres);
-      }
-    }
-    // compression
-    if (is.defined(options.compression)) {
-      if (is.string(options.compression) && is.inArray(options.compression, ['lzw', 'deflate', 'jpeg', 'ccittfax4', 'none'])) {
-        this.options.tiffCompression = options.compression;
-      } else {
-        throw is.invalidParameterError('compression', 'one of: lzw, deflate, jpeg, ccittfax4, none', options.compression);
-      }
-    }
-    // predictor
-    if (is.defined(options.predictor)) {
-      if (is.string(options.predictor) && is.inArray(options.predictor, ['none', 'horizontal', 'float'])) {
-        this.options.tiffPredictor = options.predictor;
-      } else {
-        throw is.invalidParameterError('predictor', 'one of: none, horizontal, float', options.predictor);
-      }
-    }
-  }
-  return this._updateFormatOut('tiff', options);
-}
-
-/**
- * Use these AVIF options for output image.
- *
- * Whilst it is possible to create AVIF images smaller than 16x16 pixels,
- * most web browsers do not display these properly.
- *
- * @since 0.27.0
- *
- * @param {Object} [options] - output options
- * @param {number} [options.quality=50] - quality, integer 1-100
- * @param {boolean} [options.lossless=false] - use lossless compression
- * @param {boolean} [options.speed=5] - CPU effort vs file size, 0 (slowest/smallest) to 8 (fastest/largest)
- * @param {string} [options.chromaSubsampling='4:2:0'] - set to '4:4:4' to prevent chroma subsampling otherwise defaults to '4:2:0' chroma subsampling, requires libvips v8.11.0
- * @returns {Sharp}
- * @throws {Error} Invalid options
- */
-function avif (options) {
-  return this.heif({ ...options, compression: 'av1' });
-}
-
-/**
- * Use these HEIF options for output image.
- *
- * Support for patent-encumbered HEIC images requires the use of a
- * globally-installed libvips compiled with support for libheif, libde265 and x265.
- *
- * @since 0.23.0
- *
- * @param {Object} [options] - output options
- * @param {number} [options.quality=50] - quality, integer 1-100
- * @param {string} [options.compression='av1'] - compression format: av1, hevc
- * @param {boolean} [options.lossless=false] - use lossless compression
- * @param {number} [options.speed=5] - CPU effort vs file size, 0 (slowest/smallest) to 8 (fastest/largest)
- * @param {string} [options.chromaSubsampling='4:2:0'] - set to '4:4:4' to prevent chroma subsampling otherwise defaults to '4:2:0' chroma subsampling, requires libvips v8.11.0
- * @returns {Sharp}
- * @throws {Error} Invalid options
- */
-function heif (options) {
-  if (is.object(options)) {
-    if (is.defined(options.quality)) {
-      if (is.integer(options.quality) && is.inRange(options.quality, 1, 100)) {
-        this.options.heifQuality = options.quality;
-      } else {
-        throw is.invalidParameterError('quality', 'integer between 1 and 100', options.quality);
-      }
-    }
-    if (is.defined(options.lossless)) {
-      if (is.bool(options.lossless)) {
-        this.options.heifLossless = options.lossless;
-      } else {
-        throw is.invalidParameterError('lossless', 'boolean', options.lossless);
-      }
-    }
-    if (is.defined(options.compression)) {
-      if (is.string(options.compression) && is.inArray(options.compression, ['av1', 'hevc'])) {
-        this.options.heifCompression = options.compression;
-      } else {
-        throw is.invalidParameterError('compression', 'one of: av1, hevc', options.compression);
-      }
-    }
-    if (is.defined(options.speed)) {
-      if (is.integer(options.speed) && is.inRange(options.speed, 0, 8)) {
-        this.options.heifSpeed = options.speed;
-      } else {
-        throw is.invalidParameterError('speed', 'integer between 0 and 8', options.speed);
-      }
-    }
-    if (is.defined(options.chromaSubsampling)) {
-      if (is.string(options.chromaSubsampling) && is.inArray(options.chromaSubsampling, ['4:2:0', '4:4:4'])) {
-        this.options.heifChromaSubsampling = options.chromaSubsampling;
-      } else {
-        throw is.invalidParameterError('chromaSubsampling', 'one of: 4:2:0, 4:4:4', options.chromaSubsampling);
-      }
-    }
-  }
-  return this._updateFormatOut('heif', options);
-}
-
-/**
- * Force output to be raw, uncompressed, 8-bit unsigned integer (unit8) pixel data.
- * Pixel ordering is left-to-right, top-to-bottom, without padding.
- * Channel ordering will be RGB or RGBA for non-greyscale colourspaces.
- *
- * @example
- * // Extract raw RGB pixel data from JPEG input
- * const { data, info } = await sharp('input.jpg')
- *   .raw()
- *   .toBuffer({ resolveWithObject: true });
- *
- * @example
- * // Extract alpha channel as raw pixel data from PNG input
- * const data = await sharp('input.png')
- *   .ensureAlpha()
- *   .extractChannel(3)
- *   .toColourspace('b-w')
- *   .raw()
- *   .toBuffer();
- *
- * @returns {Sharp}
- */
-function raw () {
-  return this._updateFormatOut('raw');
-}
-
-/**
- * Use tile-based deep zoom (image pyramid) output.
- * Set the format and options for tile images via the `toFormat`, `jpeg`, `png` or `webp` functions.
- * Use a `.zip` or `.szi` file extension with `toFile` to write to a compressed archive file format.
- *
- * Warning: multiple sharp instances concurrently producing tile output can expose a possible race condition in some versions of libgsf.
- *
- * @example
- *  sharp('input.tiff')
- *   .png()
- *   .tile({
- *     size: 512
- *   })
- *   .toFile('output.dz', function(err, info) {
- *     // output.dzi is the Deep Zoom XML definition
- *     // output_files contains 512x512 tiles grouped by zoom level
- *   });
- *
- * @param {Object} [options]
- * @param {number} [options.size=256] tile size in pixels, a value between 1 and 8192.
- * @param {number} [options.overlap=0] tile overlap in pixels, a value between 0 and 8192.
- * @param {number} [options.angle=0] tile angle of rotation, must be a multiple of 90.
- * @param {string|Object} [options.background={r: 255, g: 255, b: 255, alpha: 1}] - background colour, parsed by the [color](https://www.npmjs.org/package/color) module, defaults to white without transparency.
- * @param {string} [options.depth] how deep to make the pyramid, possible values are `onepixel`, `onetile` or `one`, default based on layout.
- * @param {number} [options.skipBlanks=-1] threshold to skip tile generation, a value 0 - 255 for 8-bit images or 0 - 65535 for 16-bit images
- * @param {string} [options.container='fs'] tile container, with value `fs` (filesystem) or `zip` (compressed file).
- * @param {string} [options.layout='dz'] filesystem layout, possible values are `dz`, `iiif`, `zoomify` or `google`.
- * @param {boolean} [options.centre=false] centre image in tile.
- * @param {boolean} [options.center=false] alternative spelling of centre.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function tile (options) {
-  if (is.object(options)) {
-    // Size of square tiles, in pixels
-    if (is.defined(options.size)) {
-      if (is.integer(options.size) && is.inRange(options.size, 1, 8192)) {
-        this.options.tileSize = options.size;
-      } else {
-        throw is.invalidParameterError('size', 'integer between 1 and 8192', options.size);
-      }
-    }
-    // Overlap of tiles, in pixels
-    if (is.defined(options.overlap)) {
-      if (is.integer(options.overlap) && is.inRange(options.overlap, 0, 8192)) {
-        if (options.overlap > this.options.tileSize) {
-          throw is.invalidParameterError('overlap', `<= size (${this.options.tileSize})`, options.overlap);
-        }
-        this.options.tileOverlap = options.overlap;
-      } else {
-        throw is.invalidParameterError('overlap', 'integer between 0 and 8192', options.overlap);
-      }
-    }
-    // Container
-    if (is.defined(options.container)) {
-      if (is.string(options.container) && is.inArray(options.container, ['fs', 'zip'])) {
-        this.options.tileContainer = options.container;
-      } else {
-        throw is.invalidParameterError('container', 'one of: fs, zip', options.container);
-      }
-    }
-    // Layout
-    if (is.defined(options.layout)) {
-      if (is.string(options.layout) && is.inArray(options.layout, ['dz', 'google', 'iiif', 'zoomify'])) {
-        this.options.tileLayout = options.layout;
-      } else {
-        throw is.invalidParameterError('layout', 'one of: dz, google, iiif, zoomify', options.layout);
-      }
-    }
-    // Angle of rotation,
-    if (is.defined(options.angle)) {
-      if (is.integer(options.angle) && !(options.angle % 90)) {
-        this.options.tileAngle = options.angle;
-      } else {
-        throw is.invalidParameterError('angle', 'positive/negative multiple of 90', options.angle);
-      }
-    }
-    // Background colour
-    this._setBackgroundColourOption('tileBackground', options.background);
-    // Depth of tiles
-    if (is.defined(options.depth)) {
-      if (is.string(options.depth) && is.inArray(options.depth, ['onepixel', 'onetile', 'one'])) {
-        this.options.tileDepth = options.depth;
-      } else {
-        throw is.invalidParameterError('depth', 'one of: onepixel, onetile, one', options.depth);
-      }
-    }
-    // Threshold to skip blank tiles
-    if (is.defined(options.skipBlanks)) {
-      if (is.integer(options.skipBlanks) && is.inRange(options.skipBlanks, -1, 65535)) {
-        this.options.tileSkipBlanks = options.skipBlanks;
-      } else {
-        throw is.invalidParameterError('skipBlanks', 'integer between -1 and 255/65535', options.skipBlanks);
-      }
-    } else if (is.defined(options.layout) && options.layout === 'google') {
-      this.options.tileSkipBlanks = 5;
-    }
-    // Center image in tile
-    const centre = is.bool(options.center) ? options.center : options.centre;
-    if (is.defined(centre)) {
-      this._setBooleanOption('tileCentre', centre);
-    }
-  }
-  // Format
-  if (is.inArray(this.options.formatOut, ['jpeg', 'png', 'webp'])) {
-    this.options.tileFormat = this.options.formatOut;
-  } else if (this.options.formatOut !== 'input') {
-    throw is.invalidParameterError('format', 'one of: jpeg, png, webp', this.options.formatOut);
-  }
-  return this._updateFormatOut('dz');
-}
-
-/**
- * Update the output format unless options.force is false,
- * in which case revert to input format.
- * @private
- * @param {string} formatOut
- * @param {Object} [options]
- * @param {boolean} [options.force=true] - force output format, otherwise attempt to use input format
- * @returns {Sharp}
- */
-function _updateFormatOut (formatOut, options) {
-  if (!(is.object(options) && options.force === false)) {
-    this.options.formatOut = formatOut;
-  }
-  return this;
-}
-
-/**
- * Update a boolean attribute of the this.options Object.
- * @private
- * @param {string} key
- * @param {boolean} val
- * @throws {Error} Invalid key
- */
-function _setBooleanOption (key, val) {
-  if (is.bool(val)) {
-    this.options[key] = val;
-  } else {
-    throw is.invalidParameterError(key, 'boolean', val);
-  }
-}
-
-/**
- * Called by a WriteableStream to notify us it is ready for data.
- * @private
- */
-function _read () {
-  /* istanbul ignore else */
-  if (!this.options.streamOut) {
-    this.options.streamOut = true;
-    this._pipeline();
-  }
-}
-
-/**
- * Invoke the C++ image processing pipeline
- * Supports callback, stream and promise variants
- * @private
- */
-function _pipeline (callback) {
-  if (typeof callback === 'function') {
-    // output=file/buffer
-    if (this._isStreamInput()) {
-      // output=file/buffer, input=stream
-      this.on('finish', () => {
-        this._flattenBufferIn();
-        sharp.pipeline(this.options, callback);
-      });
-    } else {
-      // output=file/buffer, input=file/buffer
-      sharp.pipeline(this.options, callback);
-    }
-    return this;
-  } else if (this.options.streamOut) {
-    // output=stream
-    if (this._isStreamInput()) {
-      // output=stream, input=stream
-      this.once('finish', () => {
-        this._flattenBufferIn();
-        sharp.pipeline(this.options, (err, data, info) => {
-          if (err) {
-            this.emit('error', err);
-          } else {
-            this.emit('info', info);
-            this.push(data);
-          }
-          this.push(null);
-        });
-      });
-      if (this.streamInFinished) {
-        this.emit('finish');
-      }
-    } else {
-      // output=stream, input=file/buffer
-      sharp.pipeline(this.options, (err, data, info) => {
-        if (err) {
-          this.emit('error', err);
-        } else {
-          this.emit('info', info);
-          this.push(data);
-        }
-        this.push(null);
-      });
-    }
-    return this;
-  } else {
-    // output=promise
-    if (this._isStreamInput()) {
-      // output=promise, input=stream
-      return new Promise((resolve, reject) => {
-        this.once('finish', () => {
-          this._flattenBufferIn();
-          sharp.pipeline(this.options, (err, data, info) => {
-            if (err) {
-              reject(err);
-            } else {
-              if (this.options.resolveWithObject) {
-                resolve({ data, info });
-              } else {
-                resolve(data);
-              }
-            }
-          });
-        });
-      });
-    } else {
-      // output=promise, input=file/buffer
-      return new Promise((resolve, reject) => {
-        sharp.pipeline(this.options, (err, data, info) => {
-          if (err) {
-            reject(err);
-          } else {
-            if (this.options.resolveWithObject) {
-              resolve({ data: data, info: info });
-            } else {
-              resolve(data);
-            }
-          }
-        });
-      });
-    }
-  }
-}
-
-/**
- * Decorate the Sharp prototype with output-related functions.
- * @private
- */
-module.exports = function (Sharp) {
-  Object.assign(Sharp.prototype, {
-    // Public
-    toFile,
-    toBuffer,
-    withMetadata,
-    toFormat,
-    jpeg,
-    png,
-    webp,
-    tiff,
-    avif,
-    heif,
-    gif,
-    raw,
-    tile,
-    // Private
-    _updateFormatOut,
-    _setBooleanOption,
-    _read,
-    _pipeline
-  });
-};
-
-
-/***/ }),
-
-/***/ 1998:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const detectLibc = __nccwpck_require__(4889);
-
-const env = process.env;
-
-module.exports = function () {
-  const arch = env.npm_config_arch || process.arch;
-  const platform = env.npm_config_platform || process.platform;
-  /* istanbul ignore next */
-  const libc = (platform === 'linux' && detectLibc.isNonGlibcLinux) ? detectLibc.family : '';
-
-  const platformId = [`${platform}${libc}`];
-
-  if (arch === 'arm') {
-    const fallback = process.versions.electron ? '7' : '6';
-    platformId.push(`armv${env.npm_config_arm_version || process.config.variables.arm_version || fallback}`);
-  } else if (arch === 'arm64') {
-    platformId.push(`arm64v${env.npm_config_arm_version || '8'}`);
-  } else {
-    platformId.push(arch);
-  }
-
-  return platformId.join('-');
-};
-
-
-/***/ }),
-
-/***/ 2932:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const is = __nccwpck_require__(768);
-
-/**
- * Weighting to apply when using contain/cover fit.
- * @member
- * @private
- */
-const gravity = {
-  center: 0,
-  centre: 0,
-  north: 1,
-  east: 2,
-  south: 3,
-  west: 4,
-  northeast: 5,
-  southeast: 6,
-  southwest: 7,
-  northwest: 8
-};
-
-/**
- * Position to apply when using contain/cover fit.
- * @member
- * @private
- */
-const position = {
-  top: 1,
-  right: 2,
-  bottom: 3,
-  left: 4,
-  'right top': 5,
-  'right bottom': 6,
-  'left bottom': 7,
-  'left top': 8
-};
-
-/**
- * Strategies for automagic cover behaviour.
- * @member
- * @private
- */
-const strategy = {
-  entropy: 16,
-  attention: 17
-};
-
-/**
- * Reduction kernels.
- * @member
- * @private
- */
-const kernel = {
-  nearest: 'nearest',
-  cubic: 'cubic',
-  mitchell: 'mitchell',
-  lanczos2: 'lanczos2',
-  lanczos3: 'lanczos3'
-};
-
-/**
- * Methods by which an image can be resized to fit the provided dimensions.
- * @member
- * @private
- */
-const fit = {
-  contain: 'contain',
-  cover: 'cover',
-  fill: 'fill',
-  inside: 'inside',
-  outside: 'outside'
-};
-
-/**
- * Map external fit property to internal canvas property.
- * @member
- * @private
- */
-const mapFitToCanvas = {
-  contain: 'embed',
-  cover: 'crop',
-  fill: 'ignore_aspect',
-  inside: 'max',
-  outside: 'min'
-};
-
-/**
- * @private
- */
-function isRotationExpected (options) {
-  return (options.angle % 360) !== 0 || options.useExifOrientation === true || options.rotationAngle !== 0;
-}
-
-/**
- * Resize image to `width`, `height` or `width x height`.
- *
- * When both a `width` and `height` are provided, the possible methods by which the image should **fit** these are:
- * - `cover`: (default) Preserving aspect ratio, ensure the image covers both provided dimensions by cropping/clipping to fit.
- * - `contain`: Preserving aspect ratio, contain within both provided dimensions using "letterboxing" where necessary.
- * - `fill`: Ignore the aspect ratio of the input and stretch to both provided dimensions.
- * - `inside`: Preserving aspect ratio, resize the image to be as large as possible while ensuring its dimensions are less than or equal to both those specified.
- * - `outside`: Preserving aspect ratio, resize the image to be as small as possible while ensuring its dimensions are greater than or equal to both those specified.
- *
- * Some of these values are based on the [object-fit](https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit) CSS property.
- *
- * When using a `fit` of `cover` or `contain`, the default **position** is `centre`. Other options are:
- * - `sharp.position`: `top`, `right top`, `right`, `right bottom`, `bottom`, `left bottom`, `left`, `left top`.
- * - `sharp.gravity`: `north`, `northeast`, `east`, `southeast`, `south`, `southwest`, `west`, `northwest`, `center` or `centre`.
- * - `sharp.strategy`: `cover` only, dynamically crop using either the `entropy` or `attention` strategy.
- *
- * Some of these values are based on the [object-position](https://developer.mozilla.org/en-US/docs/Web/CSS/object-position) CSS property.
- *
- * The experimental strategy-based approach resizes so one dimension is at its target length
- * then repeatedly ranks edge regions, discarding the edge with the lowest score based on the selected strategy.
- * - `entropy`: focus on the region with the highest [Shannon entropy](https://en.wikipedia.org/wiki/Entropy_%28information_theory%29).
- * - `attention`: focus on the region with the highest luminance frequency, colour saturation and presence of skin tones.
- *
- * Possible interpolation kernels are:
- * - `nearest`: Use [nearest neighbour interpolation](http://en.wikipedia.org/wiki/Nearest-neighbor_interpolation).
- * - `cubic`: Use a [Catmull-Rom spline](https://en.wikipedia.org/wiki/Centripetal_Catmull%E2%80%93Rom_spline).
- * - `mitchell`: Use a [Mitchell-Netravali spline](https://www.cs.utexas.edu/~fussell/courses/cs384g-fall2013/lectures/mitchell/Mitchell.pdf).
- * - `lanczos2`: Use a [Lanczos kernel](https://en.wikipedia.org/wiki/Lanczos_resampling#Lanczos_kernel) with `a=2`.
- * - `lanczos3`: Use a Lanczos kernel with `a=3` (the default).
- *
- * @example
- * sharp(input)
- *   .resize({ width: 100 })
- *   .toBuffer()
- *   .then(data => {
- *     // 100 pixels wide, auto-scaled height
- *   });
- *
- * @example
- * sharp(input)
- *   .resize({ height: 100 })
- *   .toBuffer()
- *   .then(data => {
- *     // 100 pixels high, auto-scaled width
- *   });
- *
- * @example
- * sharp(input)
- *   .resize(200, 300, {
- *     kernel: sharp.kernel.nearest,
- *     fit: 'contain',
- *     position: 'right top',
- *     background: { r: 255, g: 255, b: 255, alpha: 0.5 }
- *   })
- *   .toFile('output.png')
- *   .then(() => {
- *     // output.png is a 200 pixels wide and 300 pixels high image
- *     // containing a nearest-neighbour scaled version
- *     // contained within the north-east corner of a semi-transparent white canvas
- *   });
- *
- * @example
- * const transformer = sharp()
- *   .resize({
- *     width: 200,
- *     height: 200,
- *     fit: sharp.fit.cover,
- *     position: sharp.strategy.entropy
- *   });
- * // Read image data from readableStream
- * // Write 200px square auto-cropped image data to writableStream
- * readableStream
- *   .pipe(transformer)
- *   .pipe(writableStream);
- *
- * @example
- * sharp(input)
- *   .resize(200, 200, {
- *     fit: sharp.fit.inside,
- *     withoutEnlargement: true
- *   })
- *   .toFormat('jpeg')
- *   .toBuffer()
- *   .then(function(outputBuffer) {
- *     // outputBuffer contains JPEG image data
- *     // no wider and no higher than 200 pixels
- *     // and no larger than the input image
- *   });
- *
- * @example
- * const scaleByHalf = await sharp(input)
- *   .metadata()
- *   .then(({ width }) => sharp(input)
- *     .resize(Math.round(width * 0.5))
- *     .toBuffer()
- *   );
- *
- * @param {number} [width] - pixels wide the resultant image should be. Use `null` or `undefined` to auto-scale the width to match the height.
- * @param {number} [height] - pixels high the resultant image should be. Use `null` or `undefined` to auto-scale the height to match the width.
- * @param {Object} [options]
- * @param {String} [options.width] - alternative means of specifying `width`. If both are present this take priority.
- * @param {String} [options.height] - alternative means of specifying `height`. If both are present this take priority.
- * @param {String} [options.fit='cover'] - how the image should be resized to fit both provided dimensions, one of `cover`, `contain`, `fill`, `inside` or `outside`.
- * @param {String} [options.position='centre'] - position, gravity or strategy to use when `fit` is `cover` or `contain`.
- * @param {String|Object} [options.background={r: 0, g: 0, b: 0, alpha: 1}] - background colour when using a `fit` of `contain`, parsed by the [color](https://www.npmjs.org/package/color) module, defaults to black without transparency.
- * @param {String} [options.kernel='lanczos3'] - the kernel to use for image reduction.
- * @param {Boolean} [options.withoutEnlargement=false] - do not enlarge if the width *or* height are already less than the specified dimensions, equivalent to GraphicsMagick's `>` geometry option.
- * @param {Boolean} [options.fastShrinkOnLoad=true] - take greater advantage of the JPEG and WebP shrink-on-load feature, which can lead to a slight moiré pattern on some images.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function resize (width, height, options) {
-  if (is.defined(width)) {
-    if (is.object(width) && !is.defined(options)) {
-      options = width;
-    } else if (is.integer(width) && width > 0) {
-      this.options.width = width;
-    } else {
-      throw is.invalidParameterError('width', 'positive integer', width);
-    }
-  } else {
-    this.options.width = -1;
-  }
-  if (is.defined(height)) {
-    if (is.integer(height) && height > 0) {
-      this.options.height = height;
-    } else {
-      throw is.invalidParameterError('height', 'positive integer', height);
-    }
-  } else {
-    this.options.height = -1;
-  }
-  if (is.object(options)) {
-    // Width
-    if (is.defined(options.width)) {
-      if (is.integer(options.width) && options.width > 0) {
-        this.options.width = options.width;
-      } else {
-        throw is.invalidParameterError('width', 'positive integer', options.width);
-      }
-    }
-    // Height
-    if (is.defined(options.height)) {
-      if (is.integer(options.height) && options.height > 0) {
-        this.options.height = options.height;
-      } else {
-        throw is.invalidParameterError('height', 'positive integer', options.height);
-      }
-    }
-    // Fit
-    if (is.defined(options.fit)) {
-      const canvas = mapFitToCanvas[options.fit];
-      if (is.string(canvas)) {
-        this.options.canvas = canvas;
-      } else {
-        throw is.invalidParameterError('fit', 'valid fit', options.fit);
-      }
-    }
-    // Position
-    if (is.defined(options.position)) {
-      const pos = is.integer(options.position)
-        ? options.position
-        : strategy[options.position] || position[options.position] || gravity[options.position];
-      if (is.integer(pos) && (is.inRange(pos, 0, 8) || is.inRange(pos, 16, 17))) {
-        this.options.position = pos;
-      } else {
-        throw is.invalidParameterError('position', 'valid position/gravity/strategy', options.position);
-      }
-    }
-    // Background
-    this._setBackgroundColourOption('resizeBackground', options.background);
-    // Kernel
-    if (is.defined(options.kernel)) {
-      if (is.string(kernel[options.kernel])) {
-        this.options.kernel = kernel[options.kernel];
-      } else {
-        throw is.invalidParameterError('kernel', 'valid kernel name', options.kernel);
-      }
-    }
-    // Without enlargement
-    if (is.defined(options.withoutEnlargement)) {
-      this._setBooleanOption('withoutEnlargement', options.withoutEnlargement);
-    }
-    // Shrink on load
-    if (is.defined(options.fastShrinkOnLoad)) {
-      this._setBooleanOption('fastShrinkOnLoad', options.fastShrinkOnLoad);
-    }
-  }
-  return this;
-}
-
-/**
- * Extends/pads the edges of the image with the provided background colour.
- * This operation will always occur after resizing and extraction, if any.
- *
- * @example
- * // Resize to 140 pixels wide, then add 10 transparent pixels
- * // to the top, left and right edges and 20 to the bottom edge
- * sharp(input)
- *   .resize(140)
- *   .extend({
- *     top: 10,
- *     bottom: 20,
- *     left: 10,
- *     right: 10,
- *     background: { r: 0, g: 0, b: 0, alpha: 0 }
- *   })
- *   ...
- *
- * @param {(number|Object)} extend - single pixel count to add to all edges or an Object with per-edge counts
- * @param {number} [extend.top]
- * @param {number} [extend.left]
- * @param {number} [extend.bottom]
- * @param {number} [extend.right]
- * @param {String|Object} [extend.background={r: 0, g: 0, b: 0, alpha: 1}] - background colour, parsed by the [color](https://www.npmjs.org/package/color) module, defaults to black without transparency.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
-*/
-function extend (extend) {
-  if (is.integer(extend) && extend > 0) {
-    this.options.extendTop = extend;
-    this.options.extendBottom = extend;
-    this.options.extendLeft = extend;
-    this.options.extendRight = extend;
-  } else if (
-    is.object(extend) &&
-    is.integer(extend.top) && extend.top >= 0 &&
-    is.integer(extend.bottom) && extend.bottom >= 0 &&
-    is.integer(extend.left) && extend.left >= 0 &&
-    is.integer(extend.right) && extend.right >= 0
-  ) {
-    this.options.extendTop = extend.top;
-    this.options.extendBottom = extend.bottom;
-    this.options.extendLeft = extend.left;
-    this.options.extendRight = extend.right;
-    this._setBackgroundColourOption('extendBackground', extend.background);
-  } else {
-    throw is.invalidParameterError('extend', 'integer or object', extend);
-  }
-  return this;
-}
-
-/**
- * Extract/crop a region of the image.
- *
- * - Use `extract` before `resize` for pre-resize extraction.
- * - Use `extract` after `resize` for post-resize extraction.
- * - Use `extract` before and after for both.
- *
- * @example
- * sharp(input)
- *   .extract({ left: left, top: top, width: width, height: height })
- *   .toFile(output, function(err) {
- *     // Extract a region of the input image, saving in the same format.
- *   });
- * @example
- * sharp(input)
- *   .extract({ left: leftOffsetPre, top: topOffsetPre, width: widthPre, height: heightPre })
- *   .resize(width, height)
- *   .extract({ left: leftOffsetPost, top: topOffsetPost, width: widthPost, height: heightPost })
- *   .toFile(output, function(err) {
- *     // Extract a region, resize, then extract from the resized image
- *   });
- *
- * @param {Object} options - describes the region to extract using integral pixel values
- * @param {number} options.left - zero-indexed offset from left edge
- * @param {number} options.top - zero-indexed offset from top edge
- * @param {number} options.width - width of region to extract
- * @param {number} options.height - height of region to extract
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function extract (options) {
-  const suffix = this.options.width === -1 && this.options.height === -1 ? 'Pre' : 'Post';
-  ['left', 'top', 'width', 'height'].forEach(function (name) {
-    const value = options[name];
-    if (is.integer(value) && value >= 0) {
-      this.options[name + (name === 'left' || name === 'top' ? 'Offset' : '') + suffix] = value;
-    } else {
-      throw is.invalidParameterError(name, 'integer', value);
-    }
-  }, this);
-  // Ensure existing rotation occurs before pre-resize extraction
-  if (suffix === 'Pre' && isRotationExpected(this.options)) {
-    this.options.rotateBeforePreExtract = true;
-  }
-  return this;
-}
-
-/**
- * Trim "boring" pixels from all edges that contain values similar to the top-left pixel.
- * Images consisting entirely of a single colour will calculate "boring" using the alpha channel, if any.
- *
- * The `info` response Object, obtained from callback of `.toFile()` or `.toBuffer()`,
- * will contain `trimOffsetLeft` and `trimOffsetTop` properties.
- *
- * @param {number} [threshold=10] the allowed difference from the top-left pixel, a number greater than zero.
- * @returns {Sharp}
- * @throws {Error} Invalid parameters
- */
-function trim (threshold) {
-  if (!is.defined(threshold)) {
-    this.options.trimThreshold = 10;
-  } else if (is.number(threshold) && threshold > 0) {
-    this.options.trimThreshold = threshold;
-  } else {
-    throw is.invalidParameterError('threshold', 'number greater than zero', threshold);
-  }
-  if (this.options.trimThreshold && isRotationExpected(this.options)) {
-    this.options.rotateBeforePreExtract = true;
-  }
-  return this;
-}
-
-/**
- * Decorate the Sharp prototype with resize-related functions.
- * @private
- */
-module.exports = function (Sharp) {
-  Object.assign(Sharp.prototype, {
-    resize,
-    extend,
-    extract,
-    trim
-  });
-  // Class attributes
-  Sharp.gravity = gravity;
-  Sharp.strategy = strategy;
-  Sharp.kernel = kernel;
-  Sharp.fit = fit;
-  Sharp.position = position;
-};
-
-
-/***/ }),
-
-/***/ 9927:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-function __ncc_wildcard$0 (arg) {
-  if (arg === "8.10.5") return __nccwpck_require__(8908);
-}
-'use strict';
-
-const events = __nccwpck_require__(8614);
-const is = __nccwpck_require__(768);
-const sharp = __nccwpck_require__(2626);
-
-/**
- * An Object containing nested boolean values representing the available input and output formats/methods.
- * @member
- * @example
- * console.log(sharp.format);
- * @returns {Object}
- */
-const format = sharp.format();
-
-/**
- * An Object containing the available interpolators and their proper values
- * @readonly
- * @enum {string}
- */
-const interpolators = {
-  /** [Nearest neighbour interpolation](http://en.wikipedia.org/wiki/Nearest-neighbor_interpolation). Suitable for image enlargement only. */
-  nearest: 'nearest',
-  /** [Bilinear interpolation](http://en.wikipedia.org/wiki/Bilinear_interpolation). Faster than bicubic but with less smooth results. */
-  bilinear: 'bilinear',
-  /** [Bicubic interpolation](http://en.wikipedia.org/wiki/Bicubic_interpolation) (the default). */
-  bicubic: 'bicubic',
-  /** [LBB interpolation](https://github.com/jcupitt/libvips/blob/master/libvips/resample/lbb.cpp#L100). Prevents some "[acutance](http://en.wikipedia.org/wiki/Acutance)" but typically reduces performance by a factor of 2. */
-  locallyBoundedBicubic: 'lbb',
-  /** [Nohalo interpolation](http://eprints.soton.ac.uk/268086/). Prevents acutance but typically reduces performance by a factor of 3. */
-  nohalo: 'nohalo',
-  /** [VSQBS interpolation](https://github.com/jcupitt/libvips/blob/master/libvips/resample/vsqbs.cpp#L48). Prevents "staircasing" when enlarging. */
-  vertexSplitQuadraticBasisSpline: 'vsqbs'
-};
-
-/**
- * An Object containing the version numbers of libvips and its dependencies.
- * @member
- * @example
- * console.log(sharp.versions);
- */
-let versions = {
-  vips: sharp.libvipsVersion()
-};
-try {
-  versions = __ncc_wildcard$0(versions.vips);
-} catch (err) {}
-
-/**
- * Gets or, when options are provided, sets the limits of _libvips'_ operation cache.
- * Existing entries in the cache will be trimmed after any change in limits.
- * This method always returns cache statistics,
- * useful for determining how much working memory is required for a particular task.
- *
- * @example
- * const stats = sharp.cache();
- * @example
- * sharp.cache( { items: 200 } );
- * sharp.cache( { files: 0 } );
- * sharp.cache(false);
- *
- * @param {Object|boolean} [options=true] - Object with the following attributes, or boolean where true uses default cache settings and false removes all caching
- * @param {number} [options.memory=50] - is the maximum memory in MB to use for this cache
- * @param {number} [options.files=20] - is the maximum number of files to hold open
- * @param {number} [options.items=100] - is the maximum number of operations to cache
- * @returns {Object}
- */
-function cache (options) {
-  if (is.bool(options)) {
-    if (options) {
-      // Default cache settings of 50MB, 20 files, 100 items
-      return sharp.cache(50, 20, 100);
-    } else {
-      return sharp.cache(0, 0, 0);
-    }
-  } else if (is.object(options)) {
-    return sharp.cache(options.memory, options.files, options.items);
-  } else {
-    return sharp.cache();
-  }
-}
-cache(true);
-
-/**
- * Gets or, when a concurrency is provided, sets
- * the number of threads _libvips'_ should create to process each image.
- * The default value is the number of CPU cores.
- * A value of `0` will reset to this default.
- *
- * The maximum number of images that can be processed in parallel
- * is limited by libuv's `UV_THREADPOOL_SIZE` environment variable.
- *
- * This method always returns the current concurrency.
- *
- * @example
- * const threads = sharp.concurrency(); // 4
- * sharp.concurrency(2); // 2
- * sharp.concurrency(0); // 4
- *
- * @param {number} [concurrency]
- * @returns {number} concurrency
- */
-function concurrency (concurrency) {
-  return sharp.concurrency(is.integer(concurrency) ? concurrency : null);
-}
-
-/**
- * An EventEmitter that emits a `change` event when a task is either:
- * - queued, waiting for _libuv_ to provide a worker thread
- * - complete
- * @member
- * @example
- * sharp.queue.on('change', function(queueLength) {
- *   console.log('Queue contains ' + queueLength + ' task(s)');
- * });
- */
-const queue = new events.EventEmitter();
-
-/**
- * Provides access to internal task counters.
- * - queue is the number of tasks this module has queued waiting for _libuv_ to provide a worker thread from its pool.
- * - process is the number of resize tasks currently being processed.
- *
- * @example
- * const counters = sharp.counters(); // { queue: 2, process: 4 }
- *
- * @returns {Object}
- */
-function counters () {
-  return sharp.counters();
-}
-
-/**
- * Get and set use of SIMD vector unit instructions.
- * Requires libvips to have been compiled with liborc support.
- *
- * Improves the performance of `resize`, `blur` and `sharpen` operations
- * by taking advantage of the SIMD vector unit of the CPU, e.g. Intel SSE and ARM NEON.
- *
- * @example
- * const simd = sharp.simd();
- * // simd is `true` if the runtime use of liborc is currently enabled
- * @example
- * const simd = sharp.simd(false);
- * // prevent libvips from using liborc at runtime
- *
- * @param {boolean} [simd=true]
- * @returns {boolean}
- */
-function simd (simd) {
-  return sharp.simd(is.bool(simd) ? simd : null);
-}
-simd(true);
-
-/**
- * Decorate the Sharp class with utility-related functions.
- * @private
- */
-module.exports = function (Sharp) {
-  [
-    cache,
-    concurrency,
-    counters,
-    simd
-  ].forEach(function (f) {
-    Sharp[f.name] = f;
-  });
-  Sharp.format = format;
-  Sharp.interpolators = interpolators;
-  Sharp.versions = versions;
-  Sharp.queue = queue;
-};
-
-
-/***/ }),
-
-/***/ 3885:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-/**
- * Flatten an array indefinitely.
- */
-function flatten(array) {
-    var result = [];
-    $flatten(array, result);
-    return result;
-}
-exports.flatten = flatten;
-/**
- * Internal flatten function recursively passes `result`.
- */
-function $flatten(array, result) {
-    for (var i = 0; i < array.length; i++) {
-        var value = array[i];
-        if (Array.isArray(value)) {
-            $flatten(value, result);
-        }
-        else {
-            result.push(value);
-        }
-    }
-}
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 138:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-var colorString = __nccwpck_require__(1069);
-var convert = __nccwpck_require__(6931);
-
-var _slice = [].slice;
-
-var skippedModels = [
-	// to be honest, I don't really feel like keyword belongs in color convert, but eh.
-	'keyword',
-
-	// gray conflicts with some method names, and has its own method defined.
-	'gray',
-
-	// shouldn't really be in color-convert either...
-	'hex'
-];
-
-var hashedModelKeys = {};
-Object.keys(convert).forEach(function (model) {
-	hashedModelKeys[_slice.call(convert[model].labels).sort().join('')] = model;
-});
-
-var limiters = {};
-
-function Color(obj, model) {
-	if (!(this instanceof Color)) {
-		return new Color(obj, model);
-	}
-
-	if (model && model in skippedModels) {
-		model = null;
-	}
-
-	if (model && !(model in convert)) {
-		throw new Error('Unknown model: ' + model);
-	}
-
-	var i;
-	var channels;
-
-	if (obj == null) { // eslint-disable-line no-eq-null,eqeqeq
-		this.model = 'rgb';
-		this.color = [0, 0, 0];
-		this.valpha = 1;
-	} else if (obj instanceof Color) {
-		this.model = obj.model;
-		this.color = obj.color.slice();
-		this.valpha = obj.valpha;
-	} else if (typeof obj === 'string') {
-		var result = colorString.get(obj);
-		if (result === null) {
-			throw new Error('Unable to parse color from string: ' + obj);
-		}
-
-		this.model = result.model;
-		channels = convert[this.model].channels;
-		this.color = result.value.slice(0, channels);
-		this.valpha = typeof result.value[channels] === 'number' ? result.value[channels] : 1;
-	} else if (obj.length) {
-		this.model = model || 'rgb';
-		channels = convert[this.model].channels;
-		var newArr = _slice.call(obj, 0, channels);
-		this.color = zeroArray(newArr, channels);
-		this.valpha = typeof obj[channels] === 'number' ? obj[channels] : 1;
-	} else if (typeof obj === 'number') {
-		// this is always RGB - can be converted later on.
-		obj &= 0xFFFFFF;
-		this.model = 'rgb';
-		this.color = [
-			(obj >> 16) & 0xFF,
-			(obj >> 8) & 0xFF,
-			obj & 0xFF
-		];
-		this.valpha = 1;
-	} else {
-		this.valpha = 1;
-
-		var keys = Object.keys(obj);
-		if ('alpha' in obj) {
-			keys.splice(keys.indexOf('alpha'), 1);
-			this.valpha = typeof obj.alpha === 'number' ? obj.alpha : 0;
-		}
-
-		var hashedKeys = keys.sort().join('');
-		if (!(hashedKeys in hashedModelKeys)) {
-			throw new Error('Unable to parse color from object: ' + JSON.stringify(obj));
-		}
-
-		this.model = hashedModelKeys[hashedKeys];
-
-		var labels = convert[this.model].labels;
-		var color = [];
-		for (i = 0; i < labels.length; i++) {
-			color.push(obj[labels[i]]);
-		}
-
-		this.color = zeroArray(color);
-	}
-
-	// perform limitations (clamping, etc.)
-	if (limiters[this.model]) {
-		channels = convert[this.model].channels;
-		for (i = 0; i < channels; i++) {
-			var limit = limiters[this.model][i];
-			if (limit) {
-				this.color[i] = limit(this.color[i]);
-			}
-		}
-	}
-
-	this.valpha = Math.max(0, Math.min(1, this.valpha));
-
-	if (Object.freeze) {
-		Object.freeze(this);
-	}
-}
-
-Color.prototype = {
-	toString: function () {
-		return this.string();
-	},
-
-	toJSON: function () {
-		return this[this.model]();
-	},
-
-	string: function (places) {
-		var self = this.model in colorString.to ? this : this.rgb();
-		self = self.round(typeof places === 'number' ? places : 1);
-		var args = self.valpha === 1 ? self.color : self.color.concat(this.valpha);
-		return colorString.to[self.model](args);
-	},
-
-	percentString: function (places) {
-		var self = this.rgb().round(typeof places === 'number' ? places : 1);
-		var args = self.valpha === 1 ? self.color : self.color.concat(this.valpha);
-		return colorString.to.rgb.percent(args);
-	},
-
-	array: function () {
-		return this.valpha === 1 ? this.color.slice() : this.color.concat(this.valpha);
-	},
-
-	object: function () {
-		var result = {};
-		var channels = convert[this.model].channels;
-		var labels = convert[this.model].labels;
-
-		for (var i = 0; i < channels; i++) {
-			result[labels[i]] = this.color[i];
-		}
-
-		if (this.valpha !== 1) {
-			result.alpha = this.valpha;
-		}
-
-		return result;
-	},
-
-	unitArray: function () {
-		var rgb = this.rgb().color;
-		rgb[0] /= 255;
-		rgb[1] /= 255;
-		rgb[2] /= 255;
-
-		if (this.valpha !== 1) {
-			rgb.push(this.valpha);
-		}
-
-		return rgb;
-	},
-
-	unitObject: function () {
-		var rgb = this.rgb().object();
-		rgb.r /= 255;
-		rgb.g /= 255;
-		rgb.b /= 255;
-
-		if (this.valpha !== 1) {
-			rgb.alpha = this.valpha;
-		}
-
-		return rgb;
-	},
-
-	round: function (places) {
-		places = Math.max(places || 0, 0);
-		return new Color(this.color.map(roundToPlace(places)).concat(this.valpha), this.model);
-	},
-
-	alpha: function (val) {
-		if (arguments.length) {
-			return new Color(this.color.concat(Math.max(0, Math.min(1, val))), this.model);
-		}
-
-		return this.valpha;
-	},
-
-	// rgb
-	red: getset('rgb', 0, maxfn(255)),
-	green: getset('rgb', 1, maxfn(255)),
-	blue: getset('rgb', 2, maxfn(255)),
-
-	hue: getset(['hsl', 'hsv', 'hsl', 'hwb', 'hcg'], 0, function (val) { return ((val % 360) + 360) % 360; }), // eslint-disable-line brace-style
-
-	saturationl: getset('hsl', 1, maxfn(100)),
-	lightness: getset('hsl', 2, maxfn(100)),
-
-	saturationv: getset('hsv', 1, maxfn(100)),
-	value: getset('hsv', 2, maxfn(100)),
-
-	chroma: getset('hcg', 1, maxfn(100)),
-	gray: getset('hcg', 2, maxfn(100)),
-
-	white: getset('hwb', 1, maxfn(100)),
-	wblack: getset('hwb', 2, maxfn(100)),
-
-	cyan: getset('cmyk', 0, maxfn(100)),
-	magenta: getset('cmyk', 1, maxfn(100)),
-	yellow: getset('cmyk', 2, maxfn(100)),
-	black: getset('cmyk', 3, maxfn(100)),
-
-	x: getset('xyz', 0, maxfn(100)),
-	y: getset('xyz', 1, maxfn(100)),
-	z: getset('xyz', 2, maxfn(100)),
-
-	l: getset('lab', 0, maxfn(100)),
-	a: getset('lab', 1),
-	b: getset('lab', 2),
-
-	keyword: function (val) {
-		if (arguments.length) {
-			return new Color(val);
-		}
-
-		return convert[this.model].keyword(this.color);
-	},
-
-	hex: function (val) {
-		if (arguments.length) {
-			return new Color(val);
-		}
-
-		return colorString.to.hex(this.rgb().round().color);
-	},
-
-	rgbNumber: function () {
-		var rgb = this.rgb().color;
-		return ((rgb[0] & 0xFF) << 16) | ((rgb[1] & 0xFF) << 8) | (rgb[2] & 0xFF);
-	},
-
-	luminosity: function () {
-		// http://www.w3.org/TR/WCAG20/#relativeluminancedef
-		var rgb = this.rgb().color;
-
-		var lum = [];
-		for (var i = 0; i < rgb.length; i++) {
-			var chan = rgb[i] / 255;
-			lum[i] = (chan <= 0.03928) ? chan / 12.92 : Math.pow(((chan + 0.055) / 1.055), 2.4);
-		}
-
-		return 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
-	},
-
-	contrast: function (color2) {
-		// http://www.w3.org/TR/WCAG20/#contrast-ratiodef
-		var lum1 = this.luminosity();
-		var lum2 = color2.luminosity();
-
-		if (lum1 > lum2) {
-			return (lum1 + 0.05) / (lum2 + 0.05);
-		}
-
-		return (lum2 + 0.05) / (lum1 + 0.05);
-	},
-
-	level: function (color2) {
-		var contrastRatio = this.contrast(color2);
-		if (contrastRatio >= 7.1) {
-			return 'AAA';
-		}
-
-		return (contrastRatio >= 4.5) ? 'AA' : '';
-	},
-
-	isDark: function () {
-		// YIQ equation from http://24ways.org/2010/calculating-color-contrast
-		var rgb = this.rgb().color;
-		var yiq = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
-		return yiq < 128;
-	},
-
-	isLight: function () {
-		return !this.isDark();
-	},
-
-	negate: function () {
-		var rgb = this.rgb();
-		for (var i = 0; i < 3; i++) {
-			rgb.color[i] = 255 - rgb.color[i];
-		}
-		return rgb;
-	},
-
-	lighten: function (ratio) {
-		var hsl = this.hsl();
-		hsl.color[2] += hsl.color[2] * ratio;
-		return hsl;
-	},
-
-	darken: function (ratio) {
-		var hsl = this.hsl();
-		hsl.color[2] -= hsl.color[2] * ratio;
-		return hsl;
-	},
-
-	saturate: function (ratio) {
-		var hsl = this.hsl();
-		hsl.color[1] += hsl.color[1] * ratio;
-		return hsl;
-	},
-
-	desaturate: function (ratio) {
-		var hsl = this.hsl();
-		hsl.color[1] -= hsl.color[1] * ratio;
-		return hsl;
-	},
-
-	whiten: function (ratio) {
-		var hwb = this.hwb();
-		hwb.color[1] += hwb.color[1] * ratio;
-		return hwb;
-	},
-
-	blacken: function (ratio) {
-		var hwb = this.hwb();
-		hwb.color[2] += hwb.color[2] * ratio;
-		return hwb;
-	},
-
-	grayscale: function () {
-		// http://en.wikipedia.org/wiki/Grayscale#Converting_color_to_grayscale
-		var rgb = this.rgb().color;
-		var val = rgb[0] * 0.3 + rgb[1] * 0.59 + rgb[2] * 0.11;
-		return Color.rgb(val, val, val);
-	},
-
-	fade: function (ratio) {
-		return this.alpha(this.valpha - (this.valpha * ratio));
-	},
-
-	opaquer: function (ratio) {
-		return this.alpha(this.valpha + (this.valpha * ratio));
-	},
-
-	rotate: function (degrees) {
-		var hsl = this.hsl();
-		var hue = hsl.color[0];
-		hue = (hue + degrees) % 360;
-		hue = hue < 0 ? 360 + hue : hue;
-		hsl.color[0] = hue;
-		return hsl;
-	},
-
-	mix: function (mixinColor, weight) {
-		// ported from sass implementation in C
-		// https://github.com/sass/libsass/blob/0e6b4a2850092356aa3ece07c6b249f0221caced/functions.cpp#L209
-		if (!mixinColor || !mixinColor.rgb) {
-			throw new Error('Argument to "mix" was not a Color instance, but rather an instance of ' + typeof mixinColor);
-		}
-		var color1 = mixinColor.rgb();
-		var color2 = this.rgb();
-		var p = weight === undefined ? 0.5 : weight;
-
-		var w = 2 * p - 1;
-		var a = color1.alpha() - color2.alpha();
-
-		var w1 = (((w * a === -1) ? w : (w + a) / (1 + w * a)) + 1) / 2.0;
-		var w2 = 1 - w1;
-
-		return Color.rgb(
-				w1 * color1.red() + w2 * color2.red(),
-				w1 * color1.green() + w2 * color2.green(),
-				w1 * color1.blue() + w2 * color2.blue(),
-				color1.alpha() * p + color2.alpha() * (1 - p));
-	}
-};
-
-// model conversion methods and static constructors
-Object.keys(convert).forEach(function (model) {
-	if (skippedModels.indexOf(model) !== -1) {
-		return;
-	}
-
-	var channels = convert[model].channels;
-
-	// conversion methods
-	Color.prototype[model] = function () {
-		if (this.model === model) {
-			return new Color(this);
-		}
-
-		if (arguments.length) {
-			return new Color(arguments, model);
-		}
-
-		var newAlpha = typeof arguments[channels] === 'number' ? channels : this.valpha;
-		return new Color(assertArray(convert[this.model][model].raw(this.color)).concat(newAlpha), model);
-	};
-
-	// 'static' construction methods
-	Color[model] = function (color) {
-		if (typeof color === 'number') {
-			color = zeroArray(_slice.call(arguments), channels);
-		}
-		return new Color(color, model);
-	};
-});
-
-function roundTo(num, places) {
-	return Number(num.toFixed(places));
-}
-
-function roundToPlace(places) {
-	return function (num) {
-		return roundTo(num, places);
-	};
-}
-
-function getset(model, channel, modifier) {
-	model = Array.isArray(model) ? model : [model];
-
-	model.forEach(function (m) {
-		(limiters[m] || (limiters[m] = []))[channel] = modifier;
-	});
-
-	model = model[0];
-
-	return function (val) {
-		var result;
-
-		if (arguments.length) {
-			if (modifier) {
-				val = modifier(val);
-			}
-
-			result = this[model]();
-			result.color[channel] = val;
-			return result;
-		}
-
-		result = this[model]().color[channel];
-		if (modifier) {
-			result = modifier(result);
-		}
-
-		return result;
-	};
-}
-
-function maxfn(max) {
-	return function (v) {
-		return Math.max(0, Math.min(max, v));
-	};
-}
-
-function assertArray(val) {
-	return Array.isArray(val) ? val : [val];
-}
-
-function zeroArray(arr, length) {
-	for (var i = 0; i < length; i++) {
-		if (typeof arr[i] !== 'number') {
-			arr[i] = 0;
-		}
-	}
-
-	return arr;
-}
-
-module.exports = Color;
-
-
-/***/ }),
-
-/***/ 8679:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-var isArrayish = __nccwpck_require__(8542);
-
-var concat = Array.prototype.concat;
-var slice = Array.prototype.slice;
-
-var swizzle = module.exports = function swizzle(args) {
-	var results = [];
-
-	for (var i = 0, len = args.length; i < len; i++) {
-		var arg = args[i];
-
-		if (isArrayish(arg)) {
-			// http://jsperf.com/javascript-array-concat-vs-push/98
-			results = concat.call(results, slice.call(arg));
-		} else {
-			results.push(arg);
-		}
-	}
-
-	return results;
-};
-
-swizzle.wrap = function (fn) {
-	return function () {
-		return fn(swizzle(arguments));
-	};
-};
-
-
-/***/ }),
-
-/***/ 8542:
-/***/ ((module) => {
-
-module.exports = function isArrayish(obj) {
-	if (!obj || typeof obj === 'string') {
-		return false;
-	}
-
-	return obj instanceof Array || Array.isArray(obj) ||
-		(obj.length >= 0 && (obj.splice instanceof Function ||
-			(Object.getOwnPropertyDescriptor(obj, (obj.length - 1)) && obj.constructor.name !== 'String')));
-};
 
 
 /***/ }),
@@ -74825,463 +62080,6 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 4091:
-/***/ ((module) => {
-
-"use strict";
-
-module.exports = function (Yallist) {
-  Yallist.prototype[Symbol.iterator] = function* () {
-    for (let walker = this.head; walker; walker = walker.next) {
-      yield walker.value
-    }
-  }
-}
-
-
-/***/ }),
-
-/***/ 665:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-module.exports = Yallist
-
-Yallist.Node = Node
-Yallist.create = Yallist
-
-function Yallist (list) {
-  var self = this
-  if (!(self instanceof Yallist)) {
-    self = new Yallist()
-  }
-
-  self.tail = null
-  self.head = null
-  self.length = 0
-
-  if (list && typeof list.forEach === 'function') {
-    list.forEach(function (item) {
-      self.push(item)
-    })
-  } else if (arguments.length > 0) {
-    for (var i = 0, l = arguments.length; i < l; i++) {
-      self.push(arguments[i])
-    }
-  }
-
-  return self
-}
-
-Yallist.prototype.removeNode = function (node) {
-  if (node.list !== this) {
-    throw new Error('removing node which does not belong to this list')
-  }
-
-  var next = node.next
-  var prev = node.prev
-
-  if (next) {
-    next.prev = prev
-  }
-
-  if (prev) {
-    prev.next = next
-  }
-
-  if (node === this.head) {
-    this.head = next
-  }
-  if (node === this.tail) {
-    this.tail = prev
-  }
-
-  node.list.length--
-  node.next = null
-  node.prev = null
-  node.list = null
-
-  return next
-}
-
-Yallist.prototype.unshiftNode = function (node) {
-  if (node === this.head) {
-    return
-  }
-
-  if (node.list) {
-    node.list.removeNode(node)
-  }
-
-  var head = this.head
-  node.list = this
-  node.next = head
-  if (head) {
-    head.prev = node
-  }
-
-  this.head = node
-  if (!this.tail) {
-    this.tail = node
-  }
-  this.length++
-}
-
-Yallist.prototype.pushNode = function (node) {
-  if (node === this.tail) {
-    return
-  }
-
-  if (node.list) {
-    node.list.removeNode(node)
-  }
-
-  var tail = this.tail
-  node.list = this
-  node.prev = tail
-  if (tail) {
-    tail.next = node
-  }
-
-  this.tail = node
-  if (!this.head) {
-    this.head = node
-  }
-  this.length++
-}
-
-Yallist.prototype.push = function () {
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    push(this, arguments[i])
-  }
-  return this.length
-}
-
-Yallist.prototype.unshift = function () {
-  for (var i = 0, l = arguments.length; i < l; i++) {
-    unshift(this, arguments[i])
-  }
-  return this.length
-}
-
-Yallist.prototype.pop = function () {
-  if (!this.tail) {
-    return undefined
-  }
-
-  var res = this.tail.value
-  this.tail = this.tail.prev
-  if (this.tail) {
-    this.tail.next = null
-  } else {
-    this.head = null
-  }
-  this.length--
-  return res
-}
-
-Yallist.prototype.shift = function () {
-  if (!this.head) {
-    return undefined
-  }
-
-  var res = this.head.value
-  this.head = this.head.next
-  if (this.head) {
-    this.head.prev = null
-  } else {
-    this.tail = null
-  }
-  this.length--
-  return res
-}
-
-Yallist.prototype.forEach = function (fn, thisp) {
-  thisp = thisp || this
-  for (var walker = this.head, i = 0; walker !== null; i++) {
-    fn.call(thisp, walker.value, i, this)
-    walker = walker.next
-  }
-}
-
-Yallist.prototype.forEachReverse = function (fn, thisp) {
-  thisp = thisp || this
-  for (var walker = this.tail, i = this.length - 1; walker !== null; i--) {
-    fn.call(thisp, walker.value, i, this)
-    walker = walker.prev
-  }
-}
-
-Yallist.prototype.get = function (n) {
-  for (var i = 0, walker = this.head; walker !== null && i < n; i++) {
-    // abort out of the list early if we hit a cycle
-    walker = walker.next
-  }
-  if (i === n && walker !== null) {
-    return walker.value
-  }
-}
-
-Yallist.prototype.getReverse = function (n) {
-  for (var i = 0, walker = this.tail; walker !== null && i < n; i++) {
-    // abort out of the list early if we hit a cycle
-    walker = walker.prev
-  }
-  if (i === n && walker !== null) {
-    return walker.value
-  }
-}
-
-Yallist.prototype.map = function (fn, thisp) {
-  thisp = thisp || this
-  var res = new Yallist()
-  for (var walker = this.head; walker !== null;) {
-    res.push(fn.call(thisp, walker.value, this))
-    walker = walker.next
-  }
-  return res
-}
-
-Yallist.prototype.mapReverse = function (fn, thisp) {
-  thisp = thisp || this
-  var res = new Yallist()
-  for (var walker = this.tail; walker !== null;) {
-    res.push(fn.call(thisp, walker.value, this))
-    walker = walker.prev
-  }
-  return res
-}
-
-Yallist.prototype.reduce = function (fn, initial) {
-  var acc
-  var walker = this.head
-  if (arguments.length > 1) {
-    acc = initial
-  } else if (this.head) {
-    walker = this.head.next
-    acc = this.head.value
-  } else {
-    throw new TypeError('Reduce of empty list with no initial value')
-  }
-
-  for (var i = 0; walker !== null; i++) {
-    acc = fn(acc, walker.value, i)
-    walker = walker.next
-  }
-
-  return acc
-}
-
-Yallist.prototype.reduceReverse = function (fn, initial) {
-  var acc
-  var walker = this.tail
-  if (arguments.length > 1) {
-    acc = initial
-  } else if (this.tail) {
-    walker = this.tail.prev
-    acc = this.tail.value
-  } else {
-    throw new TypeError('Reduce of empty list with no initial value')
-  }
-
-  for (var i = this.length - 1; walker !== null; i--) {
-    acc = fn(acc, walker.value, i)
-    walker = walker.prev
-  }
-
-  return acc
-}
-
-Yallist.prototype.toArray = function () {
-  var arr = new Array(this.length)
-  for (var i = 0, walker = this.head; walker !== null; i++) {
-    arr[i] = walker.value
-    walker = walker.next
-  }
-  return arr
-}
-
-Yallist.prototype.toArrayReverse = function () {
-  var arr = new Array(this.length)
-  for (var i = 0, walker = this.tail; walker !== null; i++) {
-    arr[i] = walker.value
-    walker = walker.prev
-  }
-  return arr
-}
-
-Yallist.prototype.slice = function (from, to) {
-  to = to || this.length
-  if (to < 0) {
-    to += this.length
-  }
-  from = from || 0
-  if (from < 0) {
-    from += this.length
-  }
-  var ret = new Yallist()
-  if (to < from || to < 0) {
-    return ret
-  }
-  if (from < 0) {
-    from = 0
-  }
-  if (to > this.length) {
-    to = this.length
-  }
-  for (var i = 0, walker = this.head; walker !== null && i < from; i++) {
-    walker = walker.next
-  }
-  for (; walker !== null && i < to; i++, walker = walker.next) {
-    ret.push(walker.value)
-  }
-  return ret
-}
-
-Yallist.prototype.sliceReverse = function (from, to) {
-  to = to || this.length
-  if (to < 0) {
-    to += this.length
-  }
-  from = from || 0
-  if (from < 0) {
-    from += this.length
-  }
-  var ret = new Yallist()
-  if (to < from || to < 0) {
-    return ret
-  }
-  if (from < 0) {
-    from = 0
-  }
-  if (to > this.length) {
-    to = this.length
-  }
-  for (var i = this.length, walker = this.tail; walker !== null && i > to; i--) {
-    walker = walker.prev
-  }
-  for (; walker !== null && i > from; i--, walker = walker.prev) {
-    ret.push(walker.value)
-  }
-  return ret
-}
-
-Yallist.prototype.splice = function (start, deleteCount, ...nodes) {
-  if (start > this.length) {
-    start = this.length - 1
-  }
-  if (start < 0) {
-    start = this.length + start;
-  }
-
-  for (var i = 0, walker = this.head; walker !== null && i < start; i++) {
-    walker = walker.next
-  }
-
-  var ret = []
-  for (var i = 0; walker && i < deleteCount; i++) {
-    ret.push(walker.value)
-    walker = this.removeNode(walker)
-  }
-  if (walker === null) {
-    walker = this.tail
-  }
-
-  if (walker !== this.head && walker !== this.tail) {
-    walker = walker.prev
-  }
-
-  for (var i = 0; i < nodes.length; i++) {
-    walker = insert(this, walker, nodes[i])
-  }
-  return ret;
-}
-
-Yallist.prototype.reverse = function () {
-  var head = this.head
-  var tail = this.tail
-  for (var walker = head; walker !== null; walker = walker.prev) {
-    var p = walker.prev
-    walker.prev = walker.next
-    walker.next = p
-  }
-  this.head = tail
-  this.tail = head
-  return this
-}
-
-function insert (self, node, value) {
-  var inserted = node === self.head ?
-    new Node(value, null, node, self) :
-    new Node(value, node, node.next, self)
-
-  if (inserted.next === null) {
-    self.tail = inserted
-  }
-  if (inserted.prev === null) {
-    self.head = inserted
-  }
-
-  self.length++
-
-  return inserted
-}
-
-function push (self, item) {
-  self.tail = new Node(item, self.tail, null, self)
-  if (!self.head) {
-    self.head = self.tail
-  }
-  self.length++
-}
-
-function unshift (self, item) {
-  self.head = new Node(item, null, self.head, self)
-  if (!self.tail) {
-    self.tail = self.head
-  }
-  self.length++
-}
-
-function Node (value, prev, next, list) {
-  if (!(this instanceof Node)) {
-    return new Node(value, prev, next, list)
-  }
-
-  this.list = list
-  this.value = value
-
-  if (prev) {
-    prev.next = this
-    this.prev = prev
-  } else {
-    this.prev = null
-  }
-
-  if (next) {
-    next.prev = this
-    this.next = next
-  } else {
-    this.next = null
-  }
-}
-
-try {
-  // add if support for Symbol.iterator is present
-  __nccwpck_require__(4091)(Yallist)
-} catch (er) {}
-
-
-/***/ }),
-
-/***/ 2626:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-module.exports = require(__nccwpck_require__.ab + "build/Release/sharp.node")
-
-/***/ }),
-
 /***/ 2877:
 /***/ ((module) => {
 
@@ -75294,7 +62092,7 @@ module.exports = eval("require")("encoding");
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"_args\":[[\"axios@0.21.1\",\"/home/runner/work/awesome-podcasts-bot/awesome-podcasts-bot\"]],\"_from\":\"axios@0.21.1\",\"_id\":\"axios@0.21.1\",\"_inBundle\":false,\"_integrity\":\"sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==\",\"_location\":\"/axios\",\"_phantomChildren\":{},\"_requested\":{\"type\":\"version\",\"registry\":true,\"raw\":\"axios@0.21.1\",\"name\":\"axios\",\"escapedName\":\"axios\",\"rawSpec\":\"0.21.1\",\"saveSpec\":null,\"fetchSpec\":\"0.21.1\"},\"_requiredBy\":[\"/\",\"/@types/axios\"],\"_resolved\":\"https://registry.npmjs.org/axios/-/axios-0.21.1.tgz\",\"_spec\":\"0.21.1\",\"_where\":\"/home/runner/work/awesome-podcasts-bot/awesome-podcasts-bot\",\"author\":{\"name\":\"Matt Zabriskie\"},\"browser\":{\"./lib/adapters/http.js\":\"./lib/adapters/xhr.js\"},\"bugs\":{\"url\":\"https://github.com/axios/axios/issues\"},\"bundlesize\":[{\"path\":\"./dist/axios.min.js\",\"threshold\":\"5kB\"}],\"dependencies\":{\"follow-redirects\":\"^1.10.0\"},\"description\":\"Promise based HTTP client for the browser and node.js\",\"devDependencies\":{\"bundlesize\":\"^0.17.0\",\"coveralls\":\"^3.0.0\",\"es6-promise\":\"^4.2.4\",\"grunt\":\"^1.0.2\",\"grunt-banner\":\"^0.6.0\",\"grunt-cli\":\"^1.2.0\",\"grunt-contrib-clean\":\"^1.1.0\",\"grunt-contrib-watch\":\"^1.0.0\",\"grunt-eslint\":\"^20.1.0\",\"grunt-karma\":\"^2.0.0\",\"grunt-mocha-test\":\"^0.13.3\",\"grunt-ts\":\"^6.0.0-beta.19\",\"grunt-webpack\":\"^1.0.18\",\"istanbul-instrumenter-loader\":\"^1.0.0\",\"jasmine-core\":\"^2.4.1\",\"karma\":\"^1.3.0\",\"karma-chrome-launcher\":\"^2.2.0\",\"karma-coverage\":\"^1.1.1\",\"karma-firefox-launcher\":\"^1.1.0\",\"karma-jasmine\":\"^1.1.1\",\"karma-jasmine-ajax\":\"^0.1.13\",\"karma-opera-launcher\":\"^1.0.0\",\"karma-safari-launcher\":\"^1.0.0\",\"karma-sauce-launcher\":\"^1.2.0\",\"karma-sinon\":\"^1.0.5\",\"karma-sourcemap-loader\":\"^0.3.7\",\"karma-webpack\":\"^1.7.0\",\"load-grunt-tasks\":\"^3.5.2\",\"minimist\":\"^1.2.0\",\"mocha\":\"^5.2.0\",\"sinon\":\"^4.5.0\",\"typescript\":\"^2.8.1\",\"url-search-params\":\"^0.10.0\",\"webpack\":\"^1.13.1\",\"webpack-dev-server\":\"^1.14.1\"},\"homepage\":\"https://github.com/axios/axios\",\"jsdelivr\":\"dist/axios.min.js\",\"keywords\":[\"xhr\",\"http\",\"ajax\",\"promise\",\"node\"],\"license\":\"MIT\",\"main\":\"index.js\",\"name\":\"axios\",\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/axios/axios.git\"},\"scripts\":{\"build\":\"NODE_ENV=production grunt build\",\"coveralls\":\"cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js\",\"examples\":\"node ./examples/server.js\",\"fix\":\"eslint --fix lib/**/*.js\",\"postversion\":\"git push && git push --tags\",\"preversion\":\"npm test\",\"start\":\"node ./sandbox/server.js\",\"test\":\"grunt test && bundlesize\",\"version\":\"npm run build && grunt version && git add -A dist && git add CHANGELOG.md bower.json package.json\"},\"typings\":\"./index.d.ts\",\"unpkg\":\"dist/axios.min.js\",\"version\":\"0.21.1\"}");
+module.exports = JSON.parse("{\"_from\":\"axios\",\"_id\":\"axios@0.21.1\",\"_inBundle\":false,\"_integrity\":\"sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==\",\"_location\":\"/axios\",\"_phantomChildren\":{},\"_requested\":{\"type\":\"tag\",\"registry\":true,\"raw\":\"axios\",\"name\":\"axios\",\"escapedName\":\"axios\",\"rawSpec\":\"\",\"saveSpec\":null,\"fetchSpec\":\"latest\"},\"_requiredBy\":[\"#USER\",\"/\"],\"_resolved\":\"https://registry.npmjs.org/axios/-/axios-0.21.1.tgz\",\"_shasum\":\"22563481962f4d6bde9a76d516ef0e5d3c09b2b8\",\"_spec\":\"axios\",\"_where\":\"/Users/pcarion/pierre/awesome-podcasts-bot\",\"author\":{\"name\":\"Matt Zabriskie\"},\"browser\":{\"./lib/adapters/http.js\":\"./lib/adapters/xhr.js\"},\"bugs\":{\"url\":\"https://github.com/axios/axios/issues\"},\"bundleDependencies\":false,\"bundlesize\":[{\"path\":\"./dist/axios.min.js\",\"threshold\":\"5kB\"}],\"dependencies\":{\"follow-redirects\":\"^1.10.0\"},\"deprecated\":false,\"description\":\"Promise based HTTP client for the browser and node.js\",\"devDependencies\":{\"bundlesize\":\"^0.17.0\",\"coveralls\":\"^3.0.0\",\"es6-promise\":\"^4.2.4\",\"grunt\":\"^1.0.2\",\"grunt-banner\":\"^0.6.0\",\"grunt-cli\":\"^1.2.0\",\"grunt-contrib-clean\":\"^1.1.0\",\"grunt-contrib-watch\":\"^1.0.0\",\"grunt-eslint\":\"^20.1.0\",\"grunt-karma\":\"^2.0.0\",\"grunt-mocha-test\":\"^0.13.3\",\"grunt-ts\":\"^6.0.0-beta.19\",\"grunt-webpack\":\"^1.0.18\",\"istanbul-instrumenter-loader\":\"^1.0.0\",\"jasmine-core\":\"^2.4.1\",\"karma\":\"^1.3.0\",\"karma-chrome-launcher\":\"^2.2.0\",\"karma-coverage\":\"^1.1.1\",\"karma-firefox-launcher\":\"^1.1.0\",\"karma-jasmine\":\"^1.1.1\",\"karma-jasmine-ajax\":\"^0.1.13\",\"karma-opera-launcher\":\"^1.0.0\",\"karma-safari-launcher\":\"^1.0.0\",\"karma-sauce-launcher\":\"^1.2.0\",\"karma-sinon\":\"^1.0.5\",\"karma-sourcemap-loader\":\"^0.3.7\",\"karma-webpack\":\"^1.7.0\",\"load-grunt-tasks\":\"^3.5.2\",\"minimist\":\"^1.2.0\",\"mocha\":\"^5.2.0\",\"sinon\":\"^4.5.0\",\"typescript\":\"^2.8.1\",\"url-search-params\":\"^0.10.0\",\"webpack\":\"^1.13.1\",\"webpack-dev-server\":\"^1.14.1\"},\"homepage\":\"https://github.com/axios/axios\",\"jsdelivr\":\"dist/axios.min.js\",\"keywords\":[\"xhr\",\"http\",\"ajax\",\"promise\",\"node\"],\"license\":\"MIT\",\"main\":\"index.js\",\"name\":\"axios\",\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/axios/axios.git\"},\"scripts\":{\"build\":\"NODE_ENV=production grunt build\",\"coveralls\":\"cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js\",\"examples\":\"node ./examples/server.js\",\"fix\":\"eslint --fix lib/**/*.js\",\"postversion\":\"git push && git push --tags\",\"preversion\":\"npm test\",\"start\":\"node ./sandbox/server.js\",\"test\":\"grunt test && bundlesize\",\"version\":\"npm run build && grunt version && git add -A dist && git add CHANGELOG.md bower.json package.json\"},\"typings\":\"./index.d.ts\",\"unpkg\":\"dist/axios.min.js\",\"version\":\"0.21.1\"}");
 
 /***/ }),
 
@@ -75330,19 +62128,11 @@ module.exports = JSON.parse("{\"amp\":\"&\",\"apos\":\"'\",\"gt\":\">\",\"lt\":\
 
 /***/ }),
 
-/***/ 1062:
+/***/ 2274:
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"vc\":{\"W0\":\"8.10.5\"}}");
-
-/***/ }),
-
-/***/ 8908:
-/***/ ((module) => {
-
-"use strict";
-module.exports = JSON.parse("{\"aom\":\"2.0.1\",\"cairo\":\"1.17.4\",\"exif\":\"0.6.22\",\"expat\":\"2.2.10\",\"ffi\":\"3.3\",\"fontconfig\":\"2.13.93\",\"freetype\":\"2.10.4\",\"fribidi\":\"1.0.10\",\"gdkpixbuf\":\"2.42.2\",\"gettext\":\"0.21\",\"gif\":\"5.1.4\",\"glib\":\"2.67.1\",\"gsf\":\"1.14.47\",\"harfbuzz\":\"2.7.2\",\"heif\":\"1.10.0\",\"jpeg\":\"2.0.6\",\"lcms\":\"2.11\",\"orc\":\"0.4.32\",\"pango\":\"1.48.0\",\"pixman\":\"0.40.0\",\"png\":\"1.6.37\",\"svg\":\"2.50.2\",\"spng\":\"0.6.1\",\"tiff\":\"4.2.0\",\"vips\":\"8.10.5\",\"webp\":\"1.1.0\",\"xml\":\"2.9.10\",\"zlib\":\"1.2.11\"}");
+module.exports = JSON.parse("{\"application/andrew-inset\":[\"ez\"],\"application/applixware\":[\"aw\"],\"application/atom+xml\":[\"atom\"],\"application/atomcat+xml\":[\"atomcat\"],\"application/atomsvc+xml\":[\"atomsvc\"],\"application/bdoc\":[\"bdoc\"],\"application/ccxml+xml\":[\"ccxml\"],\"application/cdmi-capability\":[\"cdmia\"],\"application/cdmi-container\":[\"cdmic\"],\"application/cdmi-domain\":[\"cdmid\"],\"application/cdmi-object\":[\"cdmio\"],\"application/cdmi-queue\":[\"cdmiq\"],\"application/cu-seeme\":[\"cu\"],\"application/dash+xml\":[\"mpd\"],\"application/davmount+xml\":[\"davmount\"],\"application/docbook+xml\":[\"dbk\"],\"application/dssc+der\":[\"dssc\"],\"application/dssc+xml\":[\"xdssc\"],\"application/ecmascript\":[\"ecma\"],\"application/emma+xml\":[\"emma\"],\"application/epub+zip\":[\"epub\"],\"application/exi\":[\"exi\"],\"application/font-tdpfr\":[\"pfr\"],\"application/font-woff\":[],\"application/font-woff2\":[],\"application/geo+json\":[\"geojson\"],\"application/gml+xml\":[\"gml\"],\"application/gpx+xml\":[\"gpx\"],\"application/gxf\":[\"gxf\"],\"application/gzip\":[\"gz\"],\"application/hyperstudio\":[\"stk\"],\"application/inkml+xml\":[\"ink\",\"inkml\"],\"application/ipfix\":[\"ipfix\"],\"application/java-archive\":[\"jar\",\"war\",\"ear\"],\"application/java-serialized-object\":[\"ser\"],\"application/java-vm\":[\"class\"],\"application/javascript\":[\"js\",\"mjs\"],\"application/json\":[\"json\",\"map\"],\"application/json5\":[\"json5\"],\"application/jsonml+json\":[\"jsonml\"],\"application/ld+json\":[\"jsonld\"],\"application/lost+xml\":[\"lostxml\"],\"application/mac-binhex40\":[\"hqx\"],\"application/mac-compactpro\":[\"cpt\"],\"application/mads+xml\":[\"mads\"],\"application/manifest+json\":[\"webmanifest\"],\"application/marc\":[\"mrc\"],\"application/marcxml+xml\":[\"mrcx\"],\"application/mathematica\":[\"ma\",\"nb\",\"mb\"],\"application/mathml+xml\":[\"mathml\"],\"application/mbox\":[\"mbox\"],\"application/mediaservercontrol+xml\":[\"mscml\"],\"application/metalink+xml\":[\"metalink\"],\"application/metalink4+xml\":[\"meta4\"],\"application/mets+xml\":[\"mets\"],\"application/mods+xml\":[\"mods\"],\"application/mp21\":[\"m21\",\"mp21\"],\"application/mp4\":[\"mp4s\",\"m4p\"],\"application/msword\":[\"doc\",\"dot\"],\"application/mxf\":[\"mxf\"],\"application/octet-stream\":[\"bin\",\"dms\",\"lrf\",\"mar\",\"so\",\"dist\",\"distz\",\"pkg\",\"bpk\",\"dump\",\"elc\",\"deploy\",\"exe\",\"dll\",\"deb\",\"dmg\",\"iso\",\"img\",\"msi\",\"msp\",\"msm\",\"buffer\"],\"application/oda\":[\"oda\"],\"application/oebps-package+xml\":[\"opf\"],\"application/ogg\":[\"ogx\"],\"application/omdoc+xml\":[\"omdoc\"],\"application/onenote\":[\"onetoc\",\"onetoc2\",\"onetmp\",\"onepkg\"],\"application/oxps\":[\"oxps\"],\"application/patch-ops-error+xml\":[\"xer\"],\"application/pdf\":[\"pdf\"],\"application/pgp-encrypted\":[\"pgp\"],\"application/pgp-signature\":[\"asc\",\"sig\"],\"application/pics-rules\":[\"prf\"],\"application/pkcs10\":[\"p10\"],\"application/pkcs7-mime\":[\"p7m\",\"p7c\"],\"application/pkcs7-signature\":[\"p7s\"],\"application/pkcs8\":[\"p8\"],\"application/pkix-attr-cert\":[\"ac\"],\"application/pkix-cert\":[\"cer\"],\"application/pkix-crl\":[\"crl\"],\"application/pkix-pkipath\":[\"pkipath\"],\"application/pkixcmp\":[\"pki\"],\"application/pls+xml\":[\"pls\"],\"application/postscript\":[\"ai\",\"eps\",\"ps\"],\"application/prs.cww\":[\"cww\"],\"application/pskc+xml\":[\"pskcxml\"],\"application/raml+yaml\":[\"raml\"],\"application/rdf+xml\":[\"rdf\"],\"application/reginfo+xml\":[\"rif\"],\"application/relax-ng-compact-syntax\":[\"rnc\"],\"application/resource-lists+xml\":[\"rl\"],\"application/resource-lists-diff+xml\":[\"rld\"],\"application/rls-services+xml\":[\"rs\"],\"application/rpki-ghostbusters\":[\"gbr\"],\"application/rpki-manifest\":[\"mft\"],\"application/rpki-roa\":[\"roa\"],\"application/rsd+xml\":[\"rsd\"],\"application/rss+xml\":[\"rss\"],\"application/rtf\":[\"rtf\"],\"application/sbml+xml\":[\"sbml\"],\"application/scvp-cv-request\":[\"scq\"],\"application/scvp-cv-response\":[\"scs\"],\"application/scvp-vp-request\":[\"spq\"],\"application/scvp-vp-response\":[\"spp\"],\"application/sdp\":[\"sdp\"],\"application/set-payment-initiation\":[\"setpay\"],\"application/set-registration-initiation\":[\"setreg\"],\"application/shf+xml\":[\"shf\"],\"application/smil+xml\":[\"smi\",\"smil\"],\"application/sparql-query\":[\"rq\"],\"application/sparql-results+xml\":[\"srx\"],\"application/srgs\":[\"gram\"],\"application/srgs+xml\":[\"grxml\"],\"application/sru+xml\":[\"sru\"],\"application/ssdl+xml\":[\"ssdl\"],\"application/ssml+xml\":[\"ssml\"],\"application/tei+xml\":[\"tei\",\"teicorpus\"],\"application/thraud+xml\":[\"tfi\"],\"application/timestamped-data\":[\"tsd\"],\"application/vnd.3gpp.pic-bw-large\":[\"plb\"],\"application/vnd.3gpp.pic-bw-small\":[\"psb\"],\"application/vnd.3gpp.pic-bw-var\":[\"pvb\"],\"application/vnd.3gpp2.tcap\":[\"tcap\"],\"application/vnd.3m.post-it-notes\":[\"pwn\"],\"application/vnd.accpac.simply.aso\":[\"aso\"],\"application/vnd.accpac.simply.imp\":[\"imp\"],\"application/vnd.acucobol\":[\"acu\"],\"application/vnd.acucorp\":[\"atc\",\"acutc\"],\"application/vnd.adobe.air-application-installer-package+zip\":[\"air\"],\"application/vnd.adobe.formscentral.fcdt\":[\"fcdt\"],\"application/vnd.adobe.fxp\":[\"fxp\",\"fxpl\"],\"application/vnd.adobe.xdp+xml\":[\"xdp\"],\"application/vnd.adobe.xfdf\":[\"xfdf\"],\"application/vnd.ahead.space\":[\"ahead\"],\"application/vnd.airzip.filesecure.azf\":[\"azf\"],\"application/vnd.airzip.filesecure.azs\":[\"azs\"],\"application/vnd.amazon.ebook\":[\"azw\"],\"application/vnd.americandynamics.acc\":[\"acc\"],\"application/vnd.amiga.ami\":[\"ami\"],\"application/vnd.android.package-archive\":[\"apk\"],\"application/vnd.anser-web-certificate-issue-initiation\":[\"cii\"],\"application/vnd.anser-web-funds-transfer-initiation\":[\"fti\"],\"application/vnd.antix.game-component\":[\"atx\"],\"application/vnd.apple.installer+xml\":[\"mpkg\"],\"application/vnd.apple.mpegurl\":[\"m3u8\"],\"application/vnd.apple.pkpass\":[\"pkpass\"],\"application/vnd.aristanetworks.swi\":[\"swi\"],\"application/vnd.astraea-software.iota\":[\"iota\"],\"application/vnd.audiograph\":[\"aep\"],\"application/vnd.blueice.multipass\":[\"mpm\"],\"application/vnd.bmi\":[\"bmi\"],\"application/vnd.businessobjects\":[\"rep\"],\"application/vnd.chemdraw+xml\":[\"cdxml\"],\"application/vnd.chipnuts.karaoke-mmd\":[\"mmd\"],\"application/vnd.cinderella\":[\"cdy\"],\"application/vnd.claymore\":[\"cla\"],\"application/vnd.cloanto.rp9\":[\"rp9\"],\"application/vnd.clonk.c4group\":[\"c4g\",\"c4d\",\"c4f\",\"c4p\",\"c4u\"],\"application/vnd.cluetrust.cartomobile-config\":[\"c11amc\"],\"application/vnd.cluetrust.cartomobile-config-pkg\":[\"c11amz\"],\"application/vnd.commonspace\":[\"csp\"],\"application/vnd.contact.cmsg\":[\"cdbcmsg\"],\"application/vnd.cosmocaller\":[\"cmc\"],\"application/vnd.crick.clicker\":[\"clkx\"],\"application/vnd.crick.clicker.keyboard\":[\"clkk\"],\"application/vnd.crick.clicker.palette\":[\"clkp\"],\"application/vnd.crick.clicker.template\":[\"clkt\"],\"application/vnd.crick.clicker.wordbank\":[\"clkw\"],\"application/vnd.criticaltools.wbs+xml\":[\"wbs\"],\"application/vnd.ctc-posml\":[\"pml\"],\"application/vnd.cups-ppd\":[\"ppd\"],\"application/vnd.curl.car\":[\"car\"],\"application/vnd.curl.pcurl\":[\"pcurl\"],\"application/vnd.dart\":[\"dart\"],\"application/vnd.data-vision.rdz\":[\"rdz\"],\"application/vnd.dece.data\":[\"uvf\",\"uvvf\",\"uvd\",\"uvvd\"],\"application/vnd.dece.ttml+xml\":[\"uvt\",\"uvvt\"],\"application/vnd.dece.unspecified\":[\"uvx\",\"uvvx\"],\"application/vnd.dece.zip\":[\"uvz\",\"uvvz\"],\"application/vnd.denovo.fcselayout-link\":[\"fe_launch\"],\"application/vnd.dna\":[\"dna\"],\"application/vnd.dolby.mlp\":[\"mlp\"],\"application/vnd.dpgraph\":[\"dpg\"],\"application/vnd.dreamfactory\":[\"dfac\"],\"application/vnd.ds-keypoint\":[\"kpxx\"],\"application/vnd.dvb.ait\":[\"ait\"],\"application/vnd.dvb.service\":[\"svc\"],\"application/vnd.dynageo\":[\"geo\"],\"application/vnd.ecowin.chart\":[\"mag\"],\"application/vnd.enliven\":[\"nml\"],\"application/vnd.epson.esf\":[\"esf\"],\"application/vnd.epson.msf\":[\"msf\"],\"application/vnd.epson.quickanime\":[\"qam\"],\"application/vnd.epson.salt\":[\"slt\"],\"application/vnd.epson.ssf\":[\"ssf\"],\"application/vnd.eszigno3+xml\":[\"es3\",\"et3\"],\"application/vnd.ezpix-album\":[\"ez2\"],\"application/vnd.ezpix-package\":[\"ez3\"],\"application/vnd.fdf\":[\"fdf\"],\"application/vnd.fdsn.mseed\":[\"mseed\"],\"application/vnd.fdsn.seed\":[\"seed\",\"dataless\"],\"application/vnd.flographit\":[\"gph\"],\"application/vnd.fluxtime.clip\":[\"ftc\"],\"application/vnd.framemaker\":[\"fm\",\"frame\",\"maker\",\"book\"],\"application/vnd.frogans.fnc\":[\"fnc\"],\"application/vnd.frogans.ltf\":[\"ltf\"],\"application/vnd.fsc.weblaunch\":[\"fsc\"],\"application/vnd.fujitsu.oasys\":[\"oas\"],\"application/vnd.fujitsu.oasys2\":[\"oa2\"],\"application/vnd.fujitsu.oasys3\":[\"oa3\"],\"application/vnd.fujitsu.oasysgp\":[\"fg5\"],\"application/vnd.fujitsu.oasysprs\":[\"bh2\"],\"application/vnd.fujixerox.ddd\":[\"ddd\"],\"application/vnd.fujixerox.docuworks\":[\"xdw\"],\"application/vnd.fujixerox.docuworks.binder\":[\"xbd\"],\"application/vnd.fuzzysheet\":[\"fzs\"],\"application/vnd.genomatix.tuxedo\":[\"txd\"],\"application/vnd.geogebra.file\":[\"ggb\"],\"application/vnd.geogebra.tool\":[\"ggt\"],\"application/vnd.geometry-explorer\":[\"gex\",\"gre\"],\"application/vnd.geonext\":[\"gxt\"],\"application/vnd.geoplan\":[\"g2w\"],\"application/vnd.geospace\":[\"g3w\"],\"application/vnd.gmx\":[\"gmx\"],\"application/vnd.google-apps.document\":[\"gdoc\"],\"application/vnd.google-apps.presentation\":[\"gslides\"],\"application/vnd.google-apps.spreadsheet\":[\"gsheet\"],\"application/vnd.google-earth.kml+xml\":[\"kml\"],\"application/vnd.google-earth.kmz\":[\"kmz\"],\"application/vnd.grafeq\":[\"gqf\",\"gqs\"],\"application/vnd.groove-account\":[\"gac\"],\"application/vnd.groove-help\":[\"ghf\"],\"application/vnd.groove-identity-message\":[\"gim\"],\"application/vnd.groove-injector\":[\"grv\"],\"application/vnd.groove-tool-message\":[\"gtm\"],\"application/vnd.groove-tool-template\":[\"tpl\"],\"application/vnd.groove-vcard\":[\"vcg\"],\"application/vnd.hal+xml\":[\"hal\"],\"application/vnd.handheld-entertainment+xml\":[\"zmm\"],\"application/vnd.hbci\":[\"hbci\"],\"application/vnd.hhe.lesson-player\":[\"les\"],\"application/vnd.hp-hpgl\":[\"hpgl\"],\"application/vnd.hp-hpid\":[\"hpid\"],\"application/vnd.hp-hps\":[\"hps\"],\"application/vnd.hp-jlyt\":[\"jlt\"],\"application/vnd.hp-pcl\":[\"pcl\"],\"application/vnd.hp-pclxl\":[\"pclxl\"],\"application/vnd.hydrostatix.sof-data\":[\"sfd-hdstx\"],\"application/vnd.ibm.minipay\":[\"mpy\"],\"application/vnd.ibm.modcap\":[\"afp\",\"listafp\",\"list3820\"],\"application/vnd.ibm.rights-management\":[\"irm\"],\"application/vnd.ibm.secure-container\":[\"sc\"],\"application/vnd.iccprofile\":[\"icc\",\"icm\"],\"application/vnd.igloader\":[\"igl\"],\"application/vnd.immervision-ivp\":[\"ivp\"],\"application/vnd.immervision-ivu\":[\"ivu\"],\"application/vnd.insors.igm\":[\"igm\"],\"application/vnd.intercon.formnet\":[\"xpw\",\"xpx\"],\"application/vnd.intergeo\":[\"i2g\"],\"application/vnd.intu.qbo\":[\"qbo\"],\"application/vnd.intu.qfx\":[\"qfx\"],\"application/vnd.ipunplugged.rcprofile\":[\"rcprofile\"],\"application/vnd.irepository.package+xml\":[\"irp\"],\"application/vnd.is-xpr\":[\"xpr\"],\"application/vnd.isac.fcs\":[\"fcs\"],\"application/vnd.jam\":[\"jam\"],\"application/vnd.jcp.javame.midlet-rms\":[\"rms\"],\"application/vnd.jisp\":[\"jisp\"],\"application/vnd.joost.joda-archive\":[\"joda\"],\"application/vnd.kahootz\":[\"ktz\",\"ktr\"],\"application/vnd.kde.karbon\":[\"karbon\"],\"application/vnd.kde.kchart\":[\"chrt\"],\"application/vnd.kde.kformula\":[\"kfo\"],\"application/vnd.kde.kivio\":[\"flw\"],\"application/vnd.kde.kontour\":[\"kon\"],\"application/vnd.kde.kpresenter\":[\"kpr\",\"kpt\"],\"application/vnd.kde.kspread\":[\"ksp\"],\"application/vnd.kde.kword\":[\"kwd\",\"kwt\"],\"application/vnd.kenameaapp\":[\"htke\"],\"application/vnd.kidspiration\":[\"kia\"],\"application/vnd.kinar\":[\"kne\",\"knp\"],\"application/vnd.koan\":[\"skp\",\"skd\",\"skt\",\"skm\"],\"application/vnd.kodak-descriptor\":[\"sse\"],\"application/vnd.las.las+xml\":[\"lasxml\"],\"application/vnd.llamagraphics.life-balance.desktop\":[\"lbd\"],\"application/vnd.llamagraphics.life-balance.exchange+xml\":[\"lbe\"],\"application/vnd.lotus-1-2-3\":[\"123\"],\"application/vnd.lotus-approach\":[\"apr\"],\"application/vnd.lotus-freelance\":[\"pre\"],\"application/vnd.lotus-notes\":[\"nsf\"],\"application/vnd.lotus-organizer\":[\"org\"],\"application/vnd.lotus-screencam\":[\"scm\"],\"application/vnd.lotus-wordpro\":[\"lwp\"],\"application/vnd.macports.portpkg\":[\"portpkg\"],\"application/vnd.mcd\":[\"mcd\"],\"application/vnd.medcalcdata\":[\"mc1\"],\"application/vnd.mediastation.cdkey\":[\"cdkey\"],\"application/vnd.mfer\":[\"mwf\"],\"application/vnd.mfmp\":[\"mfm\"],\"application/vnd.micrografx.flo\":[\"flo\"],\"application/vnd.micrografx.igx\":[\"igx\"],\"application/vnd.mif\":[\"mif\"],\"application/vnd.mobius.daf\":[\"daf\"],\"application/vnd.mobius.dis\":[\"dis\"],\"application/vnd.mobius.mbk\":[\"mbk\"],\"application/vnd.mobius.mqy\":[\"mqy\"],\"application/vnd.mobius.msl\":[\"msl\"],\"application/vnd.mobius.plc\":[\"plc\"],\"application/vnd.mobius.txf\":[\"txf\"],\"application/vnd.mophun.application\":[\"mpn\"],\"application/vnd.mophun.certificate\":[\"mpc\"],\"application/vnd.mozilla.xul+xml\":[\"xul\"],\"application/vnd.ms-artgalry\":[\"cil\"],\"application/vnd.ms-cab-compressed\":[\"cab\"],\"application/vnd.ms-excel\":[\"xls\",\"xlm\",\"xla\",\"xlc\",\"xlt\",\"xlw\"],\"application/vnd.ms-excel.addin.macroenabled.12\":[\"xlam\"],\"application/vnd.ms-excel.sheet.binary.macroenabled.12\":[\"xlsb\"],\"application/vnd.ms-excel.sheet.macroenabled.12\":[\"xlsm\"],\"application/vnd.ms-excel.template.macroenabled.12\":[\"xltm\"],\"application/vnd.ms-fontobject\":[\"eot\"],\"application/vnd.ms-htmlhelp\":[\"chm\"],\"application/vnd.ms-ims\":[\"ims\"],\"application/vnd.ms-lrm\":[\"lrm\"],\"application/vnd.ms-officetheme\":[\"thmx\"],\"application/vnd.ms-outlook\":[\"msg\"],\"application/vnd.ms-pki.seccat\":[\"cat\"],\"application/vnd.ms-pki.stl\":[\"stl\"],\"application/vnd.ms-powerpoint\":[\"ppt\",\"pps\",\"pot\"],\"application/vnd.ms-powerpoint.addin.macroenabled.12\":[\"ppam\"],\"application/vnd.ms-powerpoint.presentation.macroenabled.12\":[\"pptm\"],\"application/vnd.ms-powerpoint.slide.macroenabled.12\":[\"sldm\"],\"application/vnd.ms-powerpoint.slideshow.macroenabled.12\":[\"ppsm\"],\"application/vnd.ms-powerpoint.template.macroenabled.12\":[\"potm\"],\"application/vnd.ms-project\":[\"mpp\",\"mpt\"],\"application/vnd.ms-word.document.macroenabled.12\":[\"docm\"],\"application/vnd.ms-word.template.macroenabled.12\":[\"dotm\"],\"application/vnd.ms-works\":[\"wps\",\"wks\",\"wcm\",\"wdb\"],\"application/vnd.ms-wpl\":[\"wpl\"],\"application/vnd.ms-xpsdocument\":[\"xps\"],\"application/vnd.mseq\":[\"mseq\"],\"application/vnd.musician\":[\"mus\"],\"application/vnd.muvee.style\":[\"msty\"],\"application/vnd.mynfc\":[\"taglet\"],\"application/vnd.neurolanguage.nlu\":[\"nlu\"],\"application/vnd.nitf\":[\"ntf\",\"nitf\"],\"application/vnd.noblenet-directory\":[\"nnd\"],\"application/vnd.noblenet-sealer\":[\"nns\"],\"application/vnd.noblenet-web\":[\"nnw\"],\"application/vnd.nokia.n-gage.data\":[\"ngdat\"],\"application/vnd.nokia.n-gage.symbian.install\":[\"n-gage\"],\"application/vnd.nokia.radio-preset\":[\"rpst\"],\"application/vnd.nokia.radio-presets\":[\"rpss\"],\"application/vnd.novadigm.edm\":[\"edm\"],\"application/vnd.novadigm.edx\":[\"edx\"],\"application/vnd.novadigm.ext\":[\"ext\"],\"application/vnd.oasis.opendocument.chart\":[\"odc\"],\"application/vnd.oasis.opendocument.chart-template\":[\"otc\"],\"application/vnd.oasis.opendocument.database\":[\"odb\"],\"application/vnd.oasis.opendocument.formula\":[\"odf\"],\"application/vnd.oasis.opendocument.formula-template\":[\"odft\"],\"application/vnd.oasis.opendocument.graphics\":[\"odg\"],\"application/vnd.oasis.opendocument.graphics-template\":[\"otg\"],\"application/vnd.oasis.opendocument.image\":[\"odi\"],\"application/vnd.oasis.opendocument.image-template\":[\"oti\"],\"application/vnd.oasis.opendocument.presentation\":[\"odp\"],\"application/vnd.oasis.opendocument.presentation-template\":[\"otp\"],\"application/vnd.oasis.opendocument.spreadsheet\":[\"ods\"],\"application/vnd.oasis.opendocument.spreadsheet-template\":[\"ots\"],\"application/vnd.oasis.opendocument.text\":[\"odt\"],\"application/vnd.oasis.opendocument.text-master\":[\"odm\"],\"application/vnd.oasis.opendocument.text-template\":[\"ott\"],\"application/vnd.oasis.opendocument.text-web\":[\"oth\"],\"application/vnd.olpc-sugar\":[\"xo\"],\"application/vnd.oma.dd2+xml\":[\"dd2\"],\"application/vnd.openofficeorg.extension\":[\"oxt\"],\"application/vnd.openxmlformats-officedocument.presentationml.presentation\":[\"pptx\"],\"application/vnd.openxmlformats-officedocument.presentationml.slide\":[\"sldx\"],\"application/vnd.openxmlformats-officedocument.presentationml.slideshow\":[\"ppsx\"],\"application/vnd.openxmlformats-officedocument.presentationml.template\":[\"potx\"],\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\":[\"xlsx\"],\"application/vnd.openxmlformats-officedocument.spreadsheetml.template\":[\"xltx\"],\"application/vnd.openxmlformats-officedocument.wordprocessingml.document\":[\"docx\"],\"application/vnd.openxmlformats-officedocument.wordprocessingml.template\":[\"dotx\"],\"application/vnd.osgeo.mapguide.package\":[\"mgp\"],\"application/vnd.osgi.dp\":[\"dp\"],\"application/vnd.osgi.subsystem\":[\"esa\"],\"application/vnd.palm\":[\"pdb\",\"pqa\",\"oprc\"],\"application/vnd.pawaafile\":[\"paw\"],\"application/vnd.pg.format\":[\"str\"],\"application/vnd.pg.osasli\":[\"ei6\"],\"application/vnd.picsel\":[\"efif\"],\"application/vnd.pmi.widget\":[\"wg\"],\"application/vnd.pocketlearn\":[\"plf\"],\"application/vnd.powerbuilder6\":[\"pbd\"],\"application/vnd.previewsystems.box\":[\"box\"],\"application/vnd.proteus.magazine\":[\"mgz\"],\"application/vnd.publishare-delta-tree\":[\"qps\"],\"application/vnd.pvi.ptid1\":[\"ptid\"],\"application/vnd.quark.quarkxpress\":[\"qxd\",\"qxt\",\"qwd\",\"qwt\",\"qxl\",\"qxb\"],\"application/vnd.realvnc.bed\":[\"bed\"],\"application/vnd.recordare.musicxml\":[\"mxl\"],\"application/vnd.recordare.musicxml+xml\":[\"musicxml\"],\"application/vnd.rig.cryptonote\":[\"cryptonote\"],\"application/vnd.rim.cod\":[\"cod\"],\"application/vnd.rn-realmedia\":[\"rm\"],\"application/vnd.rn-realmedia-vbr\":[\"rmvb\"],\"application/vnd.route66.link66+xml\":[\"link66\"],\"application/vnd.sailingtracker.track\":[\"st\"],\"application/vnd.seemail\":[\"see\"],\"application/vnd.sema\":[\"sema\"],\"application/vnd.semd\":[\"semd\"],\"application/vnd.semf\":[\"semf\"],\"application/vnd.shana.informed.formdata\":[\"ifm\"],\"application/vnd.shana.informed.formtemplate\":[\"itp\"],\"application/vnd.shana.informed.interchange\":[\"iif\"],\"application/vnd.shana.informed.package\":[\"ipk\"],\"application/vnd.simtech-mindmapper\":[\"twd\",\"twds\"],\"application/vnd.smaf\":[\"mmf\"],\"application/vnd.smart.teacher\":[\"teacher\"],\"application/vnd.solent.sdkm+xml\":[\"sdkm\",\"sdkd\"],\"application/vnd.spotfire.dxp\":[\"dxp\"],\"application/vnd.spotfire.sfs\":[\"sfs\"],\"application/vnd.stardivision.calc\":[\"sdc\"],\"application/vnd.stardivision.draw\":[\"sda\"],\"application/vnd.stardivision.impress\":[\"sdd\"],\"application/vnd.stardivision.math\":[\"smf\"],\"application/vnd.stardivision.writer\":[\"sdw\",\"vor\"],\"application/vnd.stardivision.writer-global\":[\"sgl\"],\"application/vnd.stepmania.package\":[\"smzip\"],\"application/vnd.stepmania.stepchart\":[\"sm\"],\"application/vnd.sun.wadl+xml\":[\"wadl\"],\"application/vnd.sun.xml.calc\":[\"sxc\"],\"application/vnd.sun.xml.calc.template\":[\"stc\"],\"application/vnd.sun.xml.draw\":[\"sxd\"],\"application/vnd.sun.xml.draw.template\":[\"std\"],\"application/vnd.sun.xml.impress\":[\"sxi\"],\"application/vnd.sun.xml.impress.template\":[\"sti\"],\"application/vnd.sun.xml.math\":[\"sxm\"],\"application/vnd.sun.xml.writer\":[\"sxw\"],\"application/vnd.sun.xml.writer.global\":[\"sxg\"],\"application/vnd.sun.xml.writer.template\":[\"stw\"],\"application/vnd.sus-calendar\":[\"sus\",\"susp\"],\"application/vnd.svd\":[\"svd\"],\"application/vnd.symbian.install\":[\"sis\",\"sisx\"],\"application/vnd.syncml+xml\":[\"xsm\"],\"application/vnd.syncml.dm+wbxml\":[\"bdm\"],\"application/vnd.syncml.dm+xml\":[\"xdm\"],\"application/vnd.tao.intent-module-archive\":[\"tao\"],\"application/vnd.tcpdump.pcap\":[\"pcap\",\"cap\",\"dmp\"],\"application/vnd.tmobile-livetv\":[\"tmo\"],\"application/vnd.trid.tpt\":[\"tpt\"],\"application/vnd.triscape.mxs\":[\"mxs\"],\"application/vnd.trueapp\":[\"tra\"],\"application/vnd.ufdl\":[\"ufd\",\"ufdl\"],\"application/vnd.uiq.theme\":[\"utz\"],\"application/vnd.umajin\":[\"umj\"],\"application/vnd.unity\":[\"unityweb\"],\"application/vnd.uoml+xml\":[\"uoml\"],\"application/vnd.vcx\":[\"vcx\"],\"application/vnd.visio\":[\"vsd\",\"vst\",\"vss\",\"vsw\"],\"application/vnd.visionary\":[\"vis\"],\"application/vnd.vsf\":[\"vsf\"],\"application/vnd.wap.wbxml\":[\"wbxml\"],\"application/vnd.wap.wmlc\":[\"wmlc\"],\"application/vnd.wap.wmlscriptc\":[\"wmlsc\"],\"application/vnd.webturbo\":[\"wtb\"],\"application/vnd.wolfram.player\":[\"nbp\"],\"application/vnd.wordperfect\":[\"wpd\"],\"application/vnd.wqd\":[\"wqd\"],\"application/vnd.wt.stf\":[\"stf\"],\"application/vnd.xara\":[\"xar\"],\"application/vnd.xfdl\":[\"xfdl\"],\"application/vnd.yamaha.hv-dic\":[\"hvd\"],\"application/vnd.yamaha.hv-script\":[\"hvs\"],\"application/vnd.yamaha.hv-voice\":[\"hvp\"],\"application/vnd.yamaha.openscoreformat\":[\"osf\"],\"application/vnd.yamaha.openscoreformat.osfpvg+xml\":[\"osfpvg\"],\"application/vnd.yamaha.smaf-audio\":[\"saf\"],\"application/vnd.yamaha.smaf-phrase\":[\"spf\"],\"application/vnd.yellowriver-custom-menu\":[\"cmp\"],\"application/vnd.zul\":[\"zir\",\"zirz\"],\"application/vnd.zzazz.deck+xml\":[\"zaz\"],\"application/voicexml+xml\":[\"vxml\"],\"application/wasm\":[\"wasm\"],\"application/widget\":[\"wgt\"],\"application/winhlp\":[\"hlp\"],\"application/wsdl+xml\":[\"wsdl\"],\"application/wspolicy+xml\":[\"wspolicy\"],\"application/x-7z-compressed\":[\"7z\"],\"application/x-abiword\":[\"abw\"],\"application/x-ace-compressed\":[\"ace\"],\"application/x-apple-diskimage\":[],\"application/x-arj\":[\"arj\"],\"application/x-authorware-bin\":[\"aab\",\"x32\",\"u32\",\"vox\"],\"application/x-authorware-map\":[\"aam\"],\"application/x-authorware-seg\":[\"aas\"],\"application/x-bcpio\":[\"bcpio\"],\"application/x-bdoc\":[],\"application/x-bittorrent\":[\"torrent\"],\"application/x-blorb\":[\"blb\",\"blorb\"],\"application/x-bzip\":[\"bz\"],\"application/x-bzip2\":[\"bz2\",\"boz\"],\"application/x-cbr\":[\"cbr\",\"cba\",\"cbt\",\"cbz\",\"cb7\"],\"application/x-cdlink\":[\"vcd\"],\"application/x-cfs-compressed\":[\"cfs\"],\"application/x-chat\":[\"chat\"],\"application/x-chess-pgn\":[\"pgn\"],\"application/x-chrome-extension\":[\"crx\"],\"application/x-cocoa\":[\"cco\"],\"application/x-conference\":[\"nsc\"],\"application/x-cpio\":[\"cpio\"],\"application/x-csh\":[\"csh\"],\"application/x-debian-package\":[\"udeb\"],\"application/x-dgc-compressed\":[\"dgc\"],\"application/x-director\":[\"dir\",\"dcr\",\"dxr\",\"cst\",\"cct\",\"cxt\",\"w3d\",\"fgd\",\"swa\"],\"application/x-doom\":[\"wad\"],\"application/x-dtbncx+xml\":[\"ncx\"],\"application/x-dtbook+xml\":[\"dtb\"],\"application/x-dtbresource+xml\":[\"res\"],\"application/x-dvi\":[\"dvi\"],\"application/x-envoy\":[\"evy\"],\"application/x-eva\":[\"eva\"],\"application/x-font-bdf\":[\"bdf\"],\"application/x-font-ghostscript\":[\"gsf\"],\"application/x-font-linux-psf\":[\"psf\"],\"application/x-font-pcf\":[\"pcf\"],\"application/x-font-snf\":[\"snf\"],\"application/x-font-type1\":[\"pfa\",\"pfb\",\"pfm\",\"afm\"],\"application/x-freearc\":[\"arc\"],\"application/x-futuresplash\":[\"spl\"],\"application/x-gca-compressed\":[\"gca\"],\"application/x-glulx\":[\"ulx\"],\"application/x-gnumeric\":[\"gnumeric\"],\"application/x-gramps-xml\":[\"gramps\"],\"application/x-gtar\":[\"gtar\"],\"application/x-hdf\":[\"hdf\"],\"application/x-httpd-php\":[\"php\"],\"application/x-install-instructions\":[\"install\"],\"application/x-iso9660-image\":[],\"application/x-java-archive-diff\":[\"jardiff\"],\"application/x-java-jnlp-file\":[\"jnlp\"],\"application/x-latex\":[\"latex\"],\"application/x-lua-bytecode\":[\"luac\"],\"application/x-lzh-compressed\":[\"lzh\",\"lha\"],\"application/x-makeself\":[\"run\"],\"application/x-mie\":[\"mie\"],\"application/x-mobipocket-ebook\":[\"prc\",\"mobi\"],\"application/x-ms-application\":[\"application\"],\"application/x-ms-shortcut\":[\"lnk\"],\"application/x-ms-wmd\":[\"wmd\"],\"application/x-ms-wmz\":[\"wmz\"],\"application/x-ms-xbap\":[\"xbap\"],\"application/x-msaccess\":[\"mdb\"],\"application/x-msbinder\":[\"obd\"],\"application/x-mscardfile\":[\"crd\"],\"application/x-msclip\":[\"clp\"],\"application/x-msdos-program\":[],\"application/x-msdownload\":[\"com\",\"bat\"],\"application/x-msmediaview\":[\"mvb\",\"m13\",\"m14\"],\"application/x-msmetafile\":[\"wmf\",\"emf\",\"emz\"],\"application/x-msmoney\":[\"mny\"],\"application/x-mspublisher\":[\"pub\"],\"application/x-msschedule\":[\"scd\"],\"application/x-msterminal\":[\"trm\"],\"application/x-mswrite\":[\"wri\"],\"application/x-netcdf\":[\"nc\",\"cdf\"],\"application/x-ns-proxy-autoconfig\":[\"pac\"],\"application/x-nzb\":[\"nzb\"],\"application/x-perl\":[\"pl\",\"pm\"],\"application/x-pilot\":[],\"application/x-pkcs12\":[\"p12\",\"pfx\"],\"application/x-pkcs7-certificates\":[\"p7b\",\"spc\"],\"application/x-pkcs7-certreqresp\":[\"p7r\"],\"application/x-rar-compressed\":[\"rar\"],\"application/x-redhat-package-manager\":[\"rpm\"],\"application/x-research-info-systems\":[\"ris\"],\"application/x-sea\":[\"sea\"],\"application/x-sh\":[\"sh\"],\"application/x-shar\":[\"shar\"],\"application/x-shockwave-flash\":[\"swf\"],\"application/x-silverlight-app\":[\"xap\"],\"application/x-sql\":[\"sql\"],\"application/x-stuffit\":[\"sit\"],\"application/x-stuffitx\":[\"sitx\"],\"application/x-subrip\":[\"srt\"],\"application/x-sv4cpio\":[\"sv4cpio\"],\"application/x-sv4crc\":[\"sv4crc\"],\"application/x-t3vm-image\":[\"t3\"],\"application/x-tads\":[\"gam\"],\"application/x-tar\":[\"tar\"],\"application/x-tcl\":[\"tcl\",\"tk\"],\"application/x-tex\":[\"tex\"],\"application/x-tex-tfm\":[\"tfm\"],\"application/x-texinfo\":[\"texinfo\",\"texi\"],\"application/x-tgif\":[\"obj\"],\"application/x-ustar\":[\"ustar\"],\"application/x-virtualbox-hdd\":[\"hdd\"],\"application/x-virtualbox-ova\":[\"ova\"],\"application/x-virtualbox-ovf\":[\"ovf\"],\"application/x-virtualbox-vbox\":[\"vbox\"],\"application/x-virtualbox-vbox-extpack\":[\"vbox-extpack\"],\"application/x-virtualbox-vdi\":[\"vdi\"],\"application/x-virtualbox-vhd\":[\"vhd\"],\"application/x-virtualbox-vmdk\":[\"vmdk\"],\"application/x-wais-source\":[\"src\"],\"application/x-web-app-manifest+json\":[\"webapp\"],\"application/x-x509-ca-cert\":[\"der\",\"crt\",\"pem\"],\"application/x-xfig\":[\"fig\"],\"application/x-xliff+xml\":[\"xlf\"],\"application/x-xpinstall\":[\"xpi\"],\"application/x-xz\":[\"xz\"],\"application/x-zmachine\":[\"z1\",\"z2\",\"z3\",\"z4\",\"z5\",\"z6\",\"z7\",\"z8\"],\"application/xaml+xml\":[\"xaml\"],\"application/xcap-diff+xml\":[\"xdf\"],\"application/xenc+xml\":[\"xenc\"],\"application/xhtml+xml\":[\"xhtml\",\"xht\"],\"application/xml\":[\"xml\",\"xsl\",\"xsd\",\"rng\"],\"application/xml-dtd\":[\"dtd\"],\"application/xop+xml\":[\"xop\"],\"application/xproc+xml\":[\"xpl\"],\"application/xslt+xml\":[\"xslt\"],\"application/xspf+xml\":[\"xspf\"],\"application/xv+xml\":[\"mxml\",\"xhvml\",\"xvml\",\"xvm\"],\"application/yang\":[\"yang\"],\"application/yin+xml\":[\"yin\"],\"application/zip\":[\"zip\"],\"audio/3gpp\":[],\"audio/adpcm\":[\"adp\"],\"audio/basic\":[\"au\",\"snd\"],\"audio/midi\":[\"mid\",\"midi\",\"kar\",\"rmi\"],\"audio/mp3\":[],\"audio/mp4\":[\"m4a\",\"mp4a\"],\"audio/mpeg\":[\"mpga\",\"mp2\",\"mp2a\",\"mp3\",\"m2a\",\"m3a\"],\"audio/ogg\":[\"oga\",\"ogg\",\"spx\"],\"audio/s3m\":[\"s3m\"],\"audio/silk\":[\"sil\"],\"audio/vnd.dece.audio\":[\"uva\",\"uvva\"],\"audio/vnd.digital-winds\":[\"eol\"],\"audio/vnd.dra\":[\"dra\"],\"audio/vnd.dts\":[\"dts\"],\"audio/vnd.dts.hd\":[\"dtshd\"],\"audio/vnd.lucent.voice\":[\"lvp\"],\"audio/vnd.ms-playready.media.pya\":[\"pya\"],\"audio/vnd.nuera.ecelp4800\":[\"ecelp4800\"],\"audio/vnd.nuera.ecelp7470\":[\"ecelp7470\"],\"audio/vnd.nuera.ecelp9600\":[\"ecelp9600\"],\"audio/vnd.rip\":[\"rip\"],\"audio/wav\":[\"wav\"],\"audio/wave\":[],\"audio/webm\":[\"weba\"],\"audio/x-aac\":[\"aac\"],\"audio/x-aiff\":[\"aif\",\"aiff\",\"aifc\"],\"audio/x-caf\":[\"caf\"],\"audio/x-flac\":[\"flac\"],\"audio/x-m4a\":[],\"audio/x-matroska\":[\"mka\"],\"audio/x-mpegurl\":[\"m3u\"],\"audio/x-ms-wax\":[\"wax\"],\"audio/x-ms-wma\":[\"wma\"],\"audio/x-pn-realaudio\":[\"ram\",\"ra\"],\"audio/x-pn-realaudio-plugin\":[\"rmp\"],\"audio/x-realaudio\":[],\"audio/x-wav\":[],\"audio/xm\":[\"xm\"],\"chemical/x-cdx\":[\"cdx\"],\"chemical/x-cif\":[\"cif\"],\"chemical/x-cmdf\":[\"cmdf\"],\"chemical/x-cml\":[\"cml\"],\"chemical/x-csml\":[\"csml\"],\"chemical/x-xyz\":[\"xyz\"],\"font/collection\":[\"ttc\"],\"font/otf\":[\"otf\"],\"font/ttf\":[\"ttf\"],\"font/woff\":[\"woff\"],\"font/woff2\":[\"woff2\"],\"image/apng\":[\"apng\"],\"image/bmp\":[\"bmp\"],\"image/cgm\":[\"cgm\"],\"image/g3fax\":[\"g3\"],\"image/gif\":[\"gif\"],\"image/ief\":[\"ief\"],\"image/jp2\":[\"jp2\",\"jpg2\"],\"image/jpeg\":[\"jpeg\",\"jpg\",\"jpe\"],\"image/jpm\":[\"jpm\"],\"image/jpx\":[\"jpx\",\"jpf\"],\"image/ktx\":[\"ktx\"],\"image/png\":[\"png\"],\"image/prs.btif\":[\"btif\"],\"image/sgi\":[\"sgi\"],\"image/svg+xml\":[\"svg\",\"svgz\"],\"image/tiff\":[\"tiff\",\"tif\"],\"image/vnd.adobe.photoshop\":[\"psd\"],\"image/vnd.dece.graphic\":[\"uvi\",\"uvvi\",\"uvg\",\"uvvg\"],\"image/vnd.djvu\":[\"djvu\",\"djv\"],\"image/vnd.dvb.subtitle\":[],\"image/vnd.dwg\":[\"dwg\"],\"image/vnd.dxf\":[\"dxf\"],\"image/vnd.fastbidsheet\":[\"fbs\"],\"image/vnd.fpx\":[\"fpx\"],\"image/vnd.fst\":[\"fst\"],\"image/vnd.fujixerox.edmics-mmr\":[\"mmr\"],\"image/vnd.fujixerox.edmics-rlc\":[\"rlc\"],\"image/vnd.ms-modi\":[\"mdi\"],\"image/vnd.ms-photo\":[\"wdp\"],\"image/vnd.net-fpx\":[\"npx\"],\"image/vnd.wap.wbmp\":[\"wbmp\"],\"image/vnd.xiff\":[\"xif\"],\"image/webp\":[\"webp\"],\"image/x-3ds\":[\"3ds\"],\"image/x-cmu-raster\":[\"ras\"],\"image/x-cmx\":[\"cmx\"],\"image/x-freehand\":[\"fh\",\"fhc\",\"fh4\",\"fh5\",\"fh7\"],\"image/x-icon\":[\"ico\"],\"image/x-jng\":[\"jng\"],\"image/x-mrsid-image\":[\"sid\"],\"image/x-ms-bmp\":[],\"image/x-pcx\":[\"pcx\"],\"image/x-pict\":[\"pic\",\"pct\"],\"image/x-portable-anymap\":[\"pnm\"],\"image/x-portable-bitmap\":[\"pbm\"],\"image/x-portable-graymap\":[\"pgm\"],\"image/x-portable-pixmap\":[\"ppm\"],\"image/x-rgb\":[\"rgb\"],\"image/x-tga\":[\"tga\"],\"image/x-xbitmap\":[\"xbm\"],\"image/x-xpixmap\":[\"xpm\"],\"image/x-xwindowdump\":[\"xwd\"],\"message/rfc822\":[\"eml\",\"mime\"],\"model/gltf+json\":[\"gltf\"],\"model/gltf-binary\":[\"glb\"],\"model/iges\":[\"igs\",\"iges\"],\"model/mesh\":[\"msh\",\"mesh\",\"silo\"],\"model/vnd.collada+xml\":[\"dae\"],\"model/vnd.dwf\":[\"dwf\"],\"model/vnd.gdl\":[\"gdl\"],\"model/vnd.gtw\":[\"gtw\"],\"model/vnd.mts\":[\"mts\"],\"model/vnd.vtu\":[\"vtu\"],\"model/vrml\":[\"wrl\",\"vrml\"],\"model/x3d+binary\":[\"x3db\",\"x3dbz\"],\"model/x3d+vrml\":[\"x3dv\",\"x3dvz\"],\"model/x3d+xml\":[\"x3d\",\"x3dz\"],\"text/cache-manifest\":[\"appcache\",\"manifest\"],\"text/calendar\":[\"ics\",\"ifb\"],\"text/coffeescript\":[\"coffee\",\"litcoffee\"],\"text/css\":[\"css\"],\"text/csv\":[\"csv\"],\"text/hjson\":[\"hjson\"],\"text/html\":[\"html\",\"htm\",\"shtml\"],\"text/jade\":[\"jade\"],\"text/jsx\":[\"jsx\"],\"text/less\":[\"less\"],\"text/markdown\":[\"markdown\",\"md\"],\"text/mathml\":[\"mml\"],\"text/n3\":[\"n3\"],\"text/plain\":[\"txt\",\"text\",\"conf\",\"def\",\"list\",\"log\",\"in\",\"ini\"],\"text/prs.lines.tag\":[\"dsc\"],\"text/richtext\":[\"rtx\"],\"text/rtf\":[],\"text/sgml\":[\"sgml\",\"sgm\"],\"text/slim\":[\"slim\",\"slm\"],\"text/stylus\":[\"stylus\",\"styl\"],\"text/tab-separated-values\":[\"tsv\"],\"text/troff\":[\"t\",\"tr\",\"roff\",\"man\",\"me\",\"ms\"],\"text/turtle\":[\"ttl\"],\"text/uri-list\":[\"uri\",\"uris\",\"urls\"],\"text/vcard\":[\"vcard\"],\"text/vnd.curl\":[\"curl\"],\"text/vnd.curl.dcurl\":[\"dcurl\"],\"text/vnd.curl.mcurl\":[\"mcurl\"],\"text/vnd.curl.scurl\":[\"scurl\"],\"text/vnd.dvb.subtitle\":[\"sub\"],\"text/vnd.fly\":[\"fly\"],\"text/vnd.fmi.flexstor\":[\"flx\"],\"text/vnd.graphviz\":[\"gv\"],\"text/vnd.in3d.3dml\":[\"3dml\"],\"text/vnd.in3d.spot\":[\"spot\"],\"text/vnd.sun.j2me.app-descriptor\":[\"jad\"],\"text/vnd.wap.wml\":[\"wml\"],\"text/vnd.wap.wmlscript\":[\"wmls\"],\"text/vtt\":[\"vtt\"],\"text/x-asm\":[\"s\",\"asm\"],\"text/x-c\":[\"c\",\"cc\",\"cxx\",\"cpp\",\"h\",\"hh\",\"dic\"],\"text/x-component\":[\"htc\"],\"text/x-fortran\":[\"f\",\"for\",\"f77\",\"f90\"],\"text/x-handlebars-template\":[\"hbs\"],\"text/x-java-source\":[\"java\"],\"text/x-lua\":[\"lua\"],\"text/x-markdown\":[\"mkd\"],\"text/x-nfo\":[\"nfo\"],\"text/x-opml\":[\"opml\"],\"text/x-org\":[],\"text/x-pascal\":[\"p\",\"pas\"],\"text/x-processing\":[\"pde\"],\"text/x-sass\":[\"sass\"],\"text/x-scss\":[\"scss\"],\"text/x-setext\":[\"etx\"],\"text/x-sfv\":[\"sfv\"],\"text/x-suse-ymp\":[\"ymp\"],\"text/x-uuencode\":[\"uu\"],\"text/x-vcalendar\":[\"vcs\"],\"text/x-vcard\":[\"vcf\"],\"text/xml\":[],\"text/yaml\":[\"yaml\",\"yml\"],\"video/3gpp\":[\"3gp\",\"3gpp\"],\"video/3gpp2\":[\"3g2\"],\"video/h261\":[\"h261\"],\"video/h263\":[\"h263\"],\"video/h264\":[\"h264\"],\"video/jpeg\":[\"jpgv\"],\"video/jpm\":[\"jpgm\"],\"video/mj2\":[\"mj2\",\"mjp2\"],\"video/mp2t\":[\"ts\"],\"video/mp4\":[\"mp4\",\"mp4v\",\"mpg4\"],\"video/mpeg\":[\"mpeg\",\"mpg\",\"mpe\",\"m1v\",\"m2v\"],\"video/ogg\":[\"ogv\"],\"video/quicktime\":[\"qt\",\"mov\"],\"video/vnd.dece.hd\":[\"uvh\",\"uvvh\"],\"video/vnd.dece.mobile\":[\"uvm\",\"uvvm\"],\"video/vnd.dece.pd\":[\"uvp\",\"uvvp\"],\"video/vnd.dece.sd\":[\"uvs\",\"uvvs\"],\"video/vnd.dece.video\":[\"uvv\",\"uvvv\"],\"video/vnd.dvb.file\":[\"dvb\"],\"video/vnd.fvt\":[\"fvt\"],\"video/vnd.mpegurl\":[\"mxu\",\"m4u\"],\"video/vnd.ms-playready.media.pyv\":[\"pyv\"],\"video/vnd.uvvu.mp4\":[\"uvu\",\"uvvu\"],\"video/vnd.vivo\":[\"viv\"],\"video/webm\":[\"webm\"],\"video/x-f4v\":[\"f4v\"],\"video/x-fli\":[\"fli\"],\"video/x-flv\":[\"flv\"],\"video/x-m4v\":[\"m4v\"],\"video/x-matroska\":[\"mkv\",\"mk3d\",\"mks\"],\"video/x-mng\":[\"mng\"],\"video/x-ms-asf\":[\"asf\",\"asx\"],\"video/x-ms-vob\":[\"vob\"],\"video/x-ms-wm\":[\"wm\"],\"video/x-ms-wmv\":[\"wmv\"],\"video/x-ms-wmx\":[\"wmx\"],\"video/x-ms-wvx\":[\"wvx\"],\"video/x-msvideo\":[\"avi\"],\"video/x-sgi-movie\":[\"movie\"],\"video/x-smv\":[\"smv\"],\"x-conference/x-cooltalk\":[\"ice\"]}");
 
 /***/ }),
 
@@ -75359,22 +62149,6 @@ module.exports = require("assert");;
 
 "use strict";
 module.exports = require("buffer");;
-
-/***/ }),
-
-/***/ 3129:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("child_process");;
-
-/***/ }),
-
-/***/ 881:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("dns");;
 
 /***/ }),
 
@@ -75399,14 +62173,6 @@ module.exports = require("fs");;
 
 "use strict";
 module.exports = require("http");;
-
-/***/ }),
-
-/***/ 7565:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("http2");;
 
 /***/ }),
 
