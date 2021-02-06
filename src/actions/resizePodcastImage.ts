@@ -1,7 +1,7 @@
 import Jimp from 'jimp';
 
 export default async function resizePodcastImage(imageUrl: string, size: number): Promise<Buffer | null> {
-  console.log(`> resizing image: ${imageUrl} ...`);
+  console.log(`> resizing image: ${imageUrl}`);
   return Jimp.read(imageUrl)
     .then((image) => {
       return image.cover(size, size);

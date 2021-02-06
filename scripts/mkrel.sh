@@ -24,15 +24,11 @@ echo "new version: ${newVersion}"
 npm run dist
 echo "git status after build:"
 git status
-echo "git adding files from action directoryca:"
-git add action
+git add -A
 git commit -m "release ${newVersion}"
 echo "git push"
 git push
 echo "checking platform value"
-cat action/vendor/*/platform.json
-file action/build/Release/sharp.node
-ls -alR action
 git tag -a -m "${newVersion}" ${newVersion}
 git push --follow-tags
 
