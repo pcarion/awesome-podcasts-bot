@@ -1620,7 +1620,7 @@ var jimp_1 = __importDefault(__nccwpck_require__(3794));
 function resizePodcastImage(imageUrl, size) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
-            console.log("> resizing image: " + imageUrl + " ...");
+            console.log("> resizing image: " + imageUrl);
             return [2 /*return*/, jimp_1.default.read(imageUrl)
                     .then(function (image) {
                     return image.cover(size, size);
