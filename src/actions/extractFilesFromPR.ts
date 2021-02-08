@@ -18,7 +18,12 @@ export default async function extractFilesFromPR(octokit: Octokit, commits_url: 
     }
     const result = await octokit.request(commit_url);
     (result.data.files || []).forEach((f: any) => {
-      if (!files.includes(f.filename)) {
+      const existing = files.find((e) => e.filename === f.filename);
+      // as a file may have been updated multiple times in the PR
+      // we need to take the last edit
+      if (existing) {
+        existing.url = f.raw_url;
+      } else {
         files.push({
           filename: f.filename,
           url: f.raw_url,
