@@ -11,9 +11,6 @@ interface FileInformation {
 export default async function extractFilesFromPR(octokit: Octokit, commits_url: string): Promise<FileInformation[]> {
   const files: FileInformation[] = [];
   const result = await octokit.request(commits_url);
-  if (result.data.length !== 1) {
-    throw new Error(`only one file per PR is authorized`);
-  }
   for (const commit of result.data || []) {
     const commit_url = commit.url;
     if (!commit_url) {
