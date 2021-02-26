@@ -87,7 +87,7 @@ function getRepositoryOwner() {
 }
 function run() {
     return __awaiter(this, void 0, void 0, function () {
-        var token, octokit, repo, info, _a, podcastYamlDirectory, podcastJsonDirectory, payload, error_1;
+        var token, octokit, repo, info, _a, podcastYamlDirectory, podcastJsonDirectory, podcastMetaDirectory, payload, error_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -101,7 +101,7 @@ function run() {
                     info = _b.sent();
                     return [4 /*yield*/, getConfigurationData_1.default(octokit, info)];
                 case 2:
-                    _a = _b.sent(), podcastYamlDirectory = _a.podcastYamlDirectory, podcastJsonDirectory = _a.podcastJsonDirectory;
+                    _a = _b.sent(), podcastYamlDirectory = _a.podcastYamlDirectory, podcastJsonDirectory = _a.podcastJsonDirectory, podcastMetaDirectory = _a.podcastMetaDirectory;
                     payload = JSON.stringify(github_1.context, undefined, 2);
                     console.log("> The github action context is: " + JSON.stringify(payload, null, 2));
                     console.log('====');
@@ -110,6 +110,7 @@ function run() {
                             repoInformation: info,
                             podcastYamlDirectory: podcastYamlDirectory,
                             podcastJsonDirectory: podcastJsonDirectory,
+                            podcastMetaDirectory: podcastMetaDirectory,
                         })];
                 case 3:
                     _b.sent();
@@ -383,6 +384,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var rss_parser_1 = __importDefault(__nccwpck_require__(6946));
+var formatDate_1 = __importDefault(__nccwpck_require__(4418));
 function extractEpisodesFromRssFeed(rssUrl) {
     return __awaiter(this, void 0, void 0, function () {
         var parser, timestamp, result;
@@ -410,7 +412,7 @@ function extractEpisodesFromRssFeed(rssUrl) {
                                     console.log("pubDate;" + item.pubDate + ", d=" + d);
                                 }
                                 result.push({
-                                    publishingDate: d.getFullYear() + "-" + ('' + (1 + d.getMonth())).padStart(2, '0') + "-" + ('' + d.getDate()).padStart(2, '0'),
+                                    publishingDate: formatDate_1.default(d),
                                 });
                             }
                         });
@@ -430,6 +432,20 @@ function extractEpisodesFromRssFeed(rssUrl) {
 }
 exports.default = extractEpisodesFromRssFeed;
 //# sourceMappingURL=extractEpisodesFromRssFeed.js.map
+
+/***/ }),
+
+/***/ 4418:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+function fmt(d) {
+    return d.getFullYear() + "-" + ('' + (1 + d.getMonth())).padStart(2, '0') + "-" + ('' + d.getDate()).padStart(2, '0');
+}
+exports.default = fmt;
+//# sourceMappingURL=formatDate.js.map
 
 /***/ }),
 
@@ -940,7 +956,7 @@ var retrieveYamlContentFromRepository_1 = __importDefault(__nccwpck_require__(14
 var BOT_CONFIGFILE = '.awesome-podcasts-bot.yaml';
 function getConfigurationData(octo, repoInformation) {
     return __awaiter(this, void 0, void 0, function () {
-        var botconfig, podcastYamlDirectory, podcastJsonDirectory;
+        var botconfig, podcastYamlDirectory, podcastJsonDirectory, podcastMetaDirectory;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0: return [4 /*yield*/, retrieveYamlContentFromRepository_1.default(octo, repoInformation, BOT_CONFIGFILE)];
@@ -948,13 +964,15 @@ function getConfigurationData(octo, repoInformation) {
                     botconfig = _a.sent();
                     podcastYamlDirectory = botconfig.config.podcastYamlDirectory;
                     podcastJsonDirectory = botconfig.config.podcastJsonDirectory;
-                    if (!podcastJsonDirectory || !podcastYamlDirectory) {
+                    podcastMetaDirectory = botconfig.config.podcastMetaDirectory;
+                    if (!podcastJsonDirectory || !podcastYamlDirectory || !podcastMetaDirectory) {
                         console.log(">invalid bot config>" + BOT_CONFIGFILE + ">", botconfig);
                         throw new Error("missing configuration variables from " + BOT_CONFIGFILE);
                     }
                     return [2 /*return*/, {
                             podcastYamlDirectory: podcastYamlDirectory,
                             podcastJsonDirectory: podcastJsonDirectory,
+                            podcastMetaDirectory: podcastMetaDirectory,
                         }];
             }
         });
@@ -1193,22 +1211,24 @@ var loadExistingPodcastJsonFiles_1 = __importDefault(__nccwpck_require__(5136));
 var addFilesToRepository_1 = __importDefault(__nccwpck_require__(933));
 var resizePodcastImage_1 = __importDefault(__nccwpck_require__(2883));
 function handleRegenerateAllJsonFiles(_a) {
-    var octokit = _a.octokit, repoInformation = _a.repoInformation, podcastYamlDirectory = _a.podcastYamlDirectory, podcastJsonDirectory = _a.podcastJsonDirectory;
+    var octokit = _a.octokit, repoInformation = _a.repoInformation, podcastYamlDirectory = _a.podcastYamlDirectory, podcastJsonDirectory = _a.podcastJsonDirectory, podcastMetaDirectory = _a.podcastMetaDirectory;
     return __awaiter(this, void 0, void 0, function () {
-        var existingYamlPodcasts, existingJsonPodcasts, addToRepository, _loop_1, _i, existingYamlPodcasts_1, podcast, sha, err_1;
+        var existingYamlPodcasts, existingJsonPodcasts, nbPodcasts, addToRepository, nbEpisodes, _loop_1, _i, existingYamlPodcasts_1, podcast, sha, err_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
-                    _b.trys.push([0, 9, , 10]);
+                    _b.trys.push([0, 11, , 12]);
                     return [4 /*yield*/, loadExistingPodcastYamlFiles_1.default(octokit, repoInformation, podcastYamlDirectory)];
                 case 1:
                     existingYamlPodcasts = _b.sent();
                     return [4 /*yield*/, loadExistingPodcastJsonFiles_1.default(octokit, repoInformation, podcastJsonDirectory)];
                 case 2:
                     existingJsonPodcasts = _b.sent();
+                    nbPodcasts = existingJsonPodcasts.length;
                     return [4 /*yield*/, addFilesToRepository_1.default(octokit, repoInformation)];
                 case 3:
                     addToRepository = _b.sent();
+                    nbEpisodes = 0;
                     _loop_1 = function (podcast) {
                         var alreadyEnhanced, podcastEnhanced, imageBuffer, logoRepoImage;
                         return __generator(this, function (_a) {
@@ -1231,6 +1251,7 @@ function handleRegenerateAllJsonFiles(_a) {
                                     _a.sent();
                                     _a.label = 4;
                                 case 4:
+                                    nbEpisodes += podcastEnhanced.extra.episodes.length;
                                     console.log('>adding to repository>');
                                     return [4 /*yield*/, addToRepository.addJsonFile(podcastJsonDirectory + "/" + podcastEnhanced.pid + ".json", podcastEnhanced)];
                                 case 5:
@@ -1251,22 +1272,28 @@ function handleRegenerateAllJsonFiles(_a) {
                 case 6:
                     _i++;
                     return [3 /*break*/, 4];
-                case 7: return [4 /*yield*/, addToRepository.commit("upating all podcasts", repoInformation.defaultBranch)];
+                case 7: return [4 /*yield*/, addToRepository.addJsonFile(podcastMetaDirectory + "/nbPodcasts.json", { nbPodcasts: nbPodcasts })];
                 case 8:
+                    _b.sent();
+                    return [4 /*yield*/, addToRepository.addJsonFile(podcastMetaDirectory + "/nbEpisodes.json", { nbEpisodes: nbEpisodes })];
+                case 9:
+                    _b.sent();
+                    return [4 /*yield*/, addToRepository.commit("upating all podcasts", repoInformation.defaultBranch)];
+                case 10:
                     sha = _b.sent();
                     console.log('>files commites, sha is:>', sha);
                     return [2 /*return*/, {
                             isSuccess: true,
                             errorMessage: undefined,
                         }];
-                case 9:
+                case 11:
                     err_1 = _b.sent();
                     console.log(err_1);
                     return [2 /*return*/, {
                             isSuccess: false,
                             errorMessage: err_1.message || err_1.toString(),
                         }];
-                case 10: return [2 /*return*/];
+                case 12: return [2 /*return*/];
             }
         });
     });

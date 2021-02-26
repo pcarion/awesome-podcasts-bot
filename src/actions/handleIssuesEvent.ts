@@ -6,12 +6,14 @@ import loadExistingPodcastYamlFiles from './loadExistingPodcastYamlFiles';
 import checkForDuplicatePodcast from './checks/checkForDuplicatePodcast';
 import resizePodcastImage from './resizePodcastImage';
 import mkReporter from './reporterIssues';
+import formatDate from './formatDate';
 
 export default async function handleIssuesEvent({
   octokit,
   repoInformation,
   podcastYamlDirectory,
   podcastJsonDirectory,
+  podcastMetaDirectory,
   issueNumber,
   title,
 }: HandleIssueArg): Promise<HandleIssueResponse> {
@@ -25,6 +27,7 @@ export default async function handleIssuesEvent({
 
     // load existing podcasts
     const podcasts = await loadExistingPodcastYamlFiles(octokit, repoInformation, podcastYamlDirectory);
+    const nbPodcasts = podcasts.length;
 
     // before we can add this podcast, we need to check that this is not a duplicate
     await checkForDuplicatePodcast(podcasts, result.podcast);
@@ -43,6 +46,8 @@ export default async function handleIssuesEvent({
     }
     await addToRepository.addFileWithlines(`${podcastYamlDirectory}/${result.fileName}`, result.lines);
     await addToRepository.addJsonFile(`${podcastJsonDirectory}/${podcastEnhanced.pid}.json`, podcastEnhanced);
+    await addToRepository.addJsonFile(`${podcastMetaDirectory}/nbPodcasts.json`, { nbPodcasts });
+    await addToRepository.addJsonFile(`${podcastMetaDirectory}/lastUpdate.json`, { date: formatDate(new Date()) });
 
     await addToRepository.commit(`adding podcast: ${podcastEnhanced.title} - ${podcastEnhanced.yamlDescriptionFile}`);
 

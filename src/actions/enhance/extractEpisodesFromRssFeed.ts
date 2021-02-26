@@ -1,5 +1,6 @@
 import Parser from 'rss-parser';
 import { PodcastEnhancedEpisode } from '../types';
+import formatDate from '../formatDate';
 
 export default async function extractEpisodesFromRssFeed(rssUrl: string): Promise<[PodcastEnhancedEpisode[], number]> {
   const parser = new Parser();
@@ -26,9 +27,7 @@ export default async function extractEpisodesFromRssFeed(rssUrl: string): Promis
               console.log(`pubDate;${item.pubDate}, d=${d}`);
             }
             result.push({
-              publishingDate: `${d.getFullYear()}-${('' + (1 + d.getMonth())).padStart(2, '0')}-${(
-                '' + d.getDate()
-              ).padStart(2, '0')}`,
+              publishingDate: formatDate(d),
             });
           }
         });

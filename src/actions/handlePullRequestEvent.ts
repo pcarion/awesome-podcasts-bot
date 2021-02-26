@@ -9,6 +9,7 @@ import validatePodcastYaml from './validatePodcastYaml';
 import loadExistingPodcastYamlFiles from './loadExistingPodcastYamlFiles';
 import checkPodcastModifications from './checks/checkPodcastModifications';
 import mkReporter from './reporterPullRequests';
+import formatDate from './formatDate';
 
 async function downloadFileContent(url: string): Promise<string> {
   const response = await axios({
@@ -41,6 +42,7 @@ export default async function handlePullRequestEvent({
   repoInformation,
   podcastYamlDirectory,
   podcastJsonDirectory,
+  podcastMetaDirectory,
   prNumber,
   commitsUrl,
   pullRequestBranch,
@@ -58,7 +60,7 @@ export default async function handlePullRequestEvent({
 
     // load existing podcasts
     const existingPodcasts = await loadExistingPodcastYamlFiles(octokit, repoInformation, podcastYamlDirectory);
-
+    const nbPodcasts = existingPodcasts.length;
     // the file should be in the list of existing podcasts
     const originalPodcast = existingPodcasts.find((p) => p.yamlDescriptionFile === file.filename);
     if (!originalPodcast) {
@@ -83,6 +85,8 @@ export default async function handlePullRequestEvent({
     const prJsonFile = `${podcastJsonDirectory}/${podcastEnhanced.pid}.json`;
     console.log('>adding to repository>file>', prJsonFile);
     await addToRepository.addJsonFile(prJsonFile, podcastEnhanced);
+    await addToRepository.addJsonFile(`${podcastMetaDirectory}/nbPodcasts.json`, { nbPodcasts });
+    await addToRepository.addJsonFile(`${podcastMetaDirectory}/lastUpdate.json`, { date: formatDate(new Date()) });
 
     console.log(`>pushing json to main branch>`);
     const sha = await addToRepository.commit(

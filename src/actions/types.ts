@@ -58,6 +58,7 @@ export interface HandleIssueArg {
   repoInformation: RepoInformation;
   podcastYamlDirectory: string;
   podcastJsonDirectory: string;
+  podcastMetaDirectory: string;
   issueNumber: number;
   title: string;
 }
@@ -75,6 +76,7 @@ export interface HandlePullRequestArg {
   repoInformation: RepoInformation;
   podcastYamlDirectory: string;
   podcastJsonDirectory: string;
+  podcastMetaDirectory: string;
   prNumber: number;
   commitsUrl: string;
   pullRequestBranch: string;
@@ -92,6 +94,7 @@ export interface HandleRegenerateAllJsonFilesArg {
   repoInformation: RepoInformation;
   podcastYamlDirectory: string;
   podcastJsonDirectory: string;
+  podcastMetaDirectory: string;
 }
 export interface HandleRegenerateAllJsonFilesResponse {
   isSuccess: boolean;

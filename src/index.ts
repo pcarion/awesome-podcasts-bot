@@ -32,7 +32,7 @@ const appFunction: ApplicationFunction = (app: Probot) => {
       const title = context.payload.issue.title;
 
       const repoInformation = getRepositoryInformation(context.payload.repository);
-      const { podcastYamlDirectory, podcastJsonDirectory } = await getConfigurationData(
+      const { podcastYamlDirectory, podcastJsonDirectory, podcastMetaDirectory } = await getConfigurationData(
         context.octokit,
         repoInformation,
       );
@@ -42,6 +42,7 @@ const appFunction: ApplicationFunction = (app: Probot) => {
         repoInformation,
         podcastYamlDirectory,
         podcastJsonDirectory,
+        podcastMetaDirectory,
         issueNumber,
         title,
       });
@@ -62,7 +63,7 @@ const appFunction: ApplicationFunction = (app: Probot) => {
       const pullRequestBranch = context.payload.pull_request.head.ref;
 
       // retrieve specific configuration
-      const { podcastYamlDirectory, podcastJsonDirectory } = await getConfigurationData(
+      const { podcastYamlDirectory, podcastJsonDirectory, podcastMetaDirectory } = await getConfigurationData(
         context.octokit,
         repoInformation,
       );
@@ -72,6 +73,7 @@ const appFunction: ApplicationFunction = (app: Probot) => {
         repoInformation,
         podcastYamlDirectory,
         podcastJsonDirectory,
+        podcastMetaDirectory,
         prNumber,
         commitsUrl,
         pullRequestBranch,

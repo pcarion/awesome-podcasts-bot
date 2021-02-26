@@ -11,15 +11,17 @@ export default async function handleRegenerateAllJsonFiles({
   repoInformation,
   podcastYamlDirectory,
   podcastJsonDirectory,
+  podcastMetaDirectory,
 }: HandleRegenerateAllJsonFilesArg): Promise<HandleRegenerateAllJsonFilesResponse> {
   try {
     // load existing podcasts
     const existingYamlPodcasts = await loadExistingPodcastYamlFiles(octokit, repoInformation, podcastYamlDirectory);
     const existingJsonPodcasts = await loadExistingPodcastJsonFiles(octokit, repoInformation, podcastJsonDirectory);
-
+    const nbPodcasts = existingJsonPodcasts.length;
     // prepare for file additions
     const addToRepository = await addFilesToRepository(octokit, repoInformation);
 
+    let nbEpisodes = 0;
     for (const podcast of existingYamlPodcasts) {
       console.log('>enhance podcast>', podcast.title);
       // search if we already have the json file for the podcast
@@ -39,10 +41,14 @@ export default async function handleRegenerateAllJsonFiles({
           await addToRepository.addBuffer(`${podcastJsonDirectory}/${logoRepoImage}`, imageBuffer);
         }
       }
+      nbEpisodes += podcastEnhanced.extra.episodes.length;
 
       console.log('>adding to repository>');
       await addToRepository.addJsonFile(`${podcastJsonDirectory}/${podcastEnhanced.pid}.json`, podcastEnhanced);
     }
+    await addToRepository.addJsonFile(`${podcastMetaDirectory}/nbPodcasts.json`, { nbPodcasts });
+    await addToRepository.addJsonFile(`${podcastMetaDirectory}/nbEpisodes.json`, { nbEpisodes });
+
     const sha = await addToRepository.commit(`upating all podcasts`, repoInformation.defaultBranch);
     console.log('>files commites, sha is:>', sha);
     return {
