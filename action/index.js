@@ -188,11 +188,13 @@ var extractColorsFromUrl_1 = __importDefault(__nccwpck_require__(3182));
 var extractEpisodesFromRssFeed_1 = __importDefault(__nccwpck_require__(1257));
 function enhancePodcast(podcast, fileName, alreadyEnhanced) {
     return __awaiter(this, void 0, void 0, function () {
-        var result, needColorExtraction, colors, episodes, err_1;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
+        var timestamp, result, needColorExtraction, colors, _a, episodes, timestamp_1, err_1;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
                 case 0:
+                    timestamp = 0;
                     result = __assign(__assign({}, podcast), { yamlDescriptionFile: fileName, extra: {
+                            timestamp: timestamp,
                             colors: {
                                 vibrant: null,
                                 darkVibrant: null,
@@ -213,22 +215,24 @@ function enhancePodcast(podcast, fileName, alreadyEnhanced) {
                             result.extra.colors = alreadyEnhanced.extra.colors;
                         }
                     }
-                    _a.label = 1;
+                    _b.label = 1;
                 case 1:
-                    _a.trys.push([1, 5, , 6]);
+                    _b.trys.push([1, 5, , 6]);
                     if (!needColorExtraction) return [3 /*break*/, 3];
                     return [4 /*yield*/, extractColorsFromUrl_1.default(podcast.imageUrl)];
                 case 2:
-                    colors = _a.sent();
+                    colors = _b.sent();
                     result.extra.colors = colors;
-                    _a.label = 3;
+                    _b.label = 3;
                 case 3: return [4 /*yield*/, extractEpisodesFromRssFeed_1.default(podcast.feed.rss)];
                 case 4:
-                    episodes = _a.sent();
+                    _a = _b.sent(), episodes = _a[0], timestamp_1 = _a[1];
+                    // latest published episode
+                    result.extra.timestamp = timestamp_1;
                     result.extra.episodes = episodes;
                     return [2 /*return*/, result];
                 case 5:
-                    err_1 = _a.sent();
+                    err_1 = _b.sent();
                     console.log(err_1);
                     return [2 /*return*/, result];
                 case 6: return [2 /*return*/];
@@ -381,9 +385,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 var rss_parser_1 = __importDefault(__nccwpck_require__(6946));
 function extractEpisodesFromRssFeed(rssUrl) {
     return __awaiter(this, void 0, void 0, function () {
-        var parser, result;
+        var parser, timestamp, result;
         return __generator(this, function (_a) {
             parser = new rss_parser_1.default();
+            timestamp = 0;
             console.log('>parsing feed>', rssUrl);
             result = [];
             return [2 /*return*/, new Promise(function (resolve) {
@@ -397,6 +402,10 @@ function extractEpisodesFromRssFeed(rssUrl) {
                         feed.items.forEach(function (item) {
                             if (item.pubDate) {
                                 var d = new Date(item.pubDate);
+                                var ts = d.valueOf();
+                                if (ts > timestamp) {
+                                    timestamp = ts;
+                                }
                                 if (debug) {
                                     console.log("pubDate;" + item.pubDate + ", d=" + d);
                                 }
@@ -408,12 +417,12 @@ function extractEpisodesFromRssFeed(rssUrl) {
                         if (debug) {
                             console.log(result);
                         }
-                        return resolve(result);
+                        return resolve([result, timestamp]);
                     })
                         .catch(function (err) {
                         console.log("error retrieving episodes dor podcast: " + rssUrl);
                         console.log(err);
-                        return resolve(result);
+                        return resolve([result, timestamp]);
                     });
                 })];
         });

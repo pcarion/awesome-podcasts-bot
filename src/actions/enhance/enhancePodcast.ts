@@ -8,10 +8,12 @@ export default async function enhancePodcast(
   fileName: string,
   alreadyEnhanced?: PodcastEnhanced,
 ): Promise<PodcastEnhanced> {
+  const timestamp = 0;
   const result: PodcastEnhanced = {
     ...podcast,
     yamlDescriptionFile: fileName,
     extra: {
+      timestamp,
       colors: {
         vibrant: null,
         darkVibrant: null,
@@ -38,7 +40,9 @@ export default async function enhancePodcast(
       const colors = await extractColorsFromUrl(podcast.imageUrl);
       result.extra.colors = colors;
     }
-    const episodes = await extractEpisodesFromRssFeed(podcast.feed.rss);
+    const [episodes, timestamp] = await extractEpisodesFromRssFeed(podcast.feed.rss);
+    // latest published episode
+    result.extra.timestamp = timestamp;
     result.extra.episodes = episodes;
     return result;
   } catch (err) {

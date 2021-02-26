@@ -1,8 +1,9 @@
 import Parser from 'rss-parser';
 import { PodcastEnhancedEpisode } from '../types';
 
-export default async function extractEpisodesFromRssFeed(rssUrl: string): Promise<PodcastEnhancedEpisode[]> {
+export default async function extractEpisodesFromRssFeed(rssUrl: string): Promise<[PodcastEnhancedEpisode[], number]> {
   const parser = new Parser();
+  let timestamp = 0; // keep track of most recent podcast
   console.log('>parsing feed>', rssUrl);
   const result: PodcastEnhancedEpisode[] = [];
   return new Promise((resolve) => {
@@ -16,6 +17,11 @@ export default async function extractEpisodesFromRssFeed(rssUrl: string): Promis
         feed.items.forEach((item) => {
           if (item.pubDate) {
             const d = new Date(item.pubDate);
+            const ts = d.valueOf();
+            if (ts > timestamp) {
+              timestamp = ts;
+            }
+
             if (debug) {
               console.log(`pubDate;${item.pubDate}, d=${d}`);
             }
@@ -29,12 +35,12 @@ export default async function extractEpisodesFromRssFeed(rssUrl: string): Promis
         if (debug) {
           console.log(result);
         }
-        return resolve(result);
+        return resolve([result, timestamp]);
       })
       .catch((err) => {
         console.log(`error retrieving episodes dor podcast: ${rssUrl}`);
         console.log(err);
-        return resolve(result);
+        return resolve([result, timestamp]);
       });
   });
 }

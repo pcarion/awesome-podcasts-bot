@@ -38,6 +38,7 @@ export interface PodcastEnhancedEpisode {
 
 export interface PodcastEnhanced extends Podcast {
   extra: {
+    timestamp: number; // timestamp of the most recent published podcast
     logoRepoImage?: string;
     colors: PodcastEnhancedColors;
     episodes: PodcastEnhancedEpisode[];
