@@ -34,7 +34,10 @@ async function run() {
 
     const info = await getRepositoryInformation(octokit, repo.owner, repo.repo);
 
-    const { podcastYamlDirectory, podcastJsonDirectory, podcastMetaDirectory } = await getConfigurationData(octokit, info);
+    const { podcastYamlDirectory, podcastJsonDirectory, podcastMetaDirectory } = await getConfigurationData(
+      octokit,
+      info,
+    );
 
     const payload = JSON.stringify(context, undefined, 2);
     console.log(`> The github action context is: ${JSON.stringify(payload, null, 2)}`);

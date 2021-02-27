@@ -17,7 +17,7 @@ export default async function handleRegenerateAllJsonFiles({
     // load existing podcasts
     const existingYamlPodcasts = await loadExistingPodcastYamlFiles(octokit, repoInformation, podcastYamlDirectory);
     const existingJsonPodcasts = await loadExistingPodcastJsonFiles(octokit, repoInformation, podcastJsonDirectory);
-    const nbPodcasts = existingJsonPodcasts.length;
+    const nbPodcasts = existingYamlPodcasts.length;
     // prepare for file additions
     const addToRepository = await addFilesToRepository(octokit, repoInformation);
 

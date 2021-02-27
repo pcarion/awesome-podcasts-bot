@@ -1224,7 +1224,7 @@ function handleRegenerateAllJsonFiles(_a) {
                     return [4 /*yield*/, loadExistingPodcastJsonFiles_1.default(octokit, repoInformation, podcastJsonDirectory)];
                 case 2:
                     existingJsonPodcasts = _b.sent();
-                    nbPodcasts = existingJsonPodcasts.length;
+                    nbPodcasts = existingYamlPodcasts.length;
                     return [4 /*yield*/, addFilesToRepository_1.default(octokit, repoInformation)];
                 case 3:
                     addToRepository = _b.sent();
