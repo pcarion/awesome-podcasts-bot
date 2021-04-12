@@ -309,7 +309,7 @@ function extractColorsFromUrl(imageUrl) {
                         node_vibrant_1.default.from(imageUrl).getPalette(function (err, palette) {
                             var _a, _b, _c, _d, _e, _f;
                             if (err) {
-                                console.log('>ERROR>extracting color information from image>', err);
+                                console.error('>ERROR>extracting color information from image>', err);
                                 return reject(err);
                             }
                             console.log(">palette retrieved>image url>" + imageUrl + ">found>" + !!palette);
@@ -1657,20 +1657,27 @@ function resizePodcastImage(imageUrl, size) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             console.log("> resizing image: " + imageUrl);
-            return [2 /*return*/, jimp_1.default.read(imageUrl)
-                    .then(function (image) {
-                    return image.cover(size, size);
-                })
-                    .then(function (image) {
-                    return image.quality(90);
-                })
-                    .then(function (image) {
-                    return image.getBufferAsync(jimp_1.default.MIME_PNG);
-                })
-                    .catch(function (err) {
-                    console.log("> Error resizing image: " + imageUrl + ":", err);
-                    return null;
-                })];
+            try {
+                return [2 /*return*/, jimp_1.default.read(imageUrl)
+                        .then(function (image) {
+                        return image.cover(size, size);
+                    })
+                        .then(function (image) {
+                        return image.quality(90);
+                    })
+                        .then(function (image) {
+                        return image.getBufferAsync(jimp_1.default.MIME_PNG);
+                    })
+                        .catch(function (err) {
+                        console.error("> Error resizing image: " + imageUrl + ":", err);
+                        return null;
+                    })];
+            }
+            catch (err) {
+                console.error('resizePodcastImage>', imageUrl, err);
+                return [2 /*return*/, null];
+            }
+            return [2 /*return*/];
         });
     });
 }
