@@ -16,7 +16,7 @@ export default async function extractColorsFromUrl(imageUrl: string): Promise<Po
       console.log('>extracting color information from image>', imageUrl);
       Vibrant.from(imageUrl).getPalette((err, palette) => {
         if (err) {
-          console.log('>ERROR>extracting color information from image>', err);
+          console.error('>ERROR>extracting color information from image>', err);
           return reject(err);
         }
         console.log(`>palette retrieved>image url>${imageUrl}>found>${!!palette}`);
