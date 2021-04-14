@@ -35,11 +35,14 @@ export default async function handleRegenerateAllJsonFiles({
       );
       if (!podcastEnhanced.extra.logoRepoImage) {
         const imageBuffer = await resizePodcastImage(podcastEnhanced.imageUrl, 128);
+        console.log('@@@ resizePodcastImage>A1');
         if (imageBuffer) {
+          console.log('@@@ resizePodcastImage>A2');
           const logoRepoImage = `${podcastEnhanced.pid}.png`;
           podcastEnhanced.extra.logoRepoImage = logoRepoImage;
           await addToRepository.addBuffer(`${podcastJsonDirectory}/${logoRepoImage}`, imageBuffer);
         }
+        console.log('@@@ resizePodcastImage>A3');
       }
       nbEpisodes += podcastEnhanced.extra.episodes.length;
 

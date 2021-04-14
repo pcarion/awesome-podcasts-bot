@@ -31,7 +31,8 @@ export default async function loadExistingPodcastJsonFiles(
       }
       podcasts.push(podcast);
     } catch (err) {
-      console.log('>error reading content of file>', file.path);
+      console.log('>error reading content of file>path>', file.path);
+      console.log(err);
     }
   }
   return podcasts;
