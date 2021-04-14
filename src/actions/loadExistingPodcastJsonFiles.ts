@@ -32,6 +32,7 @@ export default async function loadExistingPodcastJsonFiles(
       podcasts.push(podcast);
     } catch (err) {
       console.log('>error reading content of file>path>', file.path);
+      console.log('>error reading content of file>content>', (file.content || '').substring(0, 32));
       console.log(err);
     }
   }
