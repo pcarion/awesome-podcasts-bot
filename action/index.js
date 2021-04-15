@@ -1491,7 +1491,7 @@ function loadExistingPodcastJsonFiles(octokit, repoInformation, podcastsDirector
                 case 2:
                     _a.sent();
                     _loop_1 = function (file) {
-                        console.log('>validate file:', file.path);
+                        console.log('>validate file>', file.path);
                         if (!file.content) {
                             throw new Error("missing content for file: " + file.name);
                         }
