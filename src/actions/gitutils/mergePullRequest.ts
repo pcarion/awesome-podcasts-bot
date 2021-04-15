@@ -19,22 +19,22 @@ export default async function mergePullRequest(
     repo,
     pull_number: pullRequestNumber,
   });
-  console.log(`>mergePullRequest>pr>${pullRequestNumber}>B`);
-  await octo.pulls.update({
-    owner,
-    repo,
-    pull_number: pullRequestNumber,
-  });
+  // console.log(`>mergePullRequest>pr>${pullRequestNumber}>B`);
+  // await octo.pulls.update({
+  //   owner,
+  //   repo,
+  //   pull_number: pullRequestNumber,
+  // });
   // unfortunate, but seems to be required:
   // https://stackoverflow.com/questions/38796617/how-to-avoid-delaying-github-pull-request-merge-using-api
   console.log(`>mergePullRequest>pr>${pullRequestNumber}>C`);
   await sleep(5000);
-  console.log(`>mergePullRequest>pr>${pullRequestNumber}>D`);
-  await octo.pulls.get({
-    owner,
-    repo,
-    pull_number: pullRequestNumber,
-  });
+  // console.log(`>mergePullRequest>pr>${pullRequestNumber}>D`);
+  // await octo.pulls.get({
+  //   owner,
+  //   repo,
+  //   pull_number: pullRequestNumber,
+  // });
 
   // merging PR
   console.log(`>mergePullRequest>pr>${pullRequestNumber}>E`);
