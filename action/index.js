@@ -809,6 +809,9 @@ function downloadFile(file) {
                     })];
                 case 1:
                     response = _a.sent();
+                    console.log('@@ downloadFile>file>', file.download_url);
+                    console.log('@@ downloadFile>response from axios>status text>', response.statusText);
+                    console.log('@@ downloadFile>response from axios>status data>', response.data);
                     file.content = response.data;
                     return [2 /*return*/];
             }
