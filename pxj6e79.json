@@ -1,0 +1,407 @@
+{
+  "title": "Anti-brouillard",
+  "description": "Anti-brouillard c'est le podcast qui décrypte les grandes tendances du monde des nouvelles technologies en allant à la rencontre d'experts.\nBlockchain, intelligence artificielle, informatique quantique... tout le monde en parle mais ça veut dire quoi, concrètement ?\nTous les mois, un entretien avec un expert, qu'il soit entrepreneur, chercheur, philosophe, et toutes les semaines un flash d'actualités autour d'un sujet tech !\n",
+  "imageUrl": "https://static.audiomeans.fr/img/podcast/885ecc2c-0019-4c35-9bfe-45e08859e756.jpeg",
+  "contacts": {
+    "link": "https://www.anti-brouillard.fr/",
+    "email": "_",
+    "twitter": "Anti_brouillard",
+    "patreon": "_",
+    "googleGroup": "_"
+  },
+  "hosts": [
+    {
+      "name": "Fabien Roques",
+      "twitter": "_"
+    }
+  ],
+  "feed": {
+    "rss": "https://feeds.audiomeans.fr/feed/c4a4da51-17f1-4f0b-825f-6340b48dedde.xml",
+    "itunes": "https://podcasts.apple.com/fr/podcast/anti-brouillard/id1419098222?mt=2",
+    "spotify": "https://open.spotify.com/show/5ZPwitfQ7ESuWnMzxHDqyx",
+    "soundcloud": "_",
+    "deezer": "_",
+    "google": "https://www.google.com/podcasts?feed=aHR0cHM6Ly9mZWVkLmF1c2hhLmNvL0IxMEVhY2xldjc5TA%3D%3D",
+    "castbox": "_",
+    "pocketcast": "_"
+  },
+  "pid": "pxj6e79",
+  "yamlDescriptionFile": "anti-brouillard-9.yaml",
+  "extra": {
+    "timestamp": 1618189200000,
+    "colors": {
+      "vibrant": "#57405e",
+      "darkVibrant": "#275d51",
+      "lightVibrant": "#9ed4c8",
+      "muted": "#83688f",
+      "darkMuted": "#57405e",
+      "lightMuted": "#a4c6cc"
+    },
+    "episodes": [
+      {
+        "publishingDate": "2021-04-12"
+      },
+      {
+        "publishingDate": "2021-03-22"
+      },
+      {
+        "publishingDate": "2021-03-08"
+      },
+      {
+        "publishingDate": "2021-03-01"
+      },
+      {
+        "publishingDate": "2021-02-15"
+      },
+      {
+        "publishingDate": "2021-02-01"
+      },
+      {
+        "publishingDate": "2021-01-25"
+      },
+      {
+        "publishingDate": "2021-01-19"
+      },
+      {
+        "publishingDate": "2021-01-11"
+      },
+      {
+        "publishingDate": "2020-12-28"
+      },
+      {
+        "publishingDate": "2020-12-21"
+      },
+      {
+        "publishingDate": "2020-12-14"
+      },
+      {
+        "publishingDate": "2020-12-07"
+      },
+      {
+        "publishingDate": "2020-11-30"
+      },
+      {
+        "publishingDate": "2020-11-23"
+      },
+      {
+        "publishingDate": "2020-11-16"
+      },
+      {
+        "publishingDate": "2020-11-09"
+      },
+      {
+        "publishingDate": "2020-11-02"
+      },
+      {
+        "publishingDate": "2020-10-26"
+      },
+      {
+        "publishingDate": "2020-10-19"
+      },
+      {
+        "publishingDate": "2020-10-12"
+      },
+      {
+        "publishingDate": "2020-10-05"
+      },
+      {
+        "publishingDate": "2020-09-27"
+      },
+      {
+        "publishingDate": "2020-09-21"
+      },
+      {
+        "publishingDate": "2020-09-14"
+      },
+      {
+        "publishingDate": "2020-09-08"
+      },
+      {
+        "publishingDate": "2020-09-02"
+      },
+      {
+        "publishingDate": "2020-08-24"
+      },
+      {
+        "publishingDate": "2020-08-19"
+      },
+      {
+        "publishingDate": "2020-08-10"
+      },
+      {
+        "publishingDate": "2020-08-03"
+      },
+      {
+        "publishingDate": "2020-07-27"
+      },
+      {
+        "publishingDate": "2020-07-20"
+      },
+      {
+        "publishingDate": "2020-07-12"
+      },
+      {
+        "publishingDate": "2020-07-05"
+      },
+      {
+        "publishingDate": "2020-06-29"
+      },
+      {
+        "publishingDate": "2020-06-22"
+      },
+      {
+        "publishingDate": "2020-06-15"
+      },
+      {
+        "publishingDate": "2020-06-08"
+      },
+      {
+        "publishingDate": "2020-06-01"
+      },
+      {
+        "publishingDate": "2020-05-25"
+      },
+      {
+        "publishingDate": "2020-05-18"
+      },
+      {
+        "publishingDate": "2020-05-11"
+      },
+      {
+        "publishingDate": "2020-05-04"
+      },
+      {
+        "publishingDate": "2020-04-27"
+      },
+      {
+        "publishingDate": "2020-04-20"
+      },
+      {
+        "publishingDate": "2020-04-13"
+      },
+      {
+        "publishingDate": "2020-04-06"
+      },
+      {
+        "publishingDate": "2020-03-30"
+      },
+      {
+        "publishingDate": "2020-03-23"
+      },
+      {
+        "publishingDate": "2020-03-16"
+      },
+      {
+        "publishingDate": "2020-03-09"
+      },
+      {
+        "publishingDate": "2020-03-02"
+      },
+      {
+        "publishingDate": "2020-02-24"
+      },
+      {
+        "publishingDate": "2020-02-17"
+      },
+      {
+        "publishingDate": "2020-02-10"
+      },
+      {
+        "publishingDate": "2020-02-03"
+      },
+      {
+        "publishingDate": "2020-01-27"
+      },
+      {
+        "publishingDate": "2020-01-20"
+      },
+      {
+        "publishingDate": "2020-01-13"
+      },
+      {
+        "publishingDate": "2020-01-06"
+      },
+      {
+        "publishingDate": "2019-12-30"
+      },
+      {
+        "publishingDate": "2019-12-25"
+      },
+      {
+        "publishingDate": "2019-12-16"
+      },
+      {
+        "publishingDate": "2019-12-09"
+      },
+      {
+        "publishingDate": "2019-12-02"
+      },
+      {
+        "publishingDate": "2019-11-25"
+      },
+      {
+        "publishingDate": "2019-11-18"
+      },
+      {
+        "publishingDate": "2019-11-11"
+      },
+      {
+        "publishingDate": "2019-11-04"
+      },
+      {
+        "publishingDate": "2019-10-28"
+      },
+      {
+        "publishingDate": "2019-10-21"
+      },
+      {
+        "publishingDate": "2019-10-14"
+      },
+      {
+        "publishingDate": "2019-10-07"
+      },
+      {
+        "publishingDate": "2019-09-30"
+      },
+      {
+        "publishingDate": "2019-09-23"
+      },
+      {
+        "publishingDate": "2019-09-16"
+      },
+      {
+        "publishingDate": "2019-09-09"
+      },
+      {
+        "publishingDate": "2019-09-02"
+      },
+      {
+        "publishingDate": "2019-08-26"
+      },
+      {
+        "publishingDate": "2019-08-19"
+      },
+      {
+        "publishingDate": "2019-08-12"
+      },
+      {
+        "publishingDate": "2019-08-05"
+      },
+      {
+        "publishingDate": "2019-07-29"
+      },
+      {
+        "publishingDate": "2019-07-22"
+      },
+      {
+        "publishingDate": "2019-07-15"
+      },
+      {
+        "publishingDate": "2019-07-08"
+      },
+      {
+        "publishingDate": "2019-07-01"
+      },
+      {
+        "publishingDate": "2019-06-24"
+      },
+      {
+        "publishingDate": "2019-06-17"
+      },
+      {
+        "publishingDate": "2019-06-10"
+      },
+      {
+        "publishingDate": "2019-06-03"
+      },
+      {
+        "publishingDate": "2019-05-27"
+      },
+      {
+        "publishingDate": "2019-05-20"
+      },
+      {
+        "publishingDate": "2019-05-13"
+      },
+      {
+        "publishingDate": "2019-05-06"
+      },
+      {
+        "publishingDate": "2019-04-29"
+      },
+      {
+        "publishingDate": "2019-04-22"
+      },
+      {
+        "publishingDate": "2019-04-15"
+      },
+      {
+        "publishingDate": "2019-04-08"
+      },
+      {
+        "publishingDate": "2019-04-01"
+      },
+      {
+        "publishingDate": "2019-03-25"
+      },
+      {
+        "publishingDate": "2019-03-18"
+      },
+      {
+        "publishingDate": "2019-03-11"
+      },
+      {
+        "publishingDate": "2019-03-04"
+      },
+      {
+        "publishingDate": "2019-02-25"
+      },
+      {
+        "publishingDate": "2019-02-18"
+      },
+      {
+        "publishingDate": "2019-02-11"
+      },
+      {
+        "publishingDate": "2019-02-04"
+      },
+      {
+        "publishingDate": "2019-01-29"
+      },
+      {
+        "publishingDate": "2019-01-21"
+      },
+      {
+        "publishingDate": "2019-01-14"
+      },
+      {
+        "publishingDate": "2019-01-07"
+      },
+      {
+        "publishingDate": "2018-12-31"
+      },
+      {
+        "publishingDate": "2018-12-24"
+      },
+      {
+        "publishingDate": "2018-12-04"
+      },
+      {
+        "publishingDate": "2018-11-12"
+      },
+      {
+        "publishingDate": "2018-10-19"
+      },
+      {
+        "publishingDate": "2018-09-30"
+      },
+      {
+        "publishingDate": "2018-08-27"
+      },
+      {
+        "publishingDate": "2018-07-29"
+      }
+    ],
+    "logoRepoImage": "pxj6e79.png"
+  }
+}
