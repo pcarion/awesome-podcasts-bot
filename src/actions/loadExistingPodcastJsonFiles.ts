@@ -15,7 +15,9 @@ export default async function loadExistingPodcastJsonFiles(
   console.log('>podcast files to process:', podcastFiles);
   await dowloadFiles(podcastFiles);
   for (const file of podcastFiles) {
-    console.log('>validate file>', file.path);
+    console.log('>validate file>path>', file.path);
+    console.log('>validate file>download_url>', file.download_url);
+    console.log('>validate file>typeof content>', typeof file.content);
     if (!file.content) {
       throw new Error(`missing content for file: ${file.name}`);
     }
@@ -32,7 +34,8 @@ export default async function loadExistingPodcastJsonFiles(
       podcasts.push(podcast);
     } catch (err) {
       console.log('>error reading content of file>path>', file.path);
-      console.log('>error reading content of file>content>', (file.content || '').substring(0, 32));
+      console.log('>error reading content of file>download_url>', file.download_url);
+      // console.log('>error reading content of file>content>', (file.content || '').substring(0, 32));
       console.log(err);
     }
   }

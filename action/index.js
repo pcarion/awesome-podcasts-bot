@@ -1494,7 +1494,9 @@ function loadExistingPodcastJsonFiles(octokit, repoInformation, podcastsDirector
                 case 2:
                     _a.sent();
                     _loop_1 = function (file) {
-                        console.log('>validate file>', file.path);
+                        console.log('>validate file>path>', file.path);
+                        console.log('>validate file>download_url>', file.download_url);
+                        console.log('>validate file>typeof content>', typeof file.content);
                         if (!file.content) {
                             throw new Error("missing content for file: " + file.name);
                         }
@@ -1513,7 +1515,8 @@ function loadExistingPodcastJsonFiles(octokit, repoInformation, podcastsDirector
                         }
                         catch (err) {
                             console.log('>error reading content of file>path>', file.path);
-                            console.log('>error reading content of file>content>', (file.content || '').substring(0, 32));
+                            console.log('>error reading content of file>download_url>', file.download_url);
+                            // console.log('>error reading content of file>content>', (file.content || '').substring(0, 32));
                             console.log(err);
                         }
                     };
