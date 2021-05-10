@@ -806,7 +806,11 @@ function downloadFile(file) {
                         url: file.download_url,
                         method: 'GET',
                         responseType: 'text',
-                        transformResponse: [function (data) { return data; }],
+                        transformResponse: [
+                            function (data) {
+                                return data;
+                            },
+                        ],
                     })];
                 case 1:
                     response = _a.sent();
@@ -1162,6 +1166,11 @@ function retrieveYamlContentFromRepository(octo, repoInformation, path) {
                             url: file.download_url,
                             method: 'GET',
                             responseType: 'text',
+                            transformResponse: [
+                                function (data) {
+                                    return data;
+                                },
+                            ],
                         })];
                 case 2:
                     response = _a.sent();

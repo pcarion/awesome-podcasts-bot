@@ -37,6 +37,11 @@ export default async function retrieveYamlContentFromRepository(
     url: file.download_url,
     method: 'GET',
     responseType: 'text',
+    transformResponse: [
+      (data) => {
+        return data;
+      },
+    ],
   });
   if (!response || !response.data) {
     throw new Error(`not retrieving content for: ${path}`);
