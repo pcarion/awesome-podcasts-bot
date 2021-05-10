@@ -6,6 +6,7 @@ async function downloadFile(file: FileInformation): Promise<void> {
     url: file.download_url,
     method: 'GET',
     responseType: 'text',
+    transformResponse: [(data) => { return data; }],
   });
   console.log('@@ downloadFile>file>', file.download_url);
   console.log('@@ downloadFile>response from axios>status text>', response.statusText);
